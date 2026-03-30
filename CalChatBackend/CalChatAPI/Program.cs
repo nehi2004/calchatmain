@@ -233,18 +233,18 @@ var builder = WebApplication.CreateBuilder(args);
 // DATABASE (PostgreSQL - Railway)
 //////////////////////////////////////////////////
 
-//builder.Services.AddDbContext<ApplicationDbContext>(options =>
-//    options.UseNpgsql(
-//        builder.Configuration.GetConnectionString("DefaultConnection")
-//    ));
+builder.Services.AddDbContext<ApplicationDbContext>(options =>
+    options.UseNpgsql(
+        builder.Configuration.GetConnectionString("DefaultConnection")
+    ));
 
 //////////////////////////////////////////////////
 // IDENTITY
 //////////////////////////////////////////////////
 
-//builder.Services.AddIdentity<ApplicationUser, IdentityRole>()
-//    .AddEntityFrameworkStores<ApplicationDbContext>()
-//    .AddDefaultTokenProviders();
+builder.Services.AddIdentity<ApplicationUser, IdentityRole>()
+    .AddEntityFrameworkStores<ApplicationDbContext>()
+    .AddDefaultTokenProviders();
 
 //////////////////////////////////////////////////
 // JWT CONFIG (SignalR SUPPORT)
