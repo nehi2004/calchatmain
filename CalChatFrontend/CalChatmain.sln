@@ -1,0 +1,29 @@
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.5.2.0
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "CalChatBackend", "CalChatBackend", "{0DCD23BB-E476-F2BC-0D67-5827BFA1DFEE}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CalChatAPI", "CalChatBackend\CalChatAPI\CalChatAPI.csproj", "{CCC93C57-E731-BC56-48BF-4F6C9B4CA48D}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{CCC93C57-E731-BC56-48BF-4F6C9B4CA48D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{CCC93C57-E731-BC56-48BF-4F6C9B4CA48D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{CCC93C57-E731-BC56-48BF-4F6C9B4CA48D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{CCC93C57-E731-BC56-48BF-4F6C9B4CA48D}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{CCC93C57-E731-BC56-48BF-4F6C9B4CA48D} = {0DCD23BB-E476-F2BC-0D67-5827BFA1DFEE}
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {61730CC3-6D45-4374-B85B-12DC5F1C8346}
+	EndGlobalSection
+EndGlobal
