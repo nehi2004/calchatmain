@@ -586,7 +586,7 @@ import api from "@/lib/axios" // ✅ ADDED
 export default function RegisterPage() {
     const router = useRouter()
 
-    const [role, setRole] = useState("")
+    const [role, setRole] = useState("student")
     const [agreed, setAgreed] = useState(false)
 
     const [showPassword, setShowPassword] = useState(false)
@@ -628,8 +628,11 @@ export default function RegisterPage() {
             console.error(err)
 
             if (err.response) {
-                alert(err.response.data || "Registration failed ❌")
-            } else {
+                if (err.response?.data?.errors) {
+                    alert(err.response.data.errors.join("\n"))
+                } else {
+                    alert("Registration failed ❌")
+                }            } else {
                 alert("Server not reachable ❌")
             }
         }
