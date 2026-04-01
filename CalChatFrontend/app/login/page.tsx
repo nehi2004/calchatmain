@@ -131,7 +131,7 @@ export default function LoginPage() {
         setLoading(true)
 
         try {
-            const response = await fetch("http://localhost:5009/api/account/login", {
+            const response = await fetch("http://calchatmain.runasp.net/api/account/login", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
