@@ -749,7 +749,7 @@ public class AccountController : ControllerBase
 
         await _userManager.UpdateAsync(user);
 
-        var resetLink = $"http://localhost:3000/reset-password?token={token}";
+        var resetLink = $"https://calchatmain-le3p.vercel.app/dashboard/reset-password?token={token}";
 
         // ✅ SMTP CONFIG
         var smtpClient = new SmtpClient(_emailSettings.Host)

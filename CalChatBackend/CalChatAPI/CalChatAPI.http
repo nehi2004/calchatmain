@@ -1,4 +1,4 @@
-@CalChatAPI_HostAddress = http://localhost:5009
+@CalChatAPI_HostAddress = https://calchat-backend.onrender.com
 
 GET {{CalChatAPI_HostAddress}}/weatherforecast/
 Accept: application/json
