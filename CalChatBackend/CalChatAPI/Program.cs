@@ -329,7 +329,7 @@ builder.Services.AddSingleton<IUserIdProvider, NameIdentifierUserIdProvider>();
 
 builder.Services.AddScoped<AIService>();
 builder.Services.AddScoped<IEmailService, EmailService>();
-builder.Services.AddHostedService<MeetingNotificationService>();
+//builder.Services.AddHostedService<MeetingNotificationService>();
 
 //////////////////////////////////////////////////
 // CONTROLLERS
@@ -396,24 +396,27 @@ builder.Services.AddSwaggerGen(options =>
 //////////////////////////////////////////////////
 
 var app = builder.Build();
+app.UseDeveloperExceptionPage();
 
 //////////////////////////////////////////////////
 // RAILWAY PORT FIX (VERY IMPORTANT)
 //////////////////////////////////////////////////
 
-var port = Environment.GetEnvironmentVariable("PORT") ?? "8080";
-app.Urls.Add($"http://0.0.0.0:{port}");
+//var port = Environment.GetEnvironmentVariable("PORT") ?? "8080";
+//app.Urls.Add($"http://0.0.0.0:{port}");
 
 //////////////////////////////////////////////////
 // MIDDLEWARE
 //////////////////////////////////////////////////
 
-if (app.Environment.IsDevelopment())
+//if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
 }
 
+//app.UseSwagger();
+//app.UseSwaggerUI();
 app.UseRouting();
 
 app.UseCors("AllowFrontend");
