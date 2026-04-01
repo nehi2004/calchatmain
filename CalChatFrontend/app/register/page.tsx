@@ -187,7 +187,7 @@ export default function RegisterPage() {
         console.log("Sending data:", formData)
 
         try {
-            const response = await fetch("http://localhost:5009/api/account/register", {
+            const response = await fetch("https://calchatmain.runasp.net/api/account/register", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json"
