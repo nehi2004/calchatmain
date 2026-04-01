@@ -30,7 +30,7 @@ export default function ResetPasswordContent() {
         setLoading(true)
 
         try {
-            const res = await fetch("http://localhost:5009/api/account/reset-password", {
+            const res = await fetch("https://calchat-backend.onrender.com/api/account/reset-password", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json"

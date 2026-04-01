@@ -24,7 +24,7 @@
 //        }
 
 //        try {
-//            const res = await fetch("http://localhost:5009/api/hr/set-password", {
+//            const res = await fetch("https://calchat-backend.onrender.com/api/hr/set-password", {
 //                method: "POST",
 //                headers: {
 //                    "Content-Type": "application/json"
@@ -114,7 +114,7 @@
 //        try {
 //            setLoading(true)
 
-//            const res = await fetch("http://localhost:5009/api/hr/set-password", {
+//            const res = await fetch("https://calchat-backend.onrender.com/api/hr/set-password", {
 //                method: "POST",
 //                headers: {
 //                    "Content-Type": "application/json"

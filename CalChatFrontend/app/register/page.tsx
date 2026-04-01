@@ -48,7 +48,7 @@
 //        console.log("Sending data:", formData)
 
 //        try {
-//            const response = await fetch("http://localhost:5009/api/account/register", {
+//            const response = await fetch("https://calchat-backend.onrender.com/api/account/register", {
 //                method: "POST",
 //                headers: {
 //                    "Content-Type": "application/json"
@@ -618,7 +618,7 @@ export default function RegisterPage() {
 
         try {
             // ✅ AXIOS CALL (FIXED)
-            const response = await api.post("/api/auth/register", formData)
+            const response = await api.post("/account/register", formData)
             if (response.status >= 200 && response.status < 300) {
                 alert("Registration successful ✅")
                 router.push("/login")

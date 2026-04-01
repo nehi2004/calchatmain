@@ -32,7 +32,7 @@ export default function SetPasswordContent() {
         try {
             setLoading(true)
 
-            const res = await fetch("https://your-backend-url/api/hr/set-password", {
+            const res = await fetch("https://calchat-backend.onrender.com/api/hr/set-password", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json"

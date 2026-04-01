@@ -195,13 +195,13 @@
 
 //        try {
 //            const [meetingRes, taskRes, announcementRes] = await Promise.all([
-//                fetch("http://localhost:5009/api/Meeting", {
+//                fetch("https://calchat-backend.onrender.com/api/Meeting", {
 //                    headers: { Authorization: `Bearer ${token}` }
 //                }),
-//                fetch("http://localhost:5009/api/Task", {
+//                fetch("https://calchat-backend.onrender.com/api/Task", {
 //                    headers: { Authorization: `Bearer ${token}` }
 //                }),
-//                fetch("http://localhost:5009/api/Announcement", {
+//                fetch("https://calchat-backend.onrender.com/api/Announcement", {
 //                    headers: { Authorization: `Bearer ${token}` }
 //                })
 //            ])
@@ -390,13 +390,13 @@
 
 //        try {
 //            const [meetingRes, taskRes, announcementRes] = await Promise.all([
-//                fetch("http://localhost:5009/api/Meeting/my-meetings", {
+//                fetch("https://calchat-backend.onrender.com/api/Meeting/my-meetings", {
 //                    headers: { Authorization: `Bearer ${token}` }
 //                }),
-//                fetch("http://localhost:5009/api/Tasks", {
+//                fetch("https://calchat-backend.onrender.com/api/Tasks", {
 //                    headers: { Authorization: `Bearer ${token}` }
 //                }),
-//                fetch("http://localhost:5009/api/Announcement", {
+//                fetch("https://calchat-backend.onrender.com/api/Announcement", {
 //                    headers: { Authorization: `Bearer ${token}` }
 //                })
 //            ])
@@ -580,13 +580,13 @@
 
 //        try {
 //            const [meetingRes, taskRes, announcementRes] = await Promise.all([
-//                fetch("http://localhost:5009/api/Meeting/my-meetings", {
+//                fetch("https://calchat-backend.onrender.com/api/Meeting/my-meetings", {
 //                    headers: { Authorization: `Bearer ${token}` }
 //                }),
-//                fetch("http://localhost:5009/api/Tasks", {
+//                fetch("https://calchat-backend.onrender.com/api/Tasks", {
 //                    headers: { Authorization: `Bearer ${token}` }
 //                }),
-//                fetch("http://localhost:5009/api/Announcement", {
+//                fetch("https://calchat-backend.onrender.com/api/Announcement", {
 //                    headers: { Authorization: `Bearer ${token}` }
 //                })
 //            ])
@@ -846,13 +846,13 @@ export default function ProfessionalDashboard() {
 
         try {
             const [meetingRes, taskRes, announcementRes] = await Promise.all([
-                fetch("http://localhost:5009/api/Meeting/my-meetings", {
+                fetch("https://calchat-backend.onrender.com/api/Meeting/my-meetings", {
                     headers: { Authorization: `Bearer ${token}` }
                 }),
-                fetch("http://localhost:5009/api/Tasks", {
+                fetch("https://calchat-backend.onrender.com/api/Tasks", {
                     headers: { Authorization: `Bearer ${token}` }
                 }),
-                fetch("http://localhost:5009/api/Announcement", {
+                fetch("https://calchat-backend.onrender.com/api/Announcement", {
                     headers: { Authorization: `Bearer ${token}` }
                 })
             ])

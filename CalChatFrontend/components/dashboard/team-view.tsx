@@ -103,7 +103,7 @@
 //        try {
 //            const token = localStorage.getItem("token")
 
-//            const res = await fetch("http://localhost:5009/api/hr/employees", {
+//            const res = await fetch("https://calchat-backend.onrender.com/api/hr/employees", {
 //                headers: {
 //                    Authorization: `Bearer ${token}`
 //                }
@@ -315,7 +315,7 @@
 //    async function fetchTasks() {
 //        const token = localStorage.getItem("token")
 
-//        const res = await fetch("http://localhost:5009/api/Tasks", {
+//        const res = await fetch("https://calchat-backend.onrender.com/api/Tasks", {
 //            headers: { Authorization: `Bearer ${token}` }
 //        })
 
@@ -327,7 +327,7 @@
 //        try {
 //            const token = localStorage.getItem("token")
 
-//            const res = await fetch("http://localhost:5009/api/hr/employees", {
+//            const res = await fetch("https://calchat-backend.onrender.com/api/hr/employees", {
 //                headers: {
 //                    Authorization: `Bearer ${token}`
 //                }
@@ -481,7 +481,7 @@ export function TeamView() {
     async function fetchTasks() {
         const token = localStorage.getItem("token")
 
-        const res = await fetch("http://localhost:5009/api/Tasks", {
+        const res = await fetch("https://calchat-backend.onrender.com/api/Tasks", {
             headers: { Authorization: `Bearer ${token}` }
         })
 
@@ -494,7 +494,7 @@ export function TeamView() {
         try {
             const token = localStorage.getItem("token")
 
-            const res = await fetch("http://localhost:5009/api/hr/employees", {
+            const res = await fetch("https://calchat-backend.onrender.com/api/hr/employees", {
                 headers: {
                     Authorization: `Bearer ${token}`
                 }

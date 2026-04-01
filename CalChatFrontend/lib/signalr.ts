@@ -2,7 +2,7 @@ import * as signalR from "@microsoft/signalr"
 
 export const createConnection = (token: string) => {
     return new signalR.HubConnectionBuilder()
-        .withUrl("http://localhost:5009/chathub", {
+        .withUrl("https://calchat-backend.onrender.com/chathub", {
             accessTokenFactory: () => token
         })
         .withAutomaticReconnect()

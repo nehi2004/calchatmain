@@ -23,7 +23,7 @@
 //            const token = localStorage.getItem("token")
 
 //            const res = await fetch(
-//                `http://localhost:5009/api/chat/personal/${userId}`,
+//                `https://calchat-backend.onrender.com/api/chat/personal/${userId}`,
 //                {
 //                    headers: {
 //                        Authorization: `Bearer ${token}`
@@ -53,7 +53,7 @@
 //        try {
 //            const token = localStorage.getItem("token")
 
-//            await fetch("http://localhost:5009/api/messages", {
+//            await fetch("https://calchat-backend.onrender.com/api/messages", {
 //                method: "POST",
 //                headers: {
 //                    "Content-Type": "application/json",
@@ -156,7 +156,7 @@
 //            const token = localStorage.getItem("token")
 
 //            const res = await fetch(
-//                `http://localhost:5009/api/chat/personal/${userId}`,
+//                `https://calchat-backend.onrender.com/api/chat/personal/${userId}`,
 //                {
 //                    headers: {
 //                        Authorization: `Bearer ${token}`
@@ -193,7 +193,7 @@
 //        try {
 //            const token = localStorage.getItem("token")
 
-//            await fetch("http://localhost:5009/api/messages", {
+//            await fetch("https://calchat-backend.onrender.com/api/messages", {
 //                method: "POST",
 //                headers: {
 //                    "Content-Type": "application/json",
@@ -344,7 +344,7 @@
 //        try {
 //            const token = localStorage.getItem("token")
 
-//            const res = await fetch("http://localhost:5009/api/users/students", {
+//            const res = await fetch("https://calchat-backend.onrender.com/api/users/students", {
 //                headers: {
 //                    Authorization: `Bearer ${token}`
 //                }
@@ -377,7 +377,7 @@
 //            const token = localStorage.getItem("token")
 
 //            const res = await fetch(
-//                `http://localhost:5009/api/chat/personal/${activeUser.id}`,
+//                `https://calchat-backend.onrender.com/api/chat/personal/${activeUser.id}`,
 //                {
 //                    headers: {
 //                        Authorization: `Bearer ${token}`
@@ -416,7 +416,7 @@
 //        try {
 //            const token = localStorage.getItem("token")
 
-//            await fetch("http://localhost:5009/api/messages", {
+//            await fetch("https://calchat-backend.onrender.com/api/messages", {
 //                method: "POST",
 //                headers: {
 //                    "Content-Type": "application/json",
@@ -611,7 +611,7 @@ export default function PersonalChatPage() {
         try {
             const token = localStorage.getItem("token")
 
-            const res = await fetch("http://localhost:5009/api/users/students", {
+            const res = await fetch("https://calchat-backend.onrender.com/api/users/students", {
                 headers: {
                     Authorization: `Bearer ${token}`
                 }
@@ -650,7 +650,7 @@ export default function PersonalChatPage() {
             const token = localStorage.getItem("token")
 
             const res = await fetch(
-                `http://localhost:5009/api/chat/personal/${activeUser.id}`,
+                `https://calchat-backend.onrender.com/api/chat/personal/${activeUser.id}`,
                 {
                     headers: {
                         Authorization: `Bearer ${token}`
@@ -689,7 +689,7 @@ export default function PersonalChatPage() {
         try {
             const token = localStorage.getItem("token")
 
-            await fetch("http://localhost:5009/api/messages", {
+            await fetch("https://calchat-backend.onrender.com/api/messages", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",

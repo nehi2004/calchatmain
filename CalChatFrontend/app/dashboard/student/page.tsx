@@ -210,8 +210,8 @@
 //    { label: "Analytics", href: "/dashboard/student/analytics", icon: BarChart3 },
 //]
 
-//const TASK_API = "http://localhost:5009/api/Tasks"
-//const EVENT_API = "http://localhost:5009/api/CalendarEvents"
+//const TASK_API = "https://calchat-backend.onrender.com/api/Tasks"
+//const EVENT_API = "https://calchat-backend.onrender.com/api/CalendarEvents"
 
 ///* ================= UTIL ================= */
 
@@ -584,8 +584,8 @@
 //    { label: "Analytics", href: "/dashboard/student/analytics", icon: BarChart3 },
 //]
 
-//const TASK_API = "http://localhost:5009/api/Tasks"
-//const EVENT_API = "http://localhost:5009/api/CalendarEvents"
+//const TASK_API = "https://calchat-backend.onrender.com/api/Tasks"
+//const EVENT_API = "https://calchat-backend.onrender.com/api/CalendarEvents"
 
 ///* ================= UTIL ================= */
 
@@ -1016,8 +1016,8 @@ const navItems = [
     { label: "Analytics", href: "/dashboard/student/analytics", icon: BarChart3 },
 ]
 
-const TASK_API = "http://localhost:5009/api/Tasks"
-const EVENT_API = "http://localhost:5009/api/CalendarEvents"
+const TASK_API = "https://calchat-backend.onrender.com/api/Tasks"
+const EVENT_API = "https://calchat-backend.onrender.com/api/CalendarEvents"
 
 /* ================= UTIL ================= */
 

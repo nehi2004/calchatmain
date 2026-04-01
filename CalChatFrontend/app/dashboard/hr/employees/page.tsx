@@ -193,7 +193,7 @@
 //        try {
 //            const token = localStorage.getItem("token")
 
-//            const res = await fetch("http://localhost:5009/api/hr/employees", {
+//            const res = await fetch("https://calchat-backend.onrender.com/api/hr/employees", {
 //                headers: {
 //                    Authorization: `Bearer ${token}`
 //                }
@@ -231,7 +231,7 @@
 //        try {
 //            const token = localStorage.getItem("token")
 
-//            const res = await fetch("http://localhost:5009/api/hr/add-employee", {
+//            const res = await fetch("https://calchat-backend.onrender.com/api/hr/add-employee", {
 //                method: "POST",
 //                headers: {
 //                    "Content-Type": "application/json",
@@ -465,7 +465,7 @@
 //        try {
 //            const token = localStorage.getItem("token")
 
-//            const res = await fetch("http://localhost:5009/api/hr/employees", {
+//            const res = await fetch("https://calchat-backend.onrender.com/api/hr/employees", {
 //                headers: {
 //                    Authorization: `Bearer ${token}`
 //                }
@@ -497,7 +497,7 @@
 //        try {
 //            const token = localStorage.getItem("token")
 
-//            const res = await fetch("http://localhost:5009/api/hr/add-employee", {
+//            const res = await fetch("https://calchat-backend.onrender.com/api/hr/add-employee", {
 //                method: "POST",
 //                headers: {
 //                    "Content-Type": "application/json",
@@ -528,7 +528,7 @@
 //        try {
 //            const token = localStorage.getItem("token")
 
-//            const res = await fetch(`http://localhost:5009/api/hr/delete-employee/${id}`, {
+//            const res = await fetch(`https://calchat-backend.onrender.com/api/hr/delete-employee/${id}`, {
 //                method: "DELETE",
 //                headers: {
 //                    Authorization: `Bearer ${token}`
@@ -552,7 +552,7 @@
 //        try {
 //            const token = localStorage.getItem("token")
 
-//            const res = await fetch(`http://localhost:5009/api/hr/update-employee/${editId}`, {
+//            const res = await fetch(`https://calchat-backend.onrender.com/api/hr/update-employee/${editId}`, {
 //                method: "PUT",
 //                headers: {
 //                    "Content-Type": "application/json",
@@ -811,7 +811,7 @@
 //        try {
 //            const token = localStorage.getItem("token")
 
-//            const res = await fetch("http://localhost:5009/api/hr/employees", {
+//            const res = await fetch("https://calchat-backend.onrender.com/api/hr/employees", {
 //                headers: {
 //                    Authorization: `Bearer ${token}`
 //                }
@@ -850,7 +850,7 @@
 //        try {
 //            const token = localStorage.getItem("token")
 
-//            const res = await fetch("http://localhost:5009/api/hr/add-employee", {
+//            const res = await fetch("https://calchat-backend.onrender.com/api/hr/add-employee", {
 //                method: "POST",
 //                headers: {
 //                    "Content-Type": "application/json",
@@ -888,7 +888,7 @@
 //        try {
 //            const token = localStorage.getItem("token")
 
-//            const res = await fetch(`http://localhost:5009/api/hr/delete-employee/${id}`, {
+//            const res = await fetch(`https://calchat-backend.onrender.com/api/hr/delete-employee/${id}`, {
 //                method: "DELETE",
 //                headers: {
 //                    Authorization: `Bearer ${token}`
@@ -923,7 +923,7 @@
 //        try {
 //            const token = localStorage.getItem("token")
 
-//            const res = await fetch(`http://localhost:5009/api/hr/update-employee/${editId}`, {
+//            const res = await fetch(`https://calchat-backend.onrender.com/api/hr/update-employee/${editId}`, {
 //                method: "PUT",
 //                headers: {
 //                    "Content-Type": "application/json",
@@ -1192,7 +1192,7 @@
 //        try {
 //            const token = localStorage.getItem("token")
 
-//            const res = await fetch("http://localhost:5009/api/hr/employees", {
+//            const res = await fetch("https://calchat-backend.onrender.com/api/hr/employees", {
 //                headers: {
 //                    Authorization: `Bearer ${token}`
 //                }
@@ -1231,7 +1231,7 @@
 //        try {
 //            const token = localStorage.getItem("token")
 
-//            const res = await fetch("http://localhost:5009/api/hr/add-employee", {
+//            const res = await fetch("https://calchat-backend.onrender.com/api/hr/add-employee", {
 //                method: "POST",
 //                headers: {
 //                    "Content-Type": "application/json",
@@ -1269,7 +1269,7 @@
 //        try {
 //            const token = localStorage.getItem("token")
 
-//            const res = await fetch(`http://localhost:5009/api/hr/resend-invite/${userId}`, {
+//            const res = await fetch(`https://calchat-backend.onrender.com/api/hr/resend-invite/${userId}`, {
 //                method: "POST",
 //                headers: {
 //                    Authorization: `Bearer ${token}`
@@ -1301,7 +1301,7 @@
 //        try {
 //            const token = localStorage.getItem("token")
 
-//            const res = await fetch(`http://localhost:5009/api/hr/delete-employee/${id}`, {
+//            const res = await fetch(`https://calchat-backend.onrender.com/api/hr/delete-employee/${id}`, {
 //                method: "DELETE",
 //                headers: {
 //                    Authorization: `Bearer ${token}`
@@ -1336,7 +1336,7 @@
 //        try {
 //            const token = localStorage.getItem("token")
 
-//            const res = await fetch(`http://localhost:5009/api/hr/update-employee/${editId}`, {
+//            const res = await fetch(`https://calchat-backend.onrender.com/api/hr/update-employee/${editId}`, {
 //                method: "PUT",
 //                headers: {
 //                    "Content-Type": "application/json",
@@ -1637,7 +1637,7 @@ export default function EmployeeManagementPage() {
         try {
             const token = localStorage.getItem("token")
 
-            const res = await fetch("http://localhost:5009/api/hr/employees", {
+            const res = await fetch("https://calchat-backend.onrender.com/api/hr/employees", {
                 headers: {
                     Authorization: `Bearer ${token}`
                 }
@@ -1671,7 +1671,7 @@ export default function EmployeeManagementPage() {
 
         const token = localStorage.getItem("token")
 
-        await fetch("http://localhost:5009/api/hr/add-employee", {
+        await fetch("https://calchat-backend.onrender.com/api/hr/add-employee", {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
@@ -1690,7 +1690,7 @@ export default function EmployeeManagementPage() {
 
         const token = localStorage.getItem("token")
 
-        await fetch(`http://localhost:5009/api/hr/update-employee/${editId}`, {
+        await fetch(`https://calchat-backend.onrender.com/api/hr/update-employee/${editId}`, {
             method: "PUT",
             headers: {
                 "Content-Type": "application/json",
@@ -1709,7 +1709,7 @@ export default function EmployeeManagementPage() {
 
         const token = localStorage.getItem("token")
 
-        await fetch(`http://localhost:5009/api/hr/delete-employee/${id}`, {
+        await fetch(`https://calchat-backend.onrender.com/api/hr/delete-employee/${id}`, {
             method: "DELETE",
             headers: { Authorization: `Bearer ${token}` }
         })

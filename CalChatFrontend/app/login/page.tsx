@@ -20,7 +20,7 @@
 
 
 //        try {
-//            const response = await fetch("http://localhost:5009/api/account/login", {
+//            const response = await fetch("https://calchat-backend.onrender.com/api/account/login", {
 //                method: "POST",
 //                headers: {
 //                    "Content-Type": "application/json",
@@ -131,7 +131,7 @@ export default function LoginPage() {
         setLoading(true)
 
         try {
-            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/auth/login`, {
+            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/account/login`, {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",

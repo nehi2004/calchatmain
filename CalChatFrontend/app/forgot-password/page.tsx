@@ -9,7 +9,7 @@
 //    async function handleSubmit(e: React.FormEvent) {
 //        e.preventDefault()
 
-//        const res = await fetch("http://localhost:5009/api/account/forgot-password", {
+//        const res = await fetch("https://calchat-backend.onrender.com/api/account/forgot-password", {
 //            method: "POST",
 //            headers: {
 //                "Content-Type": "application/json"
@@ -64,7 +64,7 @@ export default function ForgotPasswordPage() {
         setLoading(true)
 
         try {
-            const res = await fetch("http://localhost:5009/api/account/forgot-password", {
+            const res = await fetch("https://calchat-backend.onrender.com/api/account/forgot-password", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json"
