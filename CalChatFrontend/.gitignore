@@ -13,3 +13,13 @@ node_modules/
 publish/
 bin/
 obj/
+
+# Backend build files ignore
+CalChatBackend/**/publish/
+CalChatBackend/**/*.dll
+CalChatBackend/**/*.exe
+CalChatBackend/**/*.pdb
+
+# .NET build folders
+CalChatBackend/**/bin/
+CalChatBackend/**/obj/
