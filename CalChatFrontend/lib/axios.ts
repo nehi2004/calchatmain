@@ -14,15 +14,13 @@
 
 //    return config
 //})
-
-//export default api
 import axios from "axios"
 
-// fallback + compatibility
-const BASE_URL =
-    (import.meta as any).env?.VITE_API_URL ||
-    process.env.REACT_APP_API_URL ||
-    "https://calchat-backend.onrender.com/api"
+const BASE_URL = process.env.NEXT_PUBLIC_API_URL
+
+if (!BASE_URL) {
+    throw new Error("NEXT_PUBLIC_API_URL is not defined ❌")
+}
 
 const api = axios.create({
     baseURL: BASE_URL,
@@ -31,18 +29,15 @@ const api = axios.create({
     }
 })
 
-api.interceptors.request.use(
-    (config) => {
-        const token = localStorage.getItem("token")
+api.interceptors.request.use((config) => {
+    const token = localStorage.getItem("token")
 
-        if (token) {
-            config.headers = config.headers || {}
-            config.headers.Authorization = `Bearer ${token}`
-        }
+    if (token) {
+        config.headers = config.headers || {}
+        config.headers.Authorization = `Bearer ${token}`
+    }
 
-        return config
-    },
-    (error) => Promise.reject(error)
-)
+    return config
+})
 
 export default api
