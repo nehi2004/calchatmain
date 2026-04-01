@@ -618,10 +618,9 @@ export default function RegisterPage() {
 
         try {
             // ✅ AXIOS CALL (FIXED)
-            const response = await api.post("/api/account/register", formData)
-
-            if (response.status === 200 || response.status === 201) {
-                alert("Registration successful!")
+            const response = await api.post("/api/auth/register", formData)
+            if (response.status >= 200 && response.status < 300) {
+                alert("Registration successful ✅")
                 router.push("/login")
             }
 
