@@ -8,7 +8,7 @@ WORKDIR /src
 COPY . .
 
 RUN dotnet restore "CalChatBackend/CalChatAPI/CalChatAPI.csproj"
-RUN dotnet publish "CalChatBackend/CalChatAPI/CalChatAPI.csproj" -c Release -o /app/publish
+RUN dotnet publish "CalChatBackend/CalChatAPI/CalChatAPI.csproj" -c Release -r linux-x64 --self-contained false -o /app/publish
 
 FROM base AS final
 WORKDIR /app
