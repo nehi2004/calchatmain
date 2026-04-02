@@ -309,7 +309,7 @@ builder.Services.AddScoped<IEmailService, EmailService>();
 
 builder.Services.AddControllers();
 
-builder.Services.AddScoped<IEmailService, EmailService>();
+
 
 //////////////////////////////////////////////////
 // CORS
@@ -387,7 +387,6 @@ app.UseExceptionHandler(errorApp =>
         await context.Response.WriteAsync("ERROR: " + error?.Error?.Message);
     });
 });
-app.UseHttpsRedirection();
 
 app.UseRouting();
 
@@ -398,3 +397,4 @@ app.UseAuthorization();
 
 app.MapControllers();
 app.MapHub<ChatHub>("/chatHub").RequireCors("AllowFrontend");
+app.Run();
