@@ -26,7 +26,7 @@
 //    status: string
 //}
 
-//const API_URL = "https://calchatmain-production-75c1.up.railway.app/api/Events"
+//const API_URL = "https://calchat-backend.onrender.com/api/Events"
 
 //export function EventsView() {
 //    const router = useRouter()
@@ -262,7 +262,7 @@
 //    status: string
 //}
 
-//const API_URL = "https://calchatmain-production-75c1.up.railway.app/api/Events"
+//const API_URL = "https://calchat-backend.onrender.com/api/Events"
 
 //export function EventsView() {
 
@@ -581,7 +581,7 @@
 //    status: string
 //}
 
-//const API_URL = "https://calchatmain-production-75c1.up.railway.app/api/Events"
+//const API_URL = "https://calchat-backend.onrender.com/api/Events"
 
 //export function EventsView() {
 
@@ -932,7 +932,7 @@ interface EventItem {
     status: string
 }
 
-const API_URL = "https://calchatmain-production-75c1.up.railway.app/api/Events"
+const API_URL = "https://calchat-backend.onrender.com/api/Events"
 
 export function EventsView() {
 

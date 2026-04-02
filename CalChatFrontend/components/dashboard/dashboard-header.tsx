@@ -63,7 +63,7 @@
 
 //                if (!token) return
 
-//                const res = await fetch("https://calchatmain-production-75c1.up.railway.app/api/Account/profile", {
+//                const res = await fetch("https://calchat-backend.onrender.com/api/Account/profile", {
 //                    headers: {
 //                        Authorization: `Bearer ${token}`,
 //                        "Content-Type": "application/json"
@@ -139,7 +139,7 @@
 
 //            const token = localStorage.getItem("token")
 
-//            const res = await fetch("https://calchatmain-production-75c1.up.railway.app/api/Account/profile", {
+//            const res = await fetch("https://calchat-backend.onrender.com/api/Account/profile", {
 
 //                method: "PUT",
 
@@ -489,7 +489,7 @@
 //    reminderMinutes?: number
 //}
 
-//const API_URL = "https://calchatmain-production-75c1.up.railway.app/api/CalendarEvents"
+//const API_URL = "https://calchat-backend.onrender.com/api/CalendarEvents"
 
 //function formatDate(date: Date) {
 //    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`
@@ -523,7 +523,7 @@
 //            const token = localStorage.getItem("token")
 //            if (!token) return
 
-//            const res = await fetch("https://calchatmain-production-75c1.up.railway.app/api/Account/profile", {
+//            const res = await fetch("https://calchat-backend.onrender.com/api/Account/profile", {
 //                headers: { Authorization: `Bearer ${token}` }
 //            })
 
@@ -750,7 +750,7 @@
 //    reminderMinutes?: number
 //}
 
-//const API_URL = "https://calchatmain-production-75c1.up.railway.app/api/CalendarEvents"
+//const API_URL = "https://calchat-backend.onrender.com/api/CalendarEvents"
 
 //function formatDate(date: Date) {
 //    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`
@@ -783,7 +783,7 @@
 //            const token = localStorage.getItem("token")
 //            if (!token) return
 
-//            const res = await fetch("https://calchatmain-production-75c1.up.railway.app/api/Account/profile", {
+//            const res = await fetch("https://calchat-backend.onrender.com/api/Account/profile", {
 //                headers: { Authorization: `Bearer ${token}` }
 //            })
 
@@ -1036,7 +1036,7 @@
 
 ///* ---------------- CONSTANT ---------------- */
 
-//const EVENT_API = "https://calchatmain-production-75c1.up.railway.app/api/CalendarEvents"
+//const EVENT_API = "https://calchat-backend.onrender.com/api/CalendarEvents"
 
 ///* ---------------- HELPERS ---------------- */
 
@@ -1079,7 +1079,7 @@
 //            const token = localStorage.getItem("token")
 //            if (!token) return
 
-//            const res = await fetch("https://calchatmain-production-75c1.up.railway.app/api/Account/profile", {
+//            const res = await fetch("https://calchat-backend.onrender.com/api/Account/profile", {
 //                headers: { Authorization: `Bearer ${token}` }
 //            })
 
@@ -1178,7 +1178,7 @@
 //            try {
 
 //                const res = await fetch(
-//                    `https://calchatmain-production-75c1.up.railway.app/api/notifications/${currentUserId}`
+//                    `https://calchat-backend.onrender.com/api/notifications/${currentUserId}`
 //                )
 
 //                const data = await res.json()
@@ -1372,7 +1372,7 @@
 
 ///* ---------------- CONSTANT ---------------- */
 
-//const EVENT_API = "https://calchatmain-production-75c1.up.railway.app/api/CalendarEvents"
+//const EVENT_API = "https://calchat-backend.onrender.com/api/CalendarEvents"
 
 ///* ---------------- HELPERS ---------------- */
 
@@ -1416,7 +1416,7 @@
 //            const token = localStorage.getItem("token")
 //            if (!token) return
 
-//            const res = await fetch("https://calchatmain-production-75c1.up.railway.app/api/Account/profile", {
+//            const res = await fetch("https://calchat-backend.onrender.com/api/Account/profile", {
 //                headers: { Authorization: `Bearer ${token}` }
 //            })
 
@@ -1431,7 +1431,7 @@
 //    /* ---------------- FETCH STUDENTS (IMPORTANT FIX) ---------------- */
 
 //    useEffect(() => {
-//        fetch("https://calchatmain-production-75c1.up.railway.app/api/users/students")
+//        fetch("https://calchat-backend.onrender.com/api/users/students")
 //            .then(res => res.json())
 //            .then(setStudents)
 //            .catch(() => setStudents([]))
@@ -1519,7 +1519,7 @@
 //    const fetchNotifications = async () => {
 //        try {
 //            const res = await fetch(
-//                `https://calchatmain-production-75c1.up.railway.app/api/notifications/${currentUserId}`
+//                `https://calchat-backend.onrender.com/api/notifications/${currentUserId}`
 //            )
 //            const data = await res.json()
 //            setChatNotifs(data)
@@ -1544,7 +1544,7 @@
 
 //    const handleRequest = async (notifId: number, status: string) => {
 
-//        await fetch(`https://calchatmain-production-75c1.up.railway.app/api/notifications/${notifId}`, {
+//        await fetch(`https://calchat-backend.onrender.com/api/notifications/${notifId}`, {
 //            method: "PUT",
 //            headers: { "Content-Type": "application/json" },
 //            body: JSON.stringify(status)
@@ -1788,7 +1788,7 @@
 //            const token = localStorage.getItem("token")
 //            if (!token) return
 
-//            const res = await fetch("https://calchatmain-production-75c1.up.railway.app/api/Account/profile", {
+//            const res = await fetch("https://calchat-backend.onrender.com/api/Account/profile", {
 //                headers: { Authorization: `Bearer ${token}` }
 //            })
 
@@ -1803,7 +1803,7 @@
 //    /* ---------------- STUDENTS ---------------- */
 
 //    useEffect(() => {
-//        fetch("https://calchatmain-production-75c1.up.railway.app/api/users/students")
+//        fetch("https://calchat-backend.onrender.com/api/users/students")
 //            .then(res => res.json())
 //            .then(setStudents)
 //            .catch(() => setStudents([]))
@@ -1814,7 +1814,7 @@
 //    const fetchNotifications = async () => {
 //        try {
 //            const res = await fetch(
-//                `https://calchatmain-production-75c1.up.railway.app/api/notifications/${currentUserId}`
+//                `https://calchat-backend.onrender.com/api/notifications/${currentUserId}`
 //            )
 //            const data = await res.json()
 //            setChatNotifs(data)
@@ -1829,7 +1829,7 @@
 //        try {
 //            const token = localStorage.getItem("token")
 
-//            const res = await fetch("https://calchatmain-production-75c1.up.railway.app/api/meeting/my-meetings", {
+//            const res = await fetch("https://calchat-backend.onrender.com/api/meeting/my-meetings", {
 //                headers: { Authorization: `Bearer ${token}` }
 //            })
 
@@ -1872,7 +1872,7 @@
 
 //    const handleRequest = async (notifId: number, status: string) => {
 
-//        await fetch(`https://calchatmain-production-75c1.up.railway.app/api/notifications/${notifId}`, {
+//        await fetch(`https://calchat-backend.onrender.com/api/notifications/${notifId}`, {
 //            method: "PUT",
 //            headers: { "Content-Type": "application/json" },
 //            body: JSON.stringify(status)
@@ -2120,7 +2120,7 @@
 //            const token = localStorage.getItem("token")
 //            if (!token) return
 
-//            const res = await fetch("https://calchatmain-production-75c1.up.railway.app/api/Account/profile", {
+//            const res = await fetch("https://calchat-backend.onrender.com/api/Account/profile", {
 //                headers: { Authorization: `Bearer ${token}` }
 //            })
 
@@ -2138,7 +2138,7 @@
 //    const fetchNotifications = async () => {
 //        try {
 //            const res = await fetch(
-//                `https://calchatmain-production-75c1.up.railway.app/api/notifications/${currentUserId}`
+//                `https://calchat-backend.onrender.com/api/notifications/${currentUserId}`
 //            )
 //            const data = await res.json()
 //            setChatNotifs(data)
@@ -2153,7 +2153,7 @@
 //        try {
 //            const token = localStorage.getItem("token")
 
-//            const res = await fetch("https://calchatmain-production-75c1.up.railway.app/api/meeting/my-meetings", {
+//            const res = await fetch("https://calchat-backend.onrender.com/api/meeting/my-meetings", {
 //                headers: { Authorization: `Bearer ${token}` }
 //            })
 
@@ -2194,7 +2194,7 @@
 
 //    const handleRequest = async (notifId: number, status: string) => {
 
-//        await fetch(`https://calchatmain-production-75c1.up.railway.app/api/notifications/${notifId}`, {
+//        await fetch(`https://calchat-backend.onrender.com/api/notifications/${notifId}`, {
 //            method: "PUT",
 //            headers: { "Content-Type": "application/json" },
 //            body: JSON.stringify(status)
@@ -2440,7 +2440,7 @@
 //                const token = localStorage.getItem("token")
 //                if (!token) return
 
-//                const res = await fetch("https://calchatmain-production-75c1.up.railway.app/api/Account/profile", {
+//                const res = await fetch("https://calchat-backend.onrender.com/api/Account/profile", {
 //                    headers: { Authorization: `Bearer ${token}` }
 //                })
 
@@ -2479,7 +2479,7 @@
 //    const fetchNotifications = async () => {
 //        try {
 //            const res = await fetch(
-//                `https://calchatmain-production-75c1.up.railway.app/api/notifications/${currentUserId}`
+//                `https://calchat-backend.onrender.com/api/notifications/${currentUserId}`
 //            )
 //            const data = await res.json()
 //            setChatNotifs(data)
@@ -2494,7 +2494,7 @@
 //        try {
 //            const token = localStorage.getItem("token")
 
-//            const res = await fetch("https://calchatmain-production-75c1.up.railway.app/api/meeting/my-meetings", {
+//            const res = await fetch("https://calchat-backend.onrender.com/api/meeting/my-meetings", {
 //                headers: { Authorization: `Bearer ${token}` }
 //            })
 
@@ -2533,14 +2533,14 @@
 
 //    const handleRequest = async (notifId: number, status: string) => {
 
-//        await fetch(`https://calchatmain-production-75c1.up.railway.app/api/notifications/${notifId}`, {
+//        await fetch(`https://calchat-backend.onrender.com/api/notifications/${notifId}`, {
 //            method: "PUT",
 //            headers: { "Content-Type": "application/json" },
 //            body: JSON.stringify(status)
 //        })
 
 //        if (status === "accepted") {
-//            await fetch("https://calchatmain-production-75c1.up.railway.app/api/chat/create", {
+//            await fetch("https://calchat-backend.onrender.com/api/chat/create", {
 //                method: "POST",
 //                headers: {
 //                    "Content-Type": "application/json"
@@ -2567,7 +2567,7 @@
 //        try {
 //            const token = localStorage.getItem("token")
 
-//            await fetch("https://calchatmain-production-75c1.up.railway.app/api/Account/profile", {
+//            await fetch("https://calchat-backend.onrender.com/api/Account/profile", {
 //                method: "PUT",
 //                headers: {
 //                    "Content-Type": "application/json",
@@ -2637,7 +2637,7 @@
 //                                if (!showNotifications) {
 //                                    try {
 //                                        await fetch(
-//                                            `https://calchatmain-production-75c1.up.railway.app/api/notifications/mark-read/${currentUserId}`,
+//                                            `https://calchat-backend.onrender.com/api/notifications/mark-read/${currentUserId}`,
 //                                            { method: "PUT" }
 //                                        )
 
@@ -3010,7 +3010,7 @@
 //                const token = localStorage.getItem("token")
 //                if (!token) return
 
-//                const res = await fetch("https://calchatmain-production-75c1.up.railway.app/api/Account/profile", {
+//                const res = await fetch("https://calchat-backend.onrender.com/api/Account/profile", {
 //                    headers: { Authorization: `Bearer ${token}` }
 //                })
 
@@ -3054,7 +3054,7 @@
 //    const fetchNotifications = async () => {
 //        try {
 //            const res = await fetch(
-//                `https://calchatmain-production-75c1.up.railway.app/api/notifications/${currentUserId}`
+//                `https://calchat-backend.onrender.com/api/notifications/${currentUserId}`
 //            )
 //            const data = await res.json()
 
@@ -3077,7 +3077,7 @@
 //        try {
 //            const token = localStorage.getItem("token")
 
-//            const res = await fetch("https://calchatmain-production-75c1.up.railway.app/api/meeting/my-meetings", {
+//            const res = await fetch("https://calchat-backend.onrender.com/api/meeting/my-meetings", {
 //                headers: { Authorization: `Bearer ${token}` }
 //            })
 
@@ -3134,14 +3134,14 @@
 
 //    const handleRequest = async (notifId: number, status: string) => {
 
-//        await fetch(`https://calchatmain-production-75c1.up.railway.app/api/notifications/${notifId}`, {
+//        await fetch(`https://calchat-backend.onrender.com/api/notifications/${notifId}`, {
 //            method: "PUT",
 //            headers: { "Content-Type": "application/json" },
 //            body: JSON.stringify(status)
 //        })
 
 //        if (status === "accepted") {
-//            await fetch("https://calchatmain-production-75c1.up.railway.app/api/chat/create", {
+//            await fetch("https://calchat-backend.onrender.com/api/chat/create", {
 //                method: "POST",
 //                headers: {
 //                    "Content-Type": "application/json"
@@ -3168,7 +3168,7 @@
 //        try {
 //            const token = localStorage.getItem("token")
 
-//            await fetch("https://calchatmain-production-75c1.up.railway.app/api/Account/profile", {
+//            await fetch("https://calchat-backend.onrender.com/api/Account/profile", {
 //                method: "PUT",
 //                headers: {
 //                    "Content-Type": "application/json",
@@ -3243,7 +3243,7 @@
 //                                if (opening) {
 //                                    try {
 //                                        await fetch(
-//                                            `https://calchatmain-production-75c1.up.railway.app/api/notifications/mark-read/${currentUserId}`,
+//                                            `https://calchat-backend.onrender.com/api/notifications/mark-read/${currentUserId}`,
 //                                            { method: "PUT" }
 //                                        )
 
@@ -3622,7 +3622,7 @@
 //                const token = localStorage.getItem("token")
 //                if (!token) return
 
-//                const res = await fetch("https://calchatmain-production-75c1.up.railway.app/api/Account/profile", {
+//                const res = await fetch("https://calchat-backend.onrender.com/api/Account/profile", {
 //                    headers: { Authorization: `Bearer ${token}` }
 //                })
 
@@ -3666,7 +3666,7 @@
 //    const fetchNotifications = async () => {
 //        try {
 //            const res = await fetch(
-//                `https://calchatmain-production-75c1.up.railway.app/api/notifications/${currentUserId}`
+//                `https://calchat-backend.onrender.com/api/notifications/${currentUserId}`
 //            )
 //            const data = await res.json()
 
@@ -3689,7 +3689,7 @@
 //        try {
 //            const token = localStorage.getItem("token")
 
-//            const res = await fetch("https://calchatmain-production-75c1.up.railway.app/api/meeting/my-meetings", {
+//            const res = await fetch("https://calchat-backend.onrender.com/api/meeting/my-meetings", {
 //                headers: { Authorization: `Bearer ${token}` }
 //            })
 
@@ -3765,14 +3765,14 @@
 
 //    const handleRequest = async (notifId: number, status: string) => {
 
-//        await fetch(`https://calchatmain-production-75c1.up.railway.app/api/notifications/${notifId}`, {
+//        await fetch(`https://calchat-backend.onrender.com/api/notifications/${notifId}`, {
 //            method: "PUT",
 //            headers: { "Content-Type": "application/json" },
 //            body: JSON.stringify(status)
 //        })
 
 //        if (status === "accepted") {
-//            await fetch("https://calchatmain-production-75c1.up.railway.app/api/chat/create", {
+//            await fetch("https://calchat-backend.onrender.com/api/chat/create", {
 //                method: "POST",
 //                headers: {
 //                    "Content-Type": "application/json"
@@ -3799,7 +3799,7 @@
 //        try {
 //            const token = localStorage.getItem("token")
 
-//            await fetch("https://calchatmain-production-75c1.up.railway.app/api/Account/profile", {
+//            await fetch("https://calchat-backend.onrender.com/api/Account/profile", {
 //                method: "PUT",
 //                headers: {
 //                    "Content-Type": "application/json",
@@ -3879,7 +3879,7 @@
 //                                if (opening) {
 //                                    try {
 //                                        await fetch(
-//                                            `https://calchatmain-production-75c1.up.railway.app/api/notifications/mark-read/${currentUserId}`,
+//                                            `https://calchat-backend.onrender.com/api/notifications/mark-read/${currentUserId}`,
 //                                            { method: "PUT" }
 //                                        )
 
@@ -4327,7 +4327,7 @@ export function DashboardHeader({ onMenuClick, title }: DashboardHeaderProps) {
 
     useEffect(() => {
         const connection = new signalR.HubConnectionBuilder()
-            .withUrl("https://calchatmain-production-75c1.up.railway.app/chatHub", {
+            .withUrl("https://calchat-backend.onrender.com/chatHub", {
                 accessTokenFactory: () => localStorage.getItem("token") || ""
             })
             .withAutomaticReconnect()
@@ -4364,7 +4364,7 @@ export function DashboardHeader({ onMenuClick, title }: DashboardHeaderProps) {
         const token = localStorage.getItem("token")
 
         const connection = new signalR.HubConnectionBuilder()
-            .withUrl("https://calchatmain-production-75c1.up.railway.app/chatHub", {
+            .withUrl("https://calchat-backend.onrender.com/chatHub", {
                 accessTokenFactory: () => token || ""
             })
             .withAutomaticReconnect()
@@ -4404,7 +4404,7 @@ export function DashboardHeader({ onMenuClick, title }: DashboardHeaderProps) {
                 const token = localStorage.getItem("token")
                 if (!token) return
 
-                const res = await fetch("https://calchatmain-production-75c1.up.railway.app/api/Account/profile", {
+                const res = await fetch("https://calchat-backend.onrender.com/api/Account/profile", {
                     headers: { Authorization: `Bearer ${token}` }
                 })
 
@@ -4448,7 +4448,7 @@ export function DashboardHeader({ onMenuClick, title }: DashboardHeaderProps) {
     const fetchNotifications = async () => {
         try {
             const res = await fetch(
-                `https://calchatmain-production-75c1.up.railway.app/api/notifications/${currentUserId}`
+                `https://calchat-backend.onrender.com/api/notifications/${currentUserId}`
             )
             const data = await res.json()
 
@@ -4480,7 +4480,7 @@ export function DashboardHeader({ onMenuClick, title }: DashboardHeaderProps) {
         try {
             const token = localStorage.getItem("token")
 
-            const res = await fetch("https://calchatmain-production-75c1.up.railway.app/api/meeting/my-meetings", {
+            const res = await fetch("https://calchat-backend.onrender.com/api/meeting/my-meetings", {
                 headers: { Authorization: `Bearer ${token}` }
             })
 
@@ -4607,14 +4607,14 @@ export function DashboardHeader({ onMenuClick, title }: DashboardHeaderProps) {
 
     const handleRequest = async (notifId: number, status: string) => {
 
-        await fetch(`https://calchatmain-production-75c1.up.railway.app/api/notifications/${notifId}`, {
+        await fetch(`https://calchat-backend.onrender.com/api/notifications/${notifId}`, {
             method: "PUT",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(status)
         })
 
         if (status === "accepted") {
-            await fetch("https://calchatmain-production-75c1.up.railway.app/api/chat/create", {
+            await fetch("https://calchat-backend.onrender.com/api/chat/create", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json"
@@ -4641,7 +4641,7 @@ export function DashboardHeader({ onMenuClick, title }: DashboardHeaderProps) {
         try {
             const token = localStorage.getItem("token")
 
-            await fetch("https://calchatmain-production-75c1.up.railway.app/api/Account/profile", {
+            await fetch("https://calchat-backend.onrender.com/api/Account/profile", {
                 method: "PUT",
                 headers: {
                     "Content-Type": "application/json",
@@ -4721,7 +4721,7 @@ export function DashboardHeader({ onMenuClick, title }: DashboardHeaderProps) {
                                 if (opening) {
                                     try {
                                         await fetch(
-                                            `https://calchatmain-production-75c1.up.railway.app/api/notifications/mark-read/${currentUserId}`,
+                                            `https://calchat-backend.onrender.com/api/notifications/mark-read/${currentUserId}`,
                                             { method: "PUT" }
                                         )
 

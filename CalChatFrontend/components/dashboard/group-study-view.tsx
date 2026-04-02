@@ -149,7 +149,7 @@ export function GroupStudyView() {
     useEffect(() => {
         if (!activeChat) return
 
-        fetch(`https://calchatmain-production-75c1.up.railway.app/api/chat/mute/${activeChat}`, {
+        fetch(`https://calchat-backend.onrender.com/api/chat/mute/${activeChat}`, {
             headers: {
                 UserId: currentUserId
             }
@@ -176,7 +176,7 @@ export function GroupStudyView() {
 
             try {
                 const data = await safeFetch<Chat[]>(
-                    `https://calchatmain-production-75c1.up.railway.app/api/chat/personal/${currentUserId}`
+                    `https://calchat-backend.onrender.com/api/chat/personal/${currentUserId}`
                 )
 
                 setChats(data)
@@ -208,7 +208,7 @@ export function GroupStudyView() {
         try {
 
             const res = await safeFetch<string[]>(
-                `https://calchatmain-production-75c1.up.railway.app/api/notifications/sent/${currentUserId}`
+                `https://calchat-backend.onrender.com/api/notifications/sent/${currentUserId}`
             )
 
             setSentRequests(res)
@@ -223,14 +223,14 @@ export function GroupStudyView() {
 
     const handleRequest = async (notifId: number, status: string) => {
 
-        await fetch(`https://calchatmain-production-75c1.up.railway.app/api/notifications/${notifId}`, {
+        await fetch(`https://calchat-backend.onrender.com/api/notifications/${notifId}`, {
             method: "PUT",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(status)
         })
 
         const chats = await safeFetch<Chat[]>(
-            `https://calchatmain-production-75c1.up.railway.app/api/chat/personal/${currentUserId}`
+            `https://calchat-backend.onrender.com/api/chat/personal/${currentUserId}`
         )
         setChats(chats)
 
@@ -257,7 +257,7 @@ export function GroupStudyView() {
             userName = currentUser?.name || "Unknown User"
         }
 
-        await fetch("https://calchatmain-production-75c1.up.railway.app/api/notifications/request", {
+        await fetch("https://calchat-backend.onrender.com/api/notifications/request", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
@@ -286,8 +286,8 @@ export function GroupStudyView() {
         try {
 
             const url = isBlocked
-                ? `https://calchatmain-production-75c1.up.railway.app/api/users/unblock/${profileId}`
-                : `https://calchatmain-production-75c1.up.railway.app/api/users/block/${profileId}`
+                ? `https://calchat-backend.onrender.com/api/users/unblock/${profileId}`
+                : `https://calchat-backend.onrender.com/api/users/block/${profileId}`
 
             const method = isBlocked ? "DELETE" : "POST"
 
@@ -314,7 +314,7 @@ export function GroupStudyView() {
 
     useEffect(() => {
 
-        safeFetch<Student[]>("https://calchatmain-production-75c1.up.railway.app/api/users/students")
+        safeFetch<Student[]>("https://calchat-backend.onrender.com/api/users/students")
             .then(setStudents)
             .catch(() => setStudents([]))
 
@@ -337,12 +337,12 @@ export function GroupStudyView() {
 
                 if (activeTab === "personal") {
 
-                    const data = await safeFetch<Chat[]>(`https://calchatmain-production-75c1.up.railway.app/api/chat/personal/${currentUserId}`)
+                    const data = await safeFetch<Chat[]>(`https://calchat-backend.onrender.com/api/chat/personal/${currentUserId}`)
                     setChats(data)
 
                 } else {
 
-                    const data = await safeFetch<Chat[]>(`https://calchatmain-production-75c1.up.railway.app/api/chat/group/${currentUserId}`)
+                    const data = await safeFetch<Chat[]>(`https://calchat-backend.onrender.com/api/chat/group/${currentUserId}`)
                     setChats(data)
 
                 }
@@ -369,7 +369,7 @@ export function GroupStudyView() {
 
         const markReadAndRefresh = async () => {
 
-            await fetch(`https://calchatmain-production-75c1.up.railway.app/api/messages/read/${activeChat}`, {
+            await fetch(`https://calchat-backend.onrender.com/api/messages/read/${activeChat}`, {
                 method: "POST",
                 headers: {
                     UserId: currentUserId,
@@ -380,7 +380,7 @@ export function GroupStudyView() {
             connectionRef.current?.invoke("MessageRead", String(activeChat))
 
             const res = await fetch(
-                `https://calchatmain-production-75c1.up.railway.app/api/messages/${activeChat}`, {
+                `https://calchat-backend.onrender.com/api/messages/${activeChat}`, {
                 headers: {
                     Authorization: `Bearer ${localStorage.getItem("token")}`
                 }
@@ -498,7 +498,7 @@ export function GroupStudyView() {
 
     const createGroup = async () => {
 
-        const res = await fetch("https://calchatmain-production-75c1.up.railway.app/api/groups", {
+        const res = await fetch("https://calchat-backend.onrender.com/api/groups", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
@@ -519,7 +519,7 @@ export function GroupStudyView() {
         setSelectedStudents([])
         setActiveTab("group")
 
-        const chats = await safeFetch<Chat[]>(`https://calchatmain-production-75c1.up.railway.app/api/chat/group/${currentUserId}`)
+        const chats = await safeFetch<Chat[]>(`https://calchat-backend.onrender.com/api/chat/group/${currentUserId}`)
         setChats(chats)
     }
 
@@ -544,7 +544,7 @@ export function GroupStudyView() {
         if (file)
             formData.append("file", file)
 
-        await fetch("https://calchatmain-production-75c1.up.railway.app/api/messages", {
+        await fetch("https://calchat-backend.onrender.com/api/messages", {
             method: "POST",
             headers: {
                 UserId: currentUserId
@@ -575,7 +575,7 @@ export function GroupStudyView() {
         const interval = setInterval(async () => {
 
             const res = await fetch(
-                `https://calchatmain-production-75c1.up.railway.app/api/chat/typing/${activeChat}`
+                `https://calchat-backend.onrender.com/api/chat/typing/${activeChat}`
             )
 
             const user = await res.text()
@@ -601,7 +601,7 @@ export function GroupStudyView() {
     }, [messages])
 
     const markReadAndRefresh = async () => {
-        await fetch(`https://calchatmain-production-75c1.up.railway.app/api/messages/read/${activeChat}`, {
+        await fetch(`https://calchat-backend.onrender.com/api/messages/read/${activeChat}`, {
             method: "POST",
             headers: {
                 UserId: currentUserId,
@@ -615,7 +615,7 @@ export function GroupStudyView() {
         window.dispatchEvent(new Event("chat-updated"))
 
         const res = await fetch(
-            `https://calchatmain-production-75c1.up.railway.app/api/messages/${activeChat}`, {
+            `https://calchat-backend.onrender.com/api/messages/${activeChat}`, {
             headers: {
                 Authorization: `Bearer ${localStorage.getItem("token")}`
             }
@@ -632,7 +632,7 @@ export function GroupStudyView() {
 
             await Promise.all(
                 selectedStudents.map(studentId =>
-                    fetch("https://calchatmain-production-75c1.up.railway.app/api/groups/add-member", {
+                    fetch("https://calchat-backend.onrender.com/api/groups/add-member", {
                         method: "POST",
                         headers: {
                             "Content-Type": "application/json"
@@ -651,7 +651,7 @@ export function GroupStudyView() {
             setShowCreateGroup(false)
 
             // 🔥 REFRESH GROUP DATA
-            const res = await fetch(`https://calchatmain-production-75c1.up.railway.app/api/groups/${activeChat}`)
+            const res = await fetch(`https://calchat-backend.onrender.com/api/groups/${activeChat}`)
             const data = await res.json()
 
             setGroupMembers(data.members || [])
@@ -668,8 +668,8 @@ export function GroupStudyView() {
 
                 const url =
                     activeTab === "personal"
-                        ? `https://calchatmain-production-75c1.up.railway.app/api/chat/personal/${currentUserId}`
-                        : `https://calchatmain-production-75c1.up.railway.app/api/chat/group/${currentUserId}`
+                        ? `https://calchat-backend.onrender.com/api/chat/personal/${currentUserId}`
+                        : `https://calchat-backend.onrender.com/api/chat/group/${currentUserId}`
 
                 const updatedChats = await safeFetch<Chat[]>(url)
 
@@ -690,7 +690,7 @@ export function GroupStudyView() {
         setMounted(true)
 
         const connection = new signalR.HubConnectionBuilder()
-            .withUrl("https://calchatmain-production-75c1.up.railway.app/chatHub", {
+            .withUrl("https://calchat-backend.onrender.com/chatHub", {
                 accessTokenFactory: () => localStorage.getItem("token") || "",
                 withCredentials: true, // ✅ ADD THIS
                 transport: signalR.HttpTransportType.WebSockets // 🔥 FORCE WEBSOCKET (IMPORTANT)
@@ -728,8 +728,8 @@ export function GroupStudyView() {
 
                 const url =
                     activeTab === "personal"
-                        ? `https://calchatmain-production-75c1.up.railway.app/api/chat/personal/${currentUserId}`
-                        : `https://calchatmain-production-75c1.up.railway.app/api/chat/group/${currentUserId}`
+                        ? `https://calchat-backend.onrender.com/api/chat/personal/${currentUserId}`
+                        : `https://calchat-backend.onrender.com/api/chat/group/${currentUserId}`
 
                 const updatedChats = await safeFetch<Chat[]>(url)
 
@@ -1151,7 +1151,7 @@ export function GroupStudyView() {
 
                                         if (id) {
 
-                                            fetch(`https://calchatmain-production-75c1.up.railway.app/api/users/is-blocked/${id}`, {
+                                            fetch(`https://calchat-backend.onrender.com/api/users/is-blocked/${id}`, {
                                                 headers: {
                                                     Authorization: `Bearer ${localStorage.getItem("token")}`
                                                 }
@@ -1171,7 +1171,7 @@ export function GroupStudyView() {
 
                                     if (activeTab === "group" && activeChat) {
 
-                                        fetch(`https://calchatmain-production-75c1.up.railway.app/api/groups/${activeChat}`)
+                                        fetch(`https://calchat-backend.onrender.com/api/groups/${activeChat}`)
                                             .then(async (res) => {
 
                                                 const text = await res.text()
@@ -1502,7 +1502,7 @@ export function GroupStudyView() {
                                                     if (!activeChat) return
 
                                                     const res = await fetch(
-                                                        `https://calchatmain-production-75c1.up.railway.app/api/messages/export/${activeChat}`,
+                                                        `https://calchat-backend.onrender.com/api/messages/export/${activeChat}`,
                                                         {
                                                             headers: {
                                                                 Authorization: `Bearer ${localStorage.getItem("token")}`
@@ -1569,7 +1569,7 @@ export function GroupStudyView() {
 
                                                 if (!activeChat) return
 
-                                                await fetch(`https://calchatmain-production-75c1.up.railway.app/api/messages/clear/${activeChat}`, {
+                                                await fetch(`https://calchat-backend.onrender.com/api/messages/clear/${activeChat}`, {
                                                     method: "DELETE",
                                                     headers: {
                                                         Authorization: `Bearer ${localStorage.getItem("token")}`
@@ -1591,7 +1591,7 @@ export function GroupStudyView() {
                                                 try {
 
                                                     const res = await fetch(
-                                                        `https://calchatmain-production-75c1.up.railway.app/api/chat/mute/${activeChat}`,
+                                                        `https://calchat-backend.onrender.com/api/chat/mute/${activeChat}`,
                                                         {
                                                             method: "POST",
                                                             headers: {
@@ -1782,7 +1782,7 @@ export function GroupStudyView() {
 
                                                 if (!activeChat) return
 
-                                                await fetch(`https://calchatmain-production-75c1.up.railway.app/api/messages/clear/${activeChat}`, {
+                                                await fetch(`https://calchat-backend.onrender.com/api/messages/clear/${activeChat}`, {
                                                     method: "DELETE",
                                                     headers: {
                                                         UserId: currentUserId
@@ -1801,7 +1801,7 @@ export function GroupStudyView() {
 
                                                 if (!activeChat) return
 
-                                                await fetch(`https://calchatmain-production-75c1.up.railway.app/api/chat/mute/${activeChat}`, {
+                                                await fetch(`https://calchat-backend.onrender.com/api/chat/mute/${activeChat}`, {
                                                     method: "POST",
                                                     headers: {
                                                         UserId: currentUserId
@@ -1820,7 +1820,7 @@ export function GroupStudyView() {
                                             onClick={async () => {
 
                                                 if (!activeChat) return
-                                                await fetch(`https://calchatmain-production-75c1.up.railway.app/api/groups/exit/${activeChat}`, {
+                                                await fetch(`https://calchat-backend.onrender.com/api/groups/exit/${activeChat}`, {
                                                     method: "POST",
                                                     headers: {
                                                         "Content-Type": "application/json",
@@ -1837,7 +1837,7 @@ export function GroupStudyView() {
 
                                                 // 🔥 ADD THIS
                                                 const updatedChats = await safeFetch<Chat[]>(
-                                                    `https://calchatmain-production-75c1.up.railway.app/api/chat/group/${currentUserId}`
+                                                    `https://calchat-backend.onrender.com/api/chat/group/${currentUserId}`
                                                 )
                                                 setChats(updatedChats)
                                             }}
@@ -1902,16 +1902,16 @@ export function GroupStudyView() {
                                     msg.fileUrl.match(/\.(jpeg|jpg|png|gif|webp)$/i) ? (
 
                                         <img
-                                            src={`https://calchatmain-production-75c1.up.railway.app${msg.fileUrl}`}
+                                            src={`https://calchat-backend.onrender.com${msg.fileUrl}`}
                                             alt="chat-image"
                                             className="rounded-lg mt-2 max-h-60 cursor-pointer"
-                                            onClick={() => window.open(`https://calchatmain-production-75c1.up.railway.app${msg.fileUrl}`, "_blank")}
+                                            onClick={() => window.open(`https://calchat-backend.onrender.com${msg.fileUrl}`, "_blank")}
                                         />
 
                                     ) : (
 
                                         <a
-                                            href={`https://calchatmain-production-75c1.up.railway.app${msg.fileUrl}`}
+                                            href={`https://calchat-backend.onrender.com${msg.fileUrl}`}
                                             download
                                             target="_blank"
                                             className="text-xs underline"
@@ -2032,7 +2032,7 @@ export function GroupStudyView() {
 
                                 if (connectionRef.current && activeChat) {
 
-                                    fetch("https://calchatmain-production-75c1.up.railway.app/api/chat/typing", {
+                                    fetch("https://calchat-backend.onrender.com/api/chat/typing", {
                                         method: "POST",
                                         headers: {
                                             "Content-Type": "application/json"
