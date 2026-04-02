@@ -586,6 +586,10 @@ import api from "@/lib/axios" // ✅ ADDED
 export default function RegisterPage() {
     const router = useRouter()
 
+    const [name, setName] = useState("")
+    const [email, setEmail] = useState("")
+    const [password, setPassword] = useState("")
+    const [confirmPassword, setConfirmPassword] = useState("")
     const [role, setRole] = useState("student")
     const [agreed, setAgreed] = useState(false)
 
@@ -595,7 +599,7 @@ export default function RegisterPage() {
     async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
         e.preventDefault()
 
-        console.log("API:", process.env.NEXT_PUBLIC_API_URL) // ✅ DEBUG
+        //console.log("API:", process.env.NEXT_PUBLIC_API_URL) // ✅ DEBUG
 
         if (!agreed) return
 
@@ -606,6 +610,8 @@ export default function RegisterPage() {
             alert("Passwords do not match")
             return
         }
+
+
 
         const formData = {
             name: (document.getElementById("name") as HTMLInputElement).value,
@@ -680,13 +686,16 @@ export default function RegisterPage() {
                         {/* NAME */}
                         <div className="flex flex-col gap-2">
                             <Label htmlFor="name">Full Name</Label>
-                            <Input id="name" placeholder="Enter Your Name" required />
+                            {/*<Input id="name" placeholder="Enter Your Name" required />*/}
+                            <Input id="name" value={name} placeholder="Enter Your Name" onChange={(e) => setName(e.target.value)} />
                         </div>
 
                         {/* EMAIL */}
                         <div className="flex flex-col gap-2">
                             <Label htmlFor="email">Email</Label>
-                            <Input id="email" type="email" placeholder="you@example.com" required />
+
+                            {/*<Input id="email" type="email" placeholder="you@example.com" required />*/}
+                            <Input id="email" value={email} type="email" placeholder="you@example.com" onChange={(e) => setEmail(e.target.value)} />
                         </div>
 
                         {/* PASSWORD SECTION */}
@@ -695,13 +704,18 @@ export default function RegisterPage() {
                             {/* PASSWORD */}
                             <div className="flex flex-col gap-2 relative">
                                 <Label htmlFor="password">Password</Label>
-                                <Input
-                                    id="password"
-                                    type={showPassword ? "text" : "password"}
+                                {/*<Input*/}
+                                {/*    id="password"*/}
+                                {/*    type={showPassword ? "text" : "password"}*/}
+                                {/*    placeholder="Create password"*/}
+                                {/*    required*/}
+                                {/*    className="pr-10"*/}
+                                {/*/>*/}
+
+                                <Input id="password" value={password} type={showPassword ? "text" : "password"}
                                     placeholder="Create password"
                                     required
-                                    className="pr-10"
-                                />
+                                    className="pr-10" onChange={(e) => setPassword(e.target.value)} />
                                 <button
                                     type="button"
                                     onClick={() => setShowPassword(!showPassword)}
@@ -714,13 +728,18 @@ export default function RegisterPage() {
                             {/* CONFIRM PASSWORD */}
                             <div className="flex flex-col gap-2 relative">
                                 <Label htmlFor="confirm">Confirm Password</Label>
-                                <Input
-                                    id="confirm"
-                                    type={showConfirmPassword ? "text" : "password"}
+                                {/*<Input*/}
+                                {/*    id="confirm"*/}
+                                {/*    type={showConfirmPassword ? "text" : "password"}*/}
+                                {/*    placeholder="Confirm password"*/}
+                                {/*    required*/}
+                                {/*    className="pr-10"*/}
+                                {/*/>*/}
+
+                                <Input id="confirm" value={confirmPassword} type={showConfirmPassword ? "text" : "password"}
                                     placeholder="Confirm password"
                                     required
-                                    className="pr-10"
-                                />
+                                    className="pr-10" onChange={(e) => setConfirmPassword(e.target.value)} />
                                 <button
                                     type="button"
                                     onClick={() => setShowConfirmPassword(!showConfirmPassword)}
