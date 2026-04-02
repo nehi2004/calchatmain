@@ -596,50 +596,39 @@ export default function RegisterPage() {
     const [showPassword, setShowPassword] = useState(false)
     const [showConfirmPassword, setShowConfirmPassword] = useState(false)
 
+
     async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
         e.preventDefault()
 
-       
-
         if (!agreed) return
-
-        const password = (document.getElementById("password") as HTMLInputElement).value
-        const confirmPassword = (document.getElementById("confirm") as HTMLInputElement).value
 
         if (password !== confirmPassword) {
             alert("Passwords do not match")
             return
         }
 
-
-
         const formData = {
-            name: (document.getElementById("name") as HTMLInputElement).value,
-            email: (document.getElementById("email") as HTMLInputElement).value,
-            password: password,
-            role: role
+            name,
+            email,
+            password,
+            role
         }
 
         console.log("Sending data:", formData)
 
         try {
-            // ✅ AXIOS CALL (FIXED)
             const response = await api.post("/account/register", formData)
-            if (response.status >= 200 && response.status < 300) {
-                alert("Registration successful ✅")
-                router.push("/login")
-            }
+
+            alert("Registration successful ✅")
+            router.push("/login")
 
         } catch (err: any) {
-            console.error(err)
+            console.error("ERROR 👉", err.response?.data)
 
-            if (err.response) {
-                if (err.response?.data?.errors) {
-                    alert(err.response.data.errors.join("\n"))
-                } else {
-                    alert("Registration failed ❌")
-                }            } else {
-                alert("Server not reachable ❌")
+            if (err.response?.data) {
+                alert(JSON.stringify(err.response.data))
+            } else {
+                alert("Registration failed ❌")
             }
         }
     }
