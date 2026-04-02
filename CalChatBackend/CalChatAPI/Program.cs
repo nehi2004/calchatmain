@@ -323,6 +323,7 @@ builder.Services.AddCors(options =>
             "https://calchatmain-le3p.vercel.app",
             "https://calchatmain-le3p-5lo2wq4ul-nehis-projects-5b192a68.vercel.app"
         )
+        .AllowAnyOrigin()
         .AllowAnyHeader()
         .AllowAnyMethod()
         .AllowCredentials(); // ✅ IMPORTANT
@@ -387,7 +388,7 @@ app.UseExceptionHandler(errorApp =>
         await context.Response.WriteAsync("ERROR: " + error?.Error?.Message);
     });
 });
-
+app.UseHttpsRedirection();
 app.UseRouting();
 app.UseCors("AllowFrontend");
 
@@ -398,6 +399,6 @@ app.UseAuthorization();
 // ENDPOINTS
 //////////////////////////////////////////////////
 app.MapControllers();
-app.MapHub<ChatHub>("/chatHub").RequireCors("AllowFrontend");
+app.MapHub<ChatHub>("/chatHub");
 
 app.Run();
