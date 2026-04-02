@@ -490,29 +490,14 @@ public class AccountController : ControllerBase
         {
             Console.WriteLine("🔥 API HIT");
 
-            if (!ModelState.IsValid)
-            {
-                Console.WriteLine("❌ Invalid Model");
+            if (model == null)
                 return BadRequest("Invalid data");
-            }
 
-            // 🔍 Check existing user
-            Console.WriteLine("🔍 Checking existing user...");
-            var existingUser = await _db.Users
-     .Where(x => x.Email == model.Email)
-     .Select(x => x.Id)
-     .FirstOrDefaultAsync();
+            var existingUser = await _userManager.FindByEmailAsync(model.Email);
 
             if (existingUser != null)
                 return BadRequest("User already exists");
 
-            if (existingUser != null)
-            {
-                Console.WriteLine("⚠️ User already exists");
-                return BadRequest("User already exists");
-            }
-
-            // 👤 Create user object
             var user = new ApplicationUser
             {
                 Name = model.Name,
@@ -521,47 +506,30 @@ public class AccountController : ControllerBase
                 IsActive = true
             };
 
-            Console.WriteLine("🚀 Before CreateAsync");
+            Console.WriteLine("🚀 Creating user...");
 
-            // 💥 MAIN DB CALL
             var result = await _userManager.CreateAsync(user, model.Password);
-
-            Console.WriteLine("✅ After CreateAsync");
 
             if (!result.Succeeded)
             {
                 Console.WriteLine("❌ Identity Errors:");
                 foreach (var err in result.Errors)
-                {
                     Console.WriteLine(err.Description);
-                }
 
                 return BadRequest(result.Errors);
             }
 
-            // 🎭 Role assign
-            var roleName = model.Role?.ToLower() ?? "student";
-
-            if (!await _roleManager.RoleExistsAsync(roleName))
-            {
-                Console.WriteLine("➕ Creating Role...");
-                await _roleManager.CreateAsync(new IdentityRole(roleName));
-            }
-
-            await _userManager.AddToRoleAsync(user, roleName);
-
-            Console.WriteLine("🎉 User Registered Successfully");
+            Console.WriteLine("✅ User created");
 
             return Ok(new
             {
-                message = "User registered successfully",
-                role = roleName
+                message = "User registered successfully"
             });
         }
         catch (Exception ex)
         {
             Console.WriteLine("🔥 EXCEPTION:");
-            Console.WriteLine(ex.ToString()); // FULL ERROR
+            Console.WriteLine(ex.ToString());
 
             return StatusCode(500, new
             {

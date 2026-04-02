@@ -46,7 +46,7 @@
 //    reminderMinutes?: number
 //}
 
-//const API_URL = "https://calchat-backend.onrender.com/api/CalendarEvents"
+//const API_URL = "https://calchatmain-production-7169.up.railway.app/api/CalendarEvents"
 
 //const MONTHS = [
 //    "January", "February", "March", "April", "May", "June",
@@ -679,7 +679,7 @@
 //    reminderMinutes?: number
 //}
 
-//const API_URL = "https://calchat-backend.onrender.com/api/CalendarEvents"
+//const API_URL = "https://calchatmain-production-7169.up.railway.app/api/CalendarEvents"
 
 //const MONTHS = [
 //    "January", "February", "March", "April", "May", "June",
@@ -1299,7 +1299,7 @@ interface CalendarEvent {
     reminderMinutes?: number
 }
 
-const API_URL = "https://calchat-backend.onrender.com/api/CalendarEvents"
+const API_URL = "https://calchatmain-production-7169.up.railway.app/api/CalendarEvents"
 
 // ✅ GLOBAL NOTIFICATION SAVE
 const saveGlobalNotification = (message: string) => {

@@ -48,7 +48,7 @@
 //        console.log("Sending data:", formData)
 
 //        try {
-//            const response = await fetch("https://calchat-backend.onrender.com/api/account/register", {
+//            const response = await fetch("https://calchatmain-production-7169.up.railway.app/api/account/register", {
 //                method: "POST",
 //                headers: {
 //                    "Content-Type": "application/json"
@@ -611,7 +611,6 @@ export default function RegisterPage() {
         }
 
         const formData = { name, email, password, role }
-
         try {
             setLoading(true)
 
@@ -621,15 +620,29 @@ export default function RegisterPage() {
             router.push("/login")
 
         } catch (err: any) {
-            console.error("ERROR 👉", err.response?.data)
+            console.error("FULL ERROR 👉", err)
+
+            if (err.code === "ECONNABORTED") {
+                alert("Server taking too long ⏳ Try again")
+                return
+            }
 
             if (err.response?.data) {
-                alert(JSON.stringify(err.response.data))
+                if (Array.isArray(err.response.data)) {
+                    const messages = err.response.data
+                        .map((e: any) => e.description)
+                        .join("\n")
+
+                    alert(messages)
+                } else {
+                    alert(err.response.data)
+                }
             } else {
                 alert("Server not responding ❌")
             }
+
         } finally {
-            setLoading(false)
+            setLoading(false) // ✅ VERY IMPORTANT
         }
     }
 
@@ -771,10 +784,14 @@ export default function RegisterPage() {
                         </div>
 
                         {/* SUBMIT */}
-                        <Button type="submit" size="lg" className="mt-2 w-full" disabled={!agreed}>
-                            Create Account
+                        <Button
+                            type="submit"
+                            size="lg"
+                            className="mt-2 w-full"
+                            disabled={!agreed || loading}
+                        >
+                            {loading ? "Creating Account..." : "Create Account"}
                         </Button>
-
 
                     </form>
                 </div>

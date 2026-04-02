@@ -44,7 +44,7 @@
 //    category: string
 //}
 
-//const API_URL = "https://calchat-backend.onrender.com/api/Tasks"
+//const API_URL = "https://calchatmain-production-7169.up.railway.app/api/Tasks"
 
 //const PRIORITY_COLORS: Record<string, any> = {
 //    High: "destructive",
@@ -441,7 +441,7 @@
 //    category: string
 //}
 
-//const API_URL = "https://calchat-backend.onrender.com/api/Tasks"
+//const API_URL = "https://calchatmain-production-7169.up.railway.app/api/Tasks"
 
 //const PRIORITY_COLORS: Record<string, any> = {
 //    High: "destructive",
@@ -792,7 +792,7 @@
 //    category: string
 //}
 
-//const API_URL = "https://calchat-backend.onrender.com/api/Tasks"
+//const API_URL = "https://calchatmain-production-7169.up.railway.app/api/Tasks"
 
 //const PRIORITY_COLORS: Record<string, any> = {
 //    High: "destructive",
@@ -1220,7 +1220,7 @@ interface Task {
     assignedByName?: string
 }
 
-const API_URL = "https://calchat-backend.onrender.com/api/Tasks"
+const API_URL = "https://calchatmain-production-7169.up.railway.app/api/Tasks"
 
 const PRIORITY_COLORS: Record<string, any> = {
     High: "destructive",

@@ -237,11 +237,13 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
         builder.Configuration.GetConnectionString("DefaultConnection"),
         npgsqlOptions =>
         {
-            npgsqlOptions.EnableRetryOnFailure(5); // 🔥 retry fix
-            npgsqlOptions.CommandTimeout(60);
+            npgsqlOptions.EnableRetryOnFailure(
+                maxRetryCount: 5,
+                maxRetryDelay: TimeSpan.FromSeconds(10),
+                errorCodesToAdd: null
+            );
         }
-    )
-);
+    ));
 
 //////////////////////////////////////////////////
 // IDENTITY
