@@ -41,36 +41,45 @@
 //    }
 //}
 
-
 using SendGrid;
 using SendGrid.Helpers.Mail;
 
-public class EmailService : IEmailService
+namespace CalChatAPI.Services
 {
-    private readonly IConfiguration _config;
-
-    public EmailService(IConfiguration config)
+    public class EmailService : IEmailService
     {
-        _config = config;
-    }
+        private readonly IConfiguration _config;
 
-    public async Task SendEmail(string to, string subject, string body)
-    {
-        var client = new SendGridClient(_config["SendGrid:ApiKey"]);
+        public EmailService(IConfiguration config)
+        {
+            _config = config;
+        }
 
-        var from = new EmailAddress("nehipatel2004@gmail.com", "CalChat"); // 👈 verified email
-        var toEmail = new EmailAddress(to);
+        public async Task SendEmail(string to, string subject, string body)
+        {
+            var apiKey = _config["SendGrid:ApiKey"];
 
-        var msg = MailHelper.CreateSingleEmail(
-            from,
-            toEmail,
-            subject,
-            "",
-            body
-        );
+            if (string.IsNullOrEmpty(apiKey))
+            {
+                throw new Exception("SendGrid API Key is missing");
+            }
 
-        var response = await client.SendEmailAsync(msg);
+            var client = new SendGridClient(apiKey);
 
-        Console.WriteLine("SENDGRID STATUS: " + response.StatusCode);
+            var from = new EmailAddress("nehipatel2004@gmail.com", "CalChat"); // ✅ verified sender
+            var toEmail = new EmailAddress(to);
+
+            var msg = MailHelper.CreateSingleEmail(
+                from,
+                toEmail,
+                subject,
+                plainTextContent: "",
+                htmlContent: body
+            );
+
+            var response = await client.SendEmailAsync(msg);
+
+            Console.WriteLine("SENDGRID STATUS: " + response.StatusCode);
+        }
     }
 }

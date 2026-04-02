@@ -7,6 +7,8 @@ using System.Security.Cryptography;
 using CalChatAPI.Data;
 using CalChatAPI.Models;
 using CalChatAPI.DTOs;
+using CalChatAPI.Services;
+
 
 [ApiController]
 [Route("api/hr")]

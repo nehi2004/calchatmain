@@ -309,6 +309,8 @@ builder.Services.AddScoped<IEmailService, EmailService>();
 
 builder.Services.AddControllers();
 
+builder.Services.AddScoped<IEmailService, EmailService>();
+
 //////////////////////////////////////////////////
 // CORS
 //////////////////////////////////////////////////
