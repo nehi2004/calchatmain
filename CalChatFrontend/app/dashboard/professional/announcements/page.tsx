@@ -41,7 +41,7 @@
 //    async function fetchAnnouncements() {
 //        const token = localStorage.getItem("token")
 
-//        const res = await fetch("https://calchat-backend.onrender.com//api/Announcement", {
+//        const res = await fetch("https://calchatmain-production-75c1.up.railway.app/api/Announcement", {
 //            headers: {
 //                Authorization: `Bearer ${token}`,
 //            },
@@ -141,7 +141,7 @@ export default function ProfessionalAnnouncementsPage() {
     async function fetchAnnouncements() {
         const token = localStorage.getItem("token")
 
-        const res = await fetch("https://calchat-backend.onrender.com//api/Announcement", {
+        const res = await fetch("https://calchatmain-production-75c1.up.railway.app/api/Announcement", {
             headers: {
                 Authorization: `Bearer ${token}`,
             },

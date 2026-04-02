@@ -34,7 +34,7 @@
 //import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 //import { cn } from "@/lib/utils"
 
-//const API_URL = "https://calchat-backend.onrender.com//api/Tasks"
+//const API_URL = "https://calchatmain-production-75c1.up.railway.app/api/Tasks"
 
 //export function TasksView() {
 
@@ -117,7 +117,7 @@
 //        try {
 //            const token = localStorage.getItem("token")
 
-//            const res = await fetch("https://calchat-backend.onrender.com//api/meeting/users", {
+//            const res = await fetch("https://calchatmain-production-75c1.up.railway.app/api/meeting/users", {
 //                headers: { Authorization: `Bearer ${token}` },
 //            })
 
@@ -706,7 +706,7 @@ import {
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 import { cn } from "@/lib/utils"
 
-const API_URL = "https://calchat-backend.onrender.com//api/Tasks"
+const API_URL = "https://calchatmain-production-75c1.up.railway.app/api/Tasks"
 
 export function TasksView() {
 
@@ -789,7 +789,7 @@ export function TasksView() {
         try {
             const token = localStorage.getItem("token")
 
-            const res = await fetch("https://calchat-backend.onrender.com//api/meeting/users", {
+            const res = await fetch("https://calchatmain-production-75c1.up.railway.app/api/meeting/users", {
                 headers: { Authorization: `Bearer ${token}` },
             })
 
@@ -891,7 +891,7 @@ export function TasksView() {
 
             const token = localStorage.getItem("token")
 
-            const res = await fetch("https://calchat-backend.onrender.com//api/notifications", {
+            const res = await fetch("https://calchatmain-production-75c1.up.railway.app/api/notifications", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
