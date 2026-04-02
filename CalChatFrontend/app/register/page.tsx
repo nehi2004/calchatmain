@@ -775,9 +775,6 @@ export default function RegisterPage() {
                             Create Account
                         </Button>
 
-                        <Button disabled={loading}>
-                            {loading ? "Creating..." : "Create Account"}
-                        </Button>
 
                     </form>
                 </div>
