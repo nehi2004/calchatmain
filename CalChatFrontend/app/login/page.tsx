@@ -131,16 +131,17 @@ export default function LoginPage() {
         setLoading(true)
 
         try {
-            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/account/login`, {
+            const response = await fetch("https://calchat-backend.onrender.com/api/account/login", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
                 },
                 body: JSON.stringify({
-                    email,
-                    password
-                }),
-            })
+                    email: email,
+                    password: password
+                })
+            });
+           
 
             if (!response.ok) {
                 const error = await response.text()
