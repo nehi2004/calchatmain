@@ -223,7 +223,7 @@
 //    async function fetchAnnouncements() {
 //        const token = localStorage.getItem("token")
 
-//        const res = await fetch("https://calchatmain-production-7169.up.railway.app/api/Announcement", {
+//        const res = await fetch("https://calchatmain-production-75c1.up.railway.app//api/Announcement", {
 //            headers: {
 //                Authorization: `Bearer ${token}`,
 //            },
@@ -241,7 +241,7 @@
 
 //        const token = localStorage.getItem("token")
 
-//        const res = await fetch("https://calchatmain-production-7169.up.railway.app/api/Announcement/create", {
+//        const res = await fetch("https://calchatmain-production-75c1.up.railway.app//api/Announcement/create", {
 //            method: "POST",
 //            headers: {
 //                "Content-Type": "application/json",
@@ -271,7 +271,7 @@
 //    async function handleDelete(id: number) {
 //        const token = localStorage.getItem("token")
 
-//        await fetch(`https://calchatmain-production-7169.up.railway.app/api/Announcement/${id}`, {
+//        await fetch(`https://calchatmain-production-75c1.up.railway.app//api/Announcement/${id}`, {
 //            method: "DELETE",
 //            headers: {
 //                Authorization: `Bearer ${token}`,
@@ -448,7 +448,7 @@ export default function AdminAnnouncementsPage() {
     async function fetchAnnouncements() {
         const token = localStorage.getItem("token")
 
-        const res = await fetch("https://calchatmain-production-7169.up.railway.app/api/Announcement", {
+        const res = await fetch("https://calchatmain-production-75c1.up.railway.app//api/Announcement", {
             headers: {
                 Authorization: `Bearer ${token}`,
             },
@@ -466,7 +466,7 @@ export default function AdminAnnouncementsPage() {
 
         const token = localStorage.getItem("token")
 
-        const res = await fetch("https://calchatmain-production-7169.up.railway.app/api/Announcement/create", {
+        const res = await fetch("https://calchatmain-production-75c1.up.railway.app//api/Announcement/create", {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
@@ -495,7 +495,7 @@ export default function AdminAnnouncementsPage() {
     async function handleDelete(id: number) {
         const token = localStorage.getItem("token")
 
-        await fetch(`https://calchatmain-production-7169.up.railway.app/api/Announcement/${id}`, {
+        await fetch(`https://calchatmain-production-75c1.up.railway.app//api/Announcement/${id}`, {
             method: "DELETE",
             headers: {
                 Authorization: `Bearer ${token}`,

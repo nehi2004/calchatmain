@@ -225,9 +225,9 @@
 //    { label: "Analytics", href: "/dashboard/personal/analytics", icon: BarChart3 },
 //]
 
-//const TASK_API = "https://calchatmain-production-7169.up.railway.app/api/Tasks"
-//const CALENDAR_API = "https://calchatmain-production-7169.up.railway.app/api/CalendarEvents"
-//const EVENTS_API = "https://calchatmain-production-7169.up.railway.app/api/Events"
+//const TASK_API = "https://calchatmain-production-75c1.up.railway.app//api/Tasks"
+//const CALENDAR_API = "https://calchatmain-production-75c1.up.railway.app//api/CalendarEvents"
+//const EVENTS_API = "https://calchatmain-production-75c1.up.railway.app//api/Events"
 
 //function formatDate(date: Date) {
 //    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(
@@ -600,8 +600,8 @@
 //    { label: "Analytics", href: "/dashboard/personal/analytics", icon: BarChart3 },
 //]
 
-//const TASK_API = "https://calchatmain-production-7169.up.railway.app/api/Tasks"
-//const CALENDAR_API = "https://calchatmain-production-7169.up.railway.app/api/CalendarEvents"
+//const TASK_API = "https://calchatmain-production-75c1.up.railway.app//api/Tasks"
+//const CALENDAR_API = "https://calchatmain-production-75c1.up.railway.app//api/CalendarEvents"
 
 //function formatDate(date: Date) {
 //    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(
@@ -930,8 +930,8 @@
 //    { label: "Analytics", href: "/dashboard/personal/analytics", icon: BarChart3 },
 //]
 
-//const TASK_API = "https://calchatmain-production-7169.up.railway.app/api/Tasks"
-//const CALENDAR_API = "https://calchatmain-production-7169.up.railway.app/api/CalendarEvents"
+//const TASK_API = "https://calchatmain-production-75c1.up.railway.app//api/Tasks"
+//const CALENDAR_API = "https://calchatmain-production-75c1.up.railway.app//api/CalendarEvents"
 
 //function formatDate(date: Date) {
 //    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(
@@ -1237,8 +1237,8 @@ const navItems = [
     { label: "Analytics", href: "/dashboard/personal/analytics", icon: BarChart3 },
 ]
 
-const TASK_API = "https://calchatmain-production-7169.up.railway.app/api/Tasks"
-const CALENDAR_API = "https://calchatmain-production-7169.up.railway.app/api/CalendarEvents"
+const TASK_API = "https://calchatmain-production-75c1.up.railway.app//api/Tasks"
+const CALENDAR_API = "https://calchatmain-production-75c1.up.railway.app//api/CalendarEvents"
 
 function formatDate(date: Date) {
     return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(

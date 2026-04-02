@@ -195,13 +195,13 @@
 
 //        try {
 //            const [meetingRes, taskRes, announcementRes] = await Promise.all([
-//                fetch("https://calchatmain-production-7169.up.railway.app/api/Meeting", {
+//                fetch("https://calchatmain-production-75c1.up.railway.app//api/Meeting", {
 //                    headers: { Authorization: `Bearer ${token}` }
 //                }),
-//                fetch("https://calchatmain-production-7169.up.railway.app/api/Task", {
+//                fetch("https://calchatmain-production-75c1.up.railway.app//api/Task", {
 //                    headers: { Authorization: `Bearer ${token}` }
 //                }),
-//                fetch("https://calchatmain-production-7169.up.railway.app/api/Announcement", {
+//                fetch("https://calchatmain-production-75c1.up.railway.app//api/Announcement", {
 //                    headers: { Authorization: `Bearer ${token}` }
 //                })
 //            ])
@@ -390,13 +390,13 @@
 
 //        try {
 //            const [meetingRes, taskRes, announcementRes] = await Promise.all([
-//                fetch("https://calchatmain-production-7169.up.railway.app/api/Meeting/my-meetings", {
+//                fetch("https://calchatmain-production-75c1.up.railway.app//api/Meeting/my-meetings", {
 //                    headers: { Authorization: `Bearer ${token}` }
 //                }),
-//                fetch("https://calchatmain-production-7169.up.railway.app/api/Tasks", {
+//                fetch("https://calchatmain-production-75c1.up.railway.app//api/Tasks", {
 //                    headers: { Authorization: `Bearer ${token}` }
 //                }),
-//                fetch("https://calchatmain-production-7169.up.railway.app/api/Announcement", {
+//                fetch("https://calchatmain-production-75c1.up.railway.app//api/Announcement", {
 //                    headers: { Authorization: `Bearer ${token}` }
 //                })
 //            ])
@@ -580,13 +580,13 @@
 
 //        try {
 //            const [meetingRes, taskRes, announcementRes] = await Promise.all([
-//                fetch("https://calchatmain-production-7169.up.railway.app/api/Meeting/my-meetings", {
+//                fetch("https://calchatmain-production-75c1.up.railway.app//api/Meeting/my-meetings", {
 //                    headers: { Authorization: `Bearer ${token}` }
 //                }),
-//                fetch("https://calchatmain-production-7169.up.railway.app/api/Tasks", {
+//                fetch("https://calchatmain-production-75c1.up.railway.app//api/Tasks", {
 //                    headers: { Authorization: `Bearer ${token}` }
 //                }),
-//                fetch("https://calchatmain-production-7169.up.railway.app/api/Announcement", {
+//                fetch("https://calchatmain-production-75c1.up.railway.app//api/Announcement", {
 //                    headers: { Authorization: `Bearer ${token}` }
 //                })
 //            ])
@@ -846,13 +846,13 @@ export default function ProfessionalDashboard() {
 
         try {
             const [meetingRes, taskRes, announcementRes] = await Promise.all([
-                fetch("https://calchatmain-production-7169.up.railway.app/api/Meeting/my-meetings", {
+                fetch("https://calchatmain-production-75c1.up.railway.app//api/Meeting/my-meetings", {
                     headers: { Authorization: `Bearer ${token}` }
                 }),
-                fetch("https://calchatmain-production-7169.up.railway.app/api/Tasks", {
+                fetch("https://calchatmain-production-75c1.up.railway.app//api/Tasks", {
                     headers: { Authorization: `Bearer ${token}` }
                 }),
-                fetch("https://calchatmain-production-7169.up.railway.app/api/Announcement", {
+                fetch("https://calchatmain-production-75c1.up.railway.app//api/Announcement", {
                     headers: { Authorization: `Bearer ${token}` }
                 })
             ])

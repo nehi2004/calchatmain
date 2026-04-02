@@ -230,7 +230,7 @@
 //        try {
 //            const token = localStorage.getItem("token")
 
-//            const res = await fetch("https://calchatmain-production-7169.up.railway.app/api/account/users", {
+//            const res = await fetch("https://calchatmain-production-75c1.up.railway.app//api/account/users", {
 //                headers: {
 //                    Authorization: `Bearer ${token}`
 //                }
@@ -459,7 +459,7 @@
 //        try {
 //            const token = localStorage.getItem("token")
 
-//            const res = await fetch("https://calchatmain-production-7169.up.railway.app/api/account/users", {
+//            const res = await fetch("https://calchatmain-production-75c1.up.railway.app//api/account/users", {
 //                headers: {
 //                    Authorization: `Bearer ${token}`
 //                }
@@ -703,7 +703,7 @@ export default function AdminDashboard() {
         try {
             const token = localStorage.getItem("token")
 
-            const res = await fetch("https://calchatmain-production-7169.up.railway.app/api/account/users", {
+            const res = await fetch("https://calchatmain-production-75c1.up.railway.app//api/account/users", {
                 headers: {
                     Authorization: `Bearer ${token}`
                 }
@@ -1139,7 +1139,7 @@ export default function AdminDashboard() {
 //        try {
 //            const token = localStorage.getItem("token")
 
-//            const res = await fetch("https://calchatmain-production-7169.up.railway.app/api/account/users", {
+//            const res = await fetch("https://calchatmain-production-75c1.up.railway.app//api/account/users", {
 //                headers: {
 //                    Authorization: `Bearer ${token}`
 //                }

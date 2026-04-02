@@ -32,7 +32,7 @@ export default function SetPasswordContent() {
         try {
             setLoading(true)
 
-            const res = await fetch("https://calchatmain-production-7169.up.railway.app/api/hr/set-password", {
+            const res = await fetch("https://calchatmain-production-75c1.up.railway.app//api/hr/set-password", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json"
