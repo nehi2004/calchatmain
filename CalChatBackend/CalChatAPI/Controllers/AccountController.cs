@@ -486,29 +486,89 @@ public class AccountController : ControllerBase
     [HttpPost("register")]
     public async Task<IActionResult> Register([FromBody] RegisterModel model)
     {
-        Console.WriteLine("🔥 API HIT");
-
-        var existingUser = await _userManager.FindByEmailAsync(model.Email);
-        Console.WriteLine("🔥 Checked existing user");
-
-        var user = new ApplicationUser
+        try
         {
-            Name = model.Name,
-            UserName = model.Email,
-            Email = model.Email,
-            IsActive = true
-        };
+            Console.WriteLine("🔥 API HIT");
 
-        Console.WriteLine("🔥 Before CreateAsync");
+            if (!ModelState.IsValid)
+            {
+                Console.WriteLine("❌ Invalid Model");
+                return BadRequest("Invalid data");
+            }
 
-        var result = await _userManager.CreateAsync(user, model.Password);
+            // 🔍 Check existing user
+            Console.WriteLine("🔍 Checking existing user...");
+            var existingUser = await _db.Users
+     .Where(x => x.Email == model.Email)
+     .Select(x => x.Id)
+     .FirstOrDefaultAsync();
 
-        Console.WriteLine("🔥 After CreateAsync");
+            if (existingUser != null)
+                return BadRequest("User already exists");
 
-        if (!result.Succeeded)
-            return BadRequest(result.Errors);
+            if (existingUser != null)
+            {
+                Console.WriteLine("⚠️ User already exists");
+                return BadRequest("User already exists");
+            }
 
-        return Ok("Success");
+            // 👤 Create user object
+            var user = new ApplicationUser
+            {
+                Name = model.Name,
+                UserName = model.Email,
+                Email = model.Email,
+                IsActive = true
+            };
+
+            Console.WriteLine("🚀 Before CreateAsync");
+
+            // 💥 MAIN DB CALL
+            var result = await _userManager.CreateAsync(user, model.Password);
+
+            Console.WriteLine("✅ After CreateAsync");
+
+            if (!result.Succeeded)
+            {
+                Console.WriteLine("❌ Identity Errors:");
+                foreach (var err in result.Errors)
+                {
+                    Console.WriteLine(err.Description);
+                }
+
+                return BadRequest(result.Errors);
+            }
+
+            // 🎭 Role assign
+            var roleName = model.Role?.ToLower() ?? "student";
+
+            if (!await _roleManager.RoleExistsAsync(roleName))
+            {
+                Console.WriteLine("➕ Creating Role...");
+                await _roleManager.CreateAsync(new IdentityRole(roleName));
+            }
+
+            await _userManager.AddToRoleAsync(user, roleName);
+
+            Console.WriteLine("🎉 User Registered Successfully");
+
+            return Ok(new
+            {
+                message = "User registered successfully",
+                role = roleName
+            });
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine("🔥 EXCEPTION:");
+            Console.WriteLine(ex.ToString()); // FULL ERROR
+
+            return StatusCode(500, new
+            {
+                message = "Internal Server Error",
+                error = ex.Message
+            });
+        }
     }
     // ================= LOGIN =================
     [HttpPost("login")]
@@ -812,5 +872,24 @@ public class AccountController : ControllerBase
         await _userManager.UpdateAsync(user);
 
         return Ok("Password reset successful");
+    }
+    [HttpGet("ping-db")]
+    public async Task<IActionResult> PingDb()
+    {
+        try
+        {
+            Console.WriteLine("🔌 Testing DB connection...");
+
+            await _db.Database.OpenConnectionAsync();
+
+            Console.WriteLine("✅ DB Connected");
+
+            return Ok("DB Connected ✅");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine("❌ DB ERROR: " + ex.Message);
+            return StatusCode(500, ex.Message);
+        }
     }
 }

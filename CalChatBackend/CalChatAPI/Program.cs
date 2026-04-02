@@ -233,9 +233,16 @@ var builder = WebApplication.CreateBuilder(args);
 // DATABASE
 //////////////////////////////////////////////////
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection"))
-           .EnableSensitiveDataLogging()
-           .LogTo(Console.WriteLine, LogLevel.Information));
+    options.UseNpgsql(
+        builder.Configuration.GetConnectionString("DefaultConnection"),
+        npgsqlOptions =>
+        {
+            npgsqlOptions.EnableRetryOnFailure(5); // 🔥 retry fix
+            npgsqlOptions.CommandTimeout(60);
+        }
+    )
+);
+
 //////////////////////////////////////////////////
 // IDENTITY
 //////////////////////////////////////////////////
