@@ -227,22 +227,43 @@ using CalChatAPI.Models;
 using CalChatAPI.Hubs;
 using CalChatAPI.Services;
 
+
 var builder = WebApplication.CreateBuilder(args);
 
+//////////////////////////////////////////////////
 // DATABASE
+//////////////////////////////////////////////////
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+    options.UseNpgsql(
+        builder.Configuration.GetConnectionString("DefaultConnection"),
+        npgsqlOptions =>
+        {
+            npgsqlOptions.EnableRetryOnFailure(
+                maxRetryCount: 5,
+                maxRetryDelay: TimeSpan.FromSeconds(10),
+                errorCodesToAdd: null
+            );
+        }
+    ));
 
+//////////////////////////////////////////////////
 // IDENTITY
+//////////////////////////////////////////////////
 builder.Services.AddIdentity<ApplicationUser, IdentityRole>()
     .AddEntityFrameworkStores<ApplicationDbContext>()
     .AddDefaultTokenProviders();
 
+//////////////////////////////////////////////////
 // JWT
+//////////////////////////////////////////////////
 var jwtKey = builder.Configuration["Jwt:Key"] ?? "THIS_IS_SECRET_KEY_CHANGE_IT";
 var key = Encoding.UTF8.GetBytes(jwtKey);
 
-builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+builder.Services.AddAuthentication(options =>
+{
+    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+})
 .AddJwtBearer(options =>
 {
     options.RequireHttpsMetadata = false;
@@ -253,11 +274,14 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         OnMessageReceived = context =>
         {
             var accessToken = context.Request.Query["access_token"];
+            var path = context.HttpContext.Request.Path;
+
             if (!string.IsNullOrEmpty(accessToken) &&
-                context.HttpContext.Request.Path.StartsWithSegments("/chatHub"))
+                path.StartsWithSegments("/chatHub"))
             {
                 context.Token = accessToken;
             }
+
             return Task.CompletedTask;
         }
     };
@@ -269,19 +293,28 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         ValidateLifetime = true,
         ValidateIssuerSigningKey = true,
         IssuerSigningKey = new SymmetricSecurityKey(key),
+
         NameClaimType = ClaimTypes.NameIdentifier,
         RoleClaimType = ClaimTypes.Role
     };
 });
 
+//////////////////////////////////////////////////
 // SERVICES
+//////////////////////////////////////////////////
 builder.Services.AddSignalR();
 builder.Services.AddSingleton<IUserIdProvider, NameIdentifierUserIdProvider>();
+
 builder.Services.AddScoped<AIService>();
 builder.Services.AddScoped<IEmailService, EmailService>();
+
 builder.Services.AddControllers();
 
+
+
+//////////////////////////////////////////////////
 // CORS
+//////////////////////////////////////////////////
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowFrontend", policy =>
@@ -293,31 +326,76 @@ builder.Services.AddCors(options =>
         )
         .AllowAnyHeader()
         .AllowAnyMethod()
-        .AllowCredentials();
+        .AllowCredentials(); // ✅ allowed ONLY with specific origins
     });
 });
 
+//////////////////////////////////////////////////
 // SWAGGER
+//////////////////////////////////////////////////
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+builder.Services.AddSwaggerGen(options =>
+{
+    options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+    {
+        Name = "Authorization",
+        Type = SecuritySchemeType.Http,
+        Scheme = "bearer",
+        BearerFormat = "JWT",
+        In = ParameterLocation.Header,
+        Description = "Enter JWT Token like: Bearer {your token}"
+    });
 
+    options.AddSecurityRequirement(new OpenApiSecurityRequirement
+    {
+        {
+            new OpenApiSecurityScheme
+            {
+                Reference = new OpenApiReference
+                {
+                    Type = ReferenceType.SecurityScheme,
+                    Id = "Bearer"
+                }
+            },
+            new string[] {}
+        }
+    });
+});
+
+//////////////////////////////////////////////////
+// BUILD APP (ONLY ONE TIME)
+//////////////////////////////////////////////////
 var app = builder.Build();
 
-// PORT (Railway)
+//////////////////////////////////////////////////
+// PORT FIX (Railway)
+//////////////////////////////////////////////////
 var port = Environment.GetEnvironmentVariable("PORT") ?? "8080";
 app.Urls.Add($"http://*:{port}");
 
+//////////////////////////////////////////////////
 // MIDDLEWARE
+//////////////////////////////////////////////////
 app.UseSwagger();
 app.UseSwaggerUI();
 
+app.UseExceptionHandler(errorApp =>
+{
+    errorApp.Run(async context =>
+    {
+        context.Response.StatusCode = 500;
+        var error = context.Features.Get<Microsoft.AspNetCore.Diagnostics.IExceptionHandlerFeature>();
+        await context.Response.WriteAsync("ERROR: " + error?.Error?.Message);
+    });
+});
+
 app.UseRouting();
-app.UseCors("AllowFrontend");
+
+app.UseCors("AllowFrontend"); // ✅ BEFORE auth
 
 app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
 app.MapHub<ChatHub>("/chatHub").RequireCors("AllowFrontend");
-
-app.Run(); // 🔥 MUST HAVE
+app.Run();
