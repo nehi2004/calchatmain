@@ -230,26 +230,22 @@ using CalChatAPI.Services;
 var builder = WebApplication.CreateBuilder(args);
 
 //////////////////////////////////////////////////
-// DATABASE (PostgreSQL - Railway)
+// DATABASE
 //////////////////////////////////////////////////
-
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    options.UseNpgsql(
-        builder.Configuration.GetConnectionString("DefaultConnection")
-    ));
-
+    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection"))
+           .EnableSensitiveDataLogging()
+           .LogTo(Console.WriteLine, LogLevel.Information));
 //////////////////////////////////////////////////
 // IDENTITY
 //////////////////////////////////////////////////
-
 builder.Services.AddIdentity<ApplicationUser, IdentityRole>()
     .AddEntityFrameworkStores<ApplicationDbContext>()
     .AddDefaultTokenProviders();
 
 //////////////////////////////////////////////////
-// JWT CONFIG (SignalR SUPPORT)
+// JWT
 //////////////////////////////////////////////////
-
 var jwtKey = builder.Configuration["Jwt:Key"] ?? "THIS_IS_SECRET_KEY_CHANGE_IT";
 var key = Encoding.UTF8.GetBytes(jwtKey);
 
@@ -294,149 +290,75 @@ builder.Services.AddAuthentication(options =>
 });
 
 //////////////////////////////////////////////////
-// PREVENT REDIRECT (IMPORTANT)
-//////////////////////////////////////////////////
-
-builder.Services.ConfigureApplicationCookie(options =>
-{
-    options.Events.OnRedirectToLogin = context =>
-    {
-        context.Response.StatusCode = 401;
-        return Task.CompletedTask;
-    };
-
-    options.Events.OnRedirectToAccessDenied = context =>
-    {
-        context.Response.StatusCode = 403;
-        return Task.CompletedTask;
-    };
-});
-
-//////////////////////////////////////////////////
-// SIGNALR
-//////////////////////////////////////////////////
-
-builder.Services.AddSignalR(options =>
-{
-    options.EnableDetailedErrors = true;
-});
-
-builder.Services.AddSingleton<IUserIdProvider, NameIdentifierUserIdProvider>();
-
-//////////////////////////////////////////////////
 // SERVICES
 //////////////////////////////////////////////////
+builder.Services.AddSignalR();
+builder.Services.AddSingleton<IUserIdProvider, NameIdentifierUserIdProvider>();
 
 builder.Services.AddScoped<AIService>();
 builder.Services.AddScoped<IEmailService, EmailService>();
-//builder.Services.AddHostedService<MeetingNotificationService>();
-
-//////////////////////////////////////////////////
-// CONTROLLERS
-//////////////////////////////////////////////////
 
 builder.Services.AddControllers();
 
 //////////////////////////////////////////////////
-// CORS (Railway + Localhost FIX)
+// CORS
 //////////////////////////////////////////////////
-
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowFrontend", policy =>
     {
-        policy
-            .AllowAnyOrigin()   // Railway fix (no localhost restriction)
-            .AllowAnyHeader()
-            .AllowAnyMethod();
+        policy.WithOrigins(
+            "http://localhost:3000",
+            "https://calchatmain-le3p.vercel.app"
+        )
+        .AllowAnyHeader()
+        .AllowAnyMethod();
     });
 });
 
 //////////////////////////////////////////////////
 // SWAGGER
 //////////////////////////////////////////////////
-
 builder.Services.AddEndpointsApiExplorer();
-
-builder.Services.AddSwaggerGen(options =>
-{
-    options.SwaggerDoc("v1", new OpenApiInfo
-    {
-        Title = "CalChat API",
-        Version = "v1"
-    });
-
-    options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
-    {
-        Name = "Authorization",
-        Type = SecuritySchemeType.Http,
-        Scheme = "bearer",
-        BearerFormat = "JWT",
-        In = ParameterLocation.Header
-    });
-
-    options.AddSecurityRequirement(new OpenApiSecurityRequirement
-    {
-        {
-            new OpenApiSecurityScheme
-            {
-                Reference = new OpenApiReference
-                {
-                    Type = ReferenceType.SecurityScheme,
-                    Id = "Bearer"
-                }
-            },
-            new string[] {}
-        }
-    });
-});
+builder.Services.AddSwaggerGen();
 
 //////////////////////////////////////////////////
-// BUILD APP
+// BUILD APP (ONLY ONE TIME)
 //////////////////////////////////////////////////
-///
-//////////////////////////////////////////////////
-// RAILWAY PORT FIX (VERY IMPORTANT)
-//////////////////////////////////////////////////
-var port = Environment.GetEnvironmentVariable("PORT") ?? "8080";
-builder.WebHost.UseUrls($"http://*:{port}");
-
 var app = builder.Build();
 
-if (app.Environment.IsDevelopment())
-{
-app.UseDeveloperExceptionPage();
-}
-
+//////////////////////////////////////////////////
+// PORT FIX (Railway)
+//////////////////////////////////////////////////
+var port = Environment.GetEnvironmentVariable("PORT") ?? "8080";
+app.Urls.Add($"http://*:{port}");
 
 //////////////////////////////////////////////////
 // MIDDLEWARE
 //////////////////////////////////////////////////
+app.UseSwagger();
+app.UseSwaggerUI();
 
-//if (app.Environment.IsDevelopment())
+app.UseExceptionHandler(errorApp =>
 {
-    app.UseSwagger();
-    app.UseSwaggerUI();
-}
+    errorApp.Run(async context =>
+    {
+        context.Response.StatusCode = 500;
+        var error = context.Features.Get<Microsoft.AspNetCore.Diagnostics.IExceptionHandlerFeature>();
+        await context.Response.WriteAsync("ERROR: " + error?.Error?.Message);
+    });
+});
 
-//app.UseSwagger();
-//app.UseSwaggerUI();
 app.UseRouting();
-
-app.UseCors("AllowFrontend"); // KEEP HERE
+app.UseCors("AllowFrontend");
 
 app.UseAuthentication();
 app.UseAuthorization();
 
-app.UseStaticFiles();
-
 //////////////////////////////////////////////////
 // ENDPOINTS
 //////////////////////////////////////////////////
-
 app.MapControllers();
-
-app.MapHub<ChatHub>("/chatHub")
-   .RequireCors("AllowFrontend");
+app.MapHub<ChatHub>("/chatHub").RequireCors("AllowFrontend");
 
 app.Run();

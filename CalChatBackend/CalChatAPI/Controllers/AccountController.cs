@@ -486,12 +486,10 @@ public class AccountController : ControllerBase
     [HttpPost("register")]
     public async Task<IActionResult> Register([FromBody] RegisterModel model)
     {
-        if (!ModelState.IsValid)
-            return BadRequest("Invalid data");
+        Console.WriteLine("🔥 API HIT");
 
         var existingUser = await _userManager.FindByEmailAsync(model.Email);
-        if (existingUser != null)
-            return BadRequest("User already exists");
+        Console.WriteLine("🔥 Checked existing user");
 
         var user = new ApplicationUser
         {
@@ -501,28 +499,17 @@ public class AccountController : ControllerBase
             IsActive = true
         };
 
+        Console.WriteLine("🔥 Before CreateAsync");
+
         var result = await _userManager.CreateAsync(user, model.Password);
+
+        Console.WriteLine("🔥 After CreateAsync");
 
         if (!result.Succeeded)
             return BadRequest(result.Errors);
 
-        var roleName = model.Role?.ToLower() ?? "student";
-
-        if (!await _roleManager.RoleExistsAsync(roleName))
-        {
-            await _roleManager.CreateAsync(new IdentityRole(roleName));
-        }
-
-        await _userManager.AddToRoleAsync(user, roleName);
-
-        return Ok(new
-        {
-            message = "User registered successfully",
-            role = roleName
-        });
+        return Ok("Success");
     }
-
-
     // ================= LOGIN =================
     [HttpPost("login")]
     public async Task<IActionResult> Login([FromBody] LoginModel model)
