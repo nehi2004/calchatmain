@@ -394,15 +394,20 @@ builder.Services.AddSwaggerGen(options =>
 //////////////////////////////////////////////////
 // BUILD APP
 //////////////////////////////////////////////////
-
-var app = builder.Build();
-app.UseDeveloperExceptionPage();
-
+///
 //////////////////////////////////////////////////
 // RAILWAY PORT FIX (VERY IMPORTANT)
 //////////////////////////////////////////////////
 var port = Environment.GetEnvironmentVariable("PORT") ?? "8080";
 builder.WebHost.UseUrls($"http://*:{port}");
+
+var app = builder.Build();
+
+if (app.Environment.IsDevelopment())
+{
+app.UseDeveloperExceptionPage();
+}
+
 
 //////////////////////////////////////////////////
 // MIDDLEWARE
@@ -418,7 +423,7 @@ builder.WebHost.UseUrls($"http://*:{port}");
 //app.UseSwaggerUI();
 app.UseRouting();
 
-app.UseCors("AllowFrontend");
+app.UseCors("AllowFrontend"); // KEEP HERE
 
 app.UseAuthentication();
 app.UseAuthorization();

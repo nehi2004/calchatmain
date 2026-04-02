@@ -600,7 +600,6 @@ export default function RegisterPage() {
 
 
 
-
     async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
         e.preventDefault()
 
@@ -611,42 +610,11 @@ export default function RegisterPage() {
             return
         }
 
-        const formData = {
-            name,
-            email,
-            password,
-            role
-        }
-
-        const controller = new AbortController()
-
-        setTimeout(() => controller.abort(), 15000) // 15 sec
-
-        const response = await fetch("https://calchat-backend.onrender.com/api/account/register", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-            },
-            body: JSON.stringify(formData),
-            signal: controller.signal
-        })
-
-        setLoading(true)
+        const formData = { name, email, password, role }
 
         try {
-            const response = await api.post("/account/register", formData)
+            setLoading(true)
 
-            alert("Registration successful ✅")
-
-        } catch (err) {
-            alert("Error ❌")
-        } finally {
-            setLoading(false)
-        }
-
-        console.log("Sending data:", formData)
-
-        try {
             const response = await api.post("/account/register", formData)
 
             alert("Registration successful ✅")
@@ -658,8 +626,10 @@ export default function RegisterPage() {
             if (err.response?.data) {
                 alert(JSON.stringify(err.response.data))
             } else {
-                alert("Registration failed ❌")
+                alert("Server not responding ❌")
             }
+        } finally {
+            setLoading(false)
         }
     }
 
