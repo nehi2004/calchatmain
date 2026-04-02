@@ -23,15 +23,17 @@ public class EmailService : IEmailService
         email.Subject = subject;
         email.Body = body;
         email.IsBodyHtml = true;
-
-        var smtp = new SmtpClient(_config["EmailSettings:Host"])
+        var smtp = new SmtpClient
         {
+            Host = _config["EmailSettings:Host"],
             Port = int.Parse(_config["EmailSettings:Port"]),
+            EnableSsl = true,
+            DeliveryMethod = SmtpDeliveryMethod.Network,
+            UseDefaultCredentials = false,
             Credentials = new NetworkCredential(
                 _config["EmailSettings:Email"],
                 _config["EmailSettings:Password"]
-            ),
-            EnableSsl = true   // ✅ VERY IMPORTANT
+            )
         };
 
         await smtp.SendMailAsync(email);

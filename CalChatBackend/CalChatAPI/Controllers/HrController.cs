@@ -122,12 +122,13 @@ public class HrController : ControllerBase
                 "Activate your CalChat account",
                 emailBody
             );
-
-            Console.WriteLine("✅ Email sent successfully");
         }
         catch (Exception ex)
         {
-            Console.WriteLine("❌ Email failed: " + ex.Message);
+            Console.WriteLine("❌ EMAIL FAILED:");
+            Console.WriteLine(ex.ToString());
+
+            return StatusCode(500, "Employee created but email failed ❌");
         }
 
         return Ok(new

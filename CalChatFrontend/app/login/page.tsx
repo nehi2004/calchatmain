@@ -166,7 +166,11 @@ export default function LoginPage() {
                 admin: "/dashboard/admin",
             }
 
-            router.push(roleMap[data.role] || "/dashboard/student")
+            const role = (data.role || "").toLowerCase()
+
+            console.log("ROLE:", role)
+
+            router.push(roleMap[role] || "/dashboard/student")
 
         } catch (error) {
             console.error(error)

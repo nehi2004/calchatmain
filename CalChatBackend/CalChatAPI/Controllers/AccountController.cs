@@ -488,13 +488,10 @@ public class AccountController : ControllerBase
     {
         try
         {
-            Console.WriteLine("🔥 API HIT");
-
             if (model == null)
                 return BadRequest("Invalid data");
 
             var existingUser = await _userManager.FindByEmailAsync(model.Email);
-
             if (existingUser != null)
                 return BadRequest("User already exists");
 
@@ -506,31 +503,29 @@ public class AccountController : ControllerBase
                 IsActive = true
             };
 
-            Console.WriteLine("🚀 Creating user...");
-
             var result = await _userManager.CreateAsync(user, model.Password);
 
             if (!result.Succeeded)
-            {
-                Console.WriteLine("❌ Identity Errors:");
-                foreach (var err in result.Errors)
-                    Console.WriteLine(err.Description);
-
                 return BadRequest(result.Errors);
+
+            // ✅ ADD ROLE (IMPORTANT)
+            var roleName = model.Role?.ToLower() ?? "student";
+
+            if (!await _roleManager.RoleExistsAsync(roleName))
+            {
+                await _roleManager.CreateAsync(new IdentityRole(roleName));
             }
 
-            Console.WriteLine("✅ User created");
+            await _userManager.AddToRoleAsync(user, roleName);
 
             return Ok(new
             {
-                message = "User registered successfully"
+                message = "User registered successfully",
+                role = roleName
             });
         }
         catch (Exception ex)
         {
-            Console.WriteLine("🔥 EXCEPTION:");
-            Console.WriteLine(ex.ToString());
-
             return StatusCode(500, new
             {
                 message = "Internal Server Error",
@@ -539,61 +534,82 @@ public class AccountController : ControllerBase
         }
     }
     // ================= LOGIN =================
+    // ================= LOGIN =================
     [HttpPost("login")]
     public async Task<IActionResult> Login([FromBody] LoginModel model)
     {
-        if (model == null || string.IsNullOrEmpty(model.Email) || string.IsNullOrEmpty(model.Password))
-            return BadRequest("Email & password required");
+        try
+        {
+            if (model == null || string.IsNullOrEmpty(model.Email) || string.IsNullOrEmpty(model.Password))
+                return BadRequest("Email & password required");
 
-        var user = await _userManager.FindByEmailAsync(model.Email);
+            Console.WriteLine("🔥 LOGIN START");
 
-        if (user == null)
-            return Unauthorized("Invalid credentials");
+            // ✅ FIX: case-insensitive email
+            var user = await _db.Users
+                .FirstOrDefaultAsync(x => x.Email.ToLower() == model.Email.ToLower());
 
-        if (!user.IsActive)
-            return Unauthorized("User is deactivated");
+            if (user == null)
+                return Unauthorized("Invalid credentials");
 
-        var check = await _signInManager.CheckPasswordSignInAsync(user, model.Password, false);
+            if (!user.IsActive)
+                return Unauthorized("User is deactivated");
 
-        if (!check.Succeeded)
-            return Unauthorized("Invalid credentials");
+            Console.WriteLine("✅ User Found");
 
-        var userRoles = await _userManager.GetRolesAsync(user);
+            // ✅ Password check
+            var result = _userManager.PasswordHasher.VerifyHashedPassword(
+                user,
+                user.PasswordHash,
+                model.Password
+            );
 
-        var claims = new List<Claim>
+            if (result == PasswordVerificationResult.Failed)
+                return Unauthorized("Invalid credentials");
+
+            Console.WriteLine("✅ Password OK");
+
+            // ✅ FIX: get real role
+            var userRoles = await _userManager.GetRolesAsync(user);
+            var role = userRoles.FirstOrDefault() ?? "student";
+
+            var claims = new List<Claim>
         {
             new Claim(ClaimTypes.NameIdentifier, user.Id),
             new Claim(ClaimTypes.Email, user.Email ?? ""),
-            new Claim(ClaimTypes.Name, user.Name ?? "")
+            new Claim(ClaimTypes.Name, user.Name ?? ""),
+            new Claim(ClaimTypes.Role, role)
         };
 
-        foreach (var r in userRoles)
-        {
-            claims.Add(new Claim(ClaimTypes.Role, r));
+            var key = new SymmetricSecurityKey(
+                Encoding.UTF8.GetBytes(_configuration["Jwt:Key"])
+            );
+
+            var token = new JwtSecurityToken(
+                issuer: _configuration["Jwt:Issuer"],
+                audience: _configuration["Jwt:Audience"],
+                claims: claims,
+                expires: DateTime.UtcNow.AddHours(2),
+                signingCredentials: new SigningCredentials(key, SecurityAlgorithms.HmacSha256)
+            );
+
+            var tokenString = new JwtSecurityTokenHandler().WriteToken(token);
+
+            Console.WriteLine("🚀 LOGIN SUCCESS");
+
+            return Ok(new
+            {
+                token = tokenString,
+                role = role,
+                userId = user.Id
+            });
         }
-
-        var key = new SymmetricSecurityKey(
-            Encoding.UTF8.GetBytes(_configuration["Jwt:Key"])
-        );
-
-        var token = new JwtSecurityToken(
-            issuer: _configuration["Jwt:Issuer"],
-            audience: _configuration["Jwt:Audience"],
-            claims: claims,
-            expires: DateTime.UtcNow.AddHours(2),
-            signingCredentials: new SigningCredentials(key, SecurityAlgorithms.HmacSha256)
-        );
-
-        var tokenString = new JwtSecurityTokenHandler().WriteToken(token);
-
-        return Ok(new
+        catch (Exception ex)
         {
-            token = tokenString,
-            role = userRoles.FirstOrDefault(),
-            userId = user.Id
-        });
+            Console.WriteLine("❌ LOGIN ERROR: " + ex.Message);
+            return StatusCode(500, ex.Message);
+        }
     }
-
     // ================= GET USERS =================
     [HttpGet("users")]
     [Authorize]

@@ -1479,74 +1479,74 @@
 //                    </div>
 //                </div>
 
-                //{/* MODAL */}
-                //<Dialog open={open} onOpenChange={setOpen}>
-                //    <DialogContent className="max-w-md p-0 overflow-hidden rounded-2xl">
+//                {/* MODAL */}
+//                <Dialog open={open} onOpenChange={setOpen}>
+//                    <DialogContent className="max-w-md p-0 overflow-hidden rounded-2xl">
 
-                //        {/* HEADER */}
-                //        <div className="bg-gradient-to-r from-primary/90 to-primary p-5 text-white">
-                //            <DialogTitle className="text-lg font-semibold">
-                //                {isEdit ? "✏️ Edit Employee" : "👤 Add Employee"}
-                //            </DialogTitle>
-                //            <DialogDescription className="text-white opacity-80 mt-1">
-                //                Manage employee details efficiently
-                //            </DialogDescription>
-                //        </div>
+//                        {/* HEADER */}
+//                        <div className="bg-gradient-to-r from-primary/90 to-primary p-5 text-white">
+//                            <DialogTitle className="text-lg font-semibold">
+//                                {isEdit ? "✏️ Edit Employee" : "👤 Add Employee"}
+//                            </DialogTitle>
+//                            <DialogDescription className="text-white opacity-80 mt-1">
+//                                Manage employee details efficiently
+//                            </DialogDescription>
+//                        </div>
 
-                //        {/* BODY */}
-                //        <div className="p-5 space-y-5">
+//                        {/* BODY */}
+//                        <div className="p-5 space-y-5">
 
-                //            {/* NAME */}
-                //            <div className="space-y-2">
-                //                <Label className="text-sm font-medium">Full Name</Label>
-                //                <Input
-                //                    placeholder="Enter full name..."
-                //                    value={newEmployee.name}
-                //                    onChange={(e) =>
-                //                        setNewEmployee({ ...newEmployee, name: e.target.value })
-                //                    }
-                //                    className="rounded-xl h-10"
-                //                />
-                //            </div>
+//                            {/* NAME */}
+//                            <div className="space-y-2">
+//                                <Label className="text-sm font-medium">Full Name</Label>
+//                                <Input
+//                                    placeholder="Enter full name..."
+//                                    value={newEmployee.name}
+//                                    onChange={(e) =>
+//                                        setNewEmployee({ ...newEmployee, name: e.target.value })
+//                                    }
+//                                    className="rounded-xl h-10"
+//                                />
+//                            </div>
 
-                //            {/* EMAIL */}
-                //            <div className="space-y-2">
-                //                <Label className="text-sm font-medium">Email Address</Label>
-                //                <Input
-                //                    type="email"
-                //                    placeholder="Enter email..."
-                //                    value={newEmployee.email}
-                //                    onChange={(e) =>
-                //                        setNewEmployee({ ...newEmployee, email: e.target.value })
-                //                    }
-                //                    className="rounded-xl h-10"
-                //                />
-                //            </div>
+//                            {/* EMAIL */}
+//                            <div className="space-y-2">
+//                                <Label className="text-sm font-medium">Email Address</Label>
+//                                <Input
+//                                    type="email"
+//                                    placeholder="Enter email..."
+//                                    value={newEmployee.email}
+//                                    onChange={(e) =>
+//                                        setNewEmployee({ ...newEmployee, email: e.target.value })
+//                                    }
+//                                    className="rounded-xl h-10"
+//                                />
+//                            </div>
 
-                //            {/* DEPARTMENT */}
-                //            <div className="space-y-2">
-                //                <Label className="text-sm font-medium">Department</Label>
-                //                <Input
-                //                    placeholder="e.g. HR, IT, Sales..."
-                //                    value={newEmployee.department}
-                //                    onChange={(e) =>
-                //                        setNewEmployee({ ...newEmployee, department: e.target.value })
-                //                    }
-                //                    className="rounded-xl h-10"
-                //                />
-                //            </div>
+//                            {/* DEPARTMENT */}
+//                            <div className="space-y-2">
+//                                <Label className="text-sm font-medium">Department</Label>
+//                                <Input
+//                                    placeholder="e.g. HR, IT, Sales..."
+//                                    value={newEmployee.department}
+//                                    onChange={(e) =>
+//                                        setNewEmployee({ ...newEmployee, department: e.target.value })
+//                                    }
+//                                    className="rounded-xl h-10"
+//                                />
+//                            </div>
 
-                //            {/* ACTION BUTTON */}
-                //            <Button
-                //                onClick={isEdit ? handleEdit : handleAddEmployee}
-                //                className="w-full h-11 rounded-xl text-sm font-medium shadow-lg hover:scale-[1.02] transition-all"
-                //            >
-                //                {isEdit ? "Update Employee ✏️" : "Create Employee 🚀"}
-                //            </Button>
+//                            {/* ACTION BUTTON */}
+//                            <Button
+//                                onClick={isEdit ? handleEdit : handleAddEmployee}
+//                                className="w-full h-11 rounded-xl text-sm font-medium shadow-lg hover:scale-[1.02] transition-all"
+//                            >
+//                                {isEdit ? "Update Employee ✏️" : "Create Employee 🚀"}
+//                            </Button>
 
-                //        </div>
-                //    </DialogContent>
-                //</Dialog>
+//                        </div>
+//                    </DialogContent>
+//                </Dialog>
 
 //            </div>
 //        </DashboardShell>
@@ -1598,7 +1598,7 @@ export default function EmployeeManagementPage() {
     const [isEdit, setIsEdit] = useState(false)
     const [editId, setEditId] = useState<string | null>(null)
     const [loading, setLoading] = useState(false)
-
+    const [creating, setCreating] = useState(false)
     // ✅ PAGINATION STATE
     const [currentPage, setCurrentPage] = useState(1)
     const usersPerPage = 6
@@ -1662,29 +1662,47 @@ export default function EmployeeManagementPage() {
     }
 
     // ================= CRUD SAME =================
-
     async function handleAddEmployee() {
         if (!newEmployee.name || !newEmployee.email) {
             toast({ title: "Error ❌", description: "Name and Email required", variant: "destructive" })
             return
         }
 
-        const token = localStorage.getItem("token")
+        setCreating(true) // ✅ start loading
 
-        await fetch("https://calchatmain-production-7169.up.railway.app/api/hr/add-employee", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                Authorization: `Bearer ${token}`,
-            },
-            body: JSON.stringify(newEmployee),
-        })
+        try {
+            const token = localStorage.getItem("token")
 
-        toast({ title: "Success ✅", description: "Employee created" })
-        await fetchEmployees()
-        resetForm()
+            const res = await fetch("https://calchatmain-production-7169.up.railway.app/api/hr/add-employee", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${token}`,
+                },
+                body: JSON.stringify(newEmployee),
+            })
+
+            const data = await res.json()
+
+            console.log("RESPONSE:", data) // 🔥 DEBUG
+
+            if (!res.ok) {
+                toast({ title: "Error ❌", description: data })
+                return
+            }
+
+            toast({ title: "Success ✅", description: "Employee created & email sent" })
+
+            await fetchEmployees()
+            resetForm()  // ✅ now it will close modal
+
+        } catch (err) {
+            console.error(err)
+            toast({ title: "Error ❌", description: "Something went wrong" })
+        }
+
+        setCreating(false) // ✅ stop loading
     }
-
     async function handleEdit() {
         if (!editId) return
 
@@ -1902,10 +1920,10 @@ export default function EmployeeManagementPage() {
 
                             {/* ACTION BUTTON */}
                             <Button
+                                disabled={creating}
                                 onClick={isEdit ? handleEdit : handleAddEmployee}
-                                className="w-full h-11 rounded-xl text-sm font-medium shadow-lg hover:scale-[1.02] transition-all"
                             >
-                                {isEdit ? "Update Employee ✏️" : "Create Employee 🚀"}
+                                {creating ? "Creating..." : "Create Employee 🚀"}
                             </Button>
 
                         </div>
@@ -1916,3 +1934,4 @@ export default function EmployeeManagementPage() {
         </DashboardShell>
     )
 }
+
