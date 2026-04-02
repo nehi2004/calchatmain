@@ -41,7 +41,7 @@ public class HrController : ControllerBase
         if (existing != null)
             return BadRequest("Email already exists");
 
-        // ✅ FIXED (Department added)
+        // ✅ Create user
         var user = new ApplicationUser
         {
             Id = Guid.NewGuid().ToString(),
@@ -56,6 +56,7 @@ public class HrController : ControllerBase
         if (!createResult.Succeeded)
             return BadRequest(createResult.Errors);
 
+        // ✅ Role assign
         var roleName = "professional";
 
         if (!await _roleManager.RoleExistsAsync(roleName))
@@ -65,7 +66,7 @@ public class HrController : ControllerBase
 
         await _userManager.AddToRoleAsync(user, roleName);
 
-        // TOKEN
+        // ✅ Generate token
         var token = Convert.ToHexString(RandomNumberGenerator.GetBytes(32));
 
         var passwordToken = new PasswordToken
@@ -82,9 +83,8 @@ public class HrController : ControllerBase
         var link = $"https://calchatmain-le3p.vercel.app/set-password?token={token}";
 
         Console.WriteLine("SET PASSWORD LINK: " + link);
-        // ✅ ADD HERE 👇 (BEFORE sending email)
-        Console.WriteLine("📧 Sending email to: " + user.Email);
 
+        // ✅ Email body
         var emailBody = $@"
 <div style='font-family: Arial, sans-serif; max-width: 600px; margin: auto; border: 1px solid #eee; padding: 20px; border-radius: 10px;'>
 
@@ -92,7 +92,7 @@ public class HrController : ControllerBase
 
     <p>Hello <b>{user.Name}</b>,</p>
 
-    <p>You have been invited to join our platform. Please click the button below to set your password and activate your account.</p>
+    <p>You have been invited to join our platform. Please click below to set your password.</p>
 
     <div style='text-align: center; margin: 30px 0;'>
         <a href='{link}' 
@@ -101,46 +101,43 @@ public class HrController : ControllerBase
         </a>
     </div>
 
-    <p>If the button doesn’t work, copy and paste this link:</p>
-    <p style='word-break: break-all;'>{link}</p>
-
-    <hr/>
-
-    <p style='font-size: 12px; color: gray;'>
-        This link will expire in 24 hours.<br/>
-        If you did not request this, please ignore this email.
-    </p>
-
-    <p style='margin-top: 20px;'>— CalChat Team</p>
+    <p>Or copy link:</p>
+    <p>{link}</p>
 
 </div>";
 
-        try
+        // 🔥 IMPORTANT: Background email sending (NO DELAY)
+        _ = Task.Run(async () =>
         {
-            await _emailService.SendEmail(
-                user.Email!,
-                "Activate your CalChat account",
-                emailBody
-            );
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine("❌ EMAIL FAILED:");
-            Console.WriteLine(ex.ToString());
+            try
+            {
+                Console.WriteLine("📧 Sending email to: " + user.Email);
 
-            return StatusCode(500, "Employee created but email failed ❌");
-        }
+                await _emailService.SendEmail(
+                    user.Email!,
+                    "Activate your CalChat account",
+                    emailBody
+                );
 
+                Console.WriteLine("✅ Email sent successfully");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("❌ EMAIL FAILED:");
+                Console.WriteLine(ex.ToString());
+            }
+        });
+
+        // ✅ RETURN IMMEDIATELY (NO WAIT)
         return Ok(new
         {
             user.Id,
             user.Name,
             user.Email,
             user.Department,
-            message = "Employee created"
+            message = "Employee created successfully 🚀"
         });
     }
-
     // ================= GET EMPLOYEES =================
     [Authorize(Roles = "hr")]
     [Authorize(Roles = "hr")]

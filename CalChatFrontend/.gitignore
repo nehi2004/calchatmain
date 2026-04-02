@@ -23,3 +23,4 @@ CalChatBackend/**/*.pdb
 # .NET build folders
 CalChatBackend/**/bin/
 CalChatBackend/**/obj/
+.env
