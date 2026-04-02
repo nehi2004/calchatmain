@@ -320,10 +320,12 @@ builder.Services.AddCors(options =>
     {
         policy.WithOrigins(
             "http://localhost:3000",
-            "https://calchatmain-le3p.vercel.app"
+            "https://calchatmain-le3p.vercel.app",
+            "https://calchatmain-le3p-5lo2wq4ul-nehis-projects-5b192a68.vercel.app"
         )
         .AllowAnyHeader()
-        .AllowAnyMethod();
+        .AllowAnyMethod()
+        .AllowCredentials(); // ✅ IMPORTANT
     });
 });
 
