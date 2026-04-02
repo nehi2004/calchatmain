@@ -522,6 +522,47 @@ public class AccountController : ControllerBase
         });
     }
 
+
+
+    [HttpPost("register")]
+    public async Task<IActionResult> Register([FromBody] RegisterModel model)
+    {
+        Console.WriteLine("API HIT ✅");
+
+        if (!ModelState.IsValid)
+            return BadRequest("Invalid data");
+
+        Console.WriteLine("Model valid");
+
+        var existingUser = await _userManager.FindByEmailAsync(model.Email);
+        Console.WriteLine("Checked existing user");
+
+        if (existingUser != null)
+            return BadRequest("User already exists");
+
+        var user = new ApplicationUser
+        {
+            Name = model.Name,
+            UserName = model.Email,
+            Email = model.Email,
+            IsActive = true
+        };
+
+        Console.WriteLine("Creating user...");
+
+        var result = await _userManager.CreateAsync(user, model.Password);
+
+        Console.WriteLine("User create result");
+
+        if (!result.Succeeded)
+            return BadRequest(result.Errors);
+
+        return Ok("DONE ✅");
+    }
+
+
+
+
     // ================= LOGIN =================
     [HttpPost("login")]
     public async Task<IActionResult> Login([FromBody] LoginModel model)

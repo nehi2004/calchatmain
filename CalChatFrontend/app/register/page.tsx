@@ -595,6 +595,10 @@ export default function RegisterPage() {
 
     const [showPassword, setShowPassword] = useState(false)
     const [showConfirmPassword, setShowConfirmPassword] = useState(false)
+    const [loading, setLoading] = useState(false)
+
+
+
 
 
     async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
@@ -612,6 +616,32 @@ export default function RegisterPage() {
             email,
             password,
             role
+        }
+
+        const controller = new AbortController()
+
+        setTimeout(() => controller.abort(), 15000) // 15 sec
+
+        const response = await fetch("https://calchat-backend.onrender.com/api/account/register", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify(formData),
+            signal: controller.signal
+        })
+
+        setLoading(true)
+
+        try {
+            const response = await api.post("/account/register", formData)
+
+            alert("Registration successful ✅")
+
+        } catch (err) {
+            alert("Error ❌")
+        } finally {
+            setLoading(false)
         }
 
         console.log("Sending data:", formData)
@@ -632,6 +662,8 @@ export default function RegisterPage() {
             }
         }
     }
+
+
 
     return (
         <div className="flex min-h-screen">
@@ -771,6 +803,10 @@ export default function RegisterPage() {
                         {/* SUBMIT */}
                         <Button type="submit" size="lg" className="mt-2 w-full" disabled={!agreed}>
                             Create Account
+                        </Button>
+
+                        <Button disabled={loading}>
+                            {loading ? "Creating..." : "Create Account"}
                         </Button>
 
                     </form>
