@@ -599,7 +599,7 @@ export default function RegisterPage() {
     async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
         e.preventDefault()
 
-        //console.log("API:", process.env.NEXT_PUBLIC_API_URL) // ✅ DEBUG
+       
 
         if (!agreed) return
 
