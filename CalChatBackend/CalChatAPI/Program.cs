@@ -131,7 +131,7 @@
 //    options.AddPolicy("AllowFrontend", policy =>
 //    {
 //        policy
-//            .WithOrigins("http://localhost:3000")
+//            .WithOrigins("https://calchatmain-le3p.vercel.app")
 //            .AllowAnyHeader()
 //            .AllowAnyMethod()
 //            .AllowCredentials();

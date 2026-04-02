@@ -79,7 +79,7 @@ public class HrController : ControllerBase
         _db.PasswordTokens.Add(passwordToken);
         await _db.SaveChangesAsync();
 
-        var link = $"http://localhost:3000/set-password?token={token}";
+        var link = $"https://calchatmain-le3p.vercel.app/set-password?token={token}";
 
         Console.WriteLine("SET PASSWORD LINK: " + link);
         // ✅ ADD HERE 👇 (BEFORE sending email)
@@ -233,7 +233,7 @@ public class HrController : ControllerBase
         _db.PasswordTokens.Add(passwordToken);
         await _db.SaveChangesAsync();
 
-        var link = $"http://localhost:3000/set-password?token={token}";
+        var link = $"https://calchatmain-le3p.vercel.app/set-password?token={token}";
 
         // SAME PROFESSIONAL TEMPLATE
         var emailBody = $@"
