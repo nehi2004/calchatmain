@@ -1918,9 +1918,15 @@ export default function EmployeeManagementPage() {
                                 />
                             </div>
 
-                            {/* ACTION BUTTON */}
-                            <Button disabled={creating}>
-                                {creating ? "Creating..." : "Create Employee 🚀"}
+                            <Button
+                                onClick={isEdit ? handleEdit : handleAddEmployee}
+                                disabled={creating}
+                            >
+                                {creating
+                                    ? "Processing..."
+                                    : isEdit
+                                        ? "Update Employee ✏️"
+                                        : "Create Employee 🚀"}
                             </Button>
 
                         </div>
