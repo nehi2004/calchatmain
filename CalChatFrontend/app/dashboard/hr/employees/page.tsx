@@ -1599,6 +1599,8 @@ export default function EmployeeManagementPage() {
     const [editId, setEditId] = useState<string | null>(null)
     const [loading, setLoading] = useState(false)
     const [creating, setCreating] = useState(false)
+
+    const [isRefreshing, setIsRefreshing] = useState(false) // ✅ background refresh
     // ✅ PAGINATION STATE
     const [currentPage, setCurrentPage] = useState(1)
     const usersPerPage = 6
@@ -1611,9 +1613,6 @@ export default function EmployeeManagementPage() {
         department: "",
     })
 
-    useEffect(() => {
-        fetchEmployees()
-    }, [])
 
     // ✅ RESET PAGE
     useEffect(() => {
@@ -1632,8 +1631,13 @@ export default function EmployeeManagementPage() {
         return () => clearInterval(interval) // cleanup
     }, [])
 
-    async function fetchEmployees() {
-        setLoading(true)
+    async function fetchEmployees(isAuto = false) {
+        if (isAuto) {
+            setIsRefreshing(true) // background refresh
+        } else {
+            setLoading(true) // only first load
+        }
+
         try {
             const token = localStorage.getItem("token")
 
@@ -1645,20 +1649,27 @@ export default function EmployeeManagementPage() {
 
             const data = await res.json()
 
-            setEmployees(
-                data.map((emp: any) => ({
+            setEmployees(prev => {
+                // ✅ prevent unnecessary re-render
+                const newData = data.map((emp: any) => ({
                     id: emp.id,
                     name: emp.name,
                     email: emp.email,
                     department: emp.department || "N/A",
                     status: emp.status
                 }))
-            )
+
+                return JSON.stringify(prev) !== JSON.stringify(newData)
+                    ? newData
+                    : prev
+            })
 
         } catch (err) {
             console.error(err)
         }
+
         setLoading(false)
+        setIsRefreshing(false)
     }
 
     // ================= CRUD SAME =================
@@ -1754,6 +1765,48 @@ export default function EmployeeManagementPage() {
         setNewEmployee({ name: "", email: "", department: "" })
     }
 
+    async function handleResend(id: string) {
+        const confirmResend = confirm("Resend invitation email?");
+        if (!confirmResend) return;
+
+        try {
+            const token = localStorage.getItem("token");
+
+            const res = await fetch(
+                `https://calchatmain-production-75c1.up.railway.app/api/hr/resend-invite/${id}`,
+                {
+                    method: "POST",
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                    },
+                }
+            );
+
+            const data = await res.json();
+
+            if (!res.ok) {
+                toast({
+                    title: "Error ❌",
+                    description: data.message || "Failed to resend",
+                    variant: "destructive",
+                });
+                return;
+            }
+
+            toast({
+                title: "Success ✅",
+                description: "Invitation email resent successfully",
+            });
+
+        } catch (err) {
+            console.error(err);
+            toast({
+                title: "Error ❌",
+                description: "Something went wrong",
+            });
+        }
+    }
+
     // ================= FILTER =================
     const filteredEmployees = employees.filter(emp =>
         emp.name.toLowerCase().includes(search.toLowerCase()) ||
@@ -1789,9 +1842,10 @@ export default function EmployeeManagementPage() {
                 {/* TABLE */}
                 <div className="rounded-xl border bg-card">
 
-                    {loading ? (
+                    {loading && employees.length === 0 ? (
                         <p className="text-center p-6">Loading...</p>
                     ) : (
+                       
                         <table className="w-full">
 
                             <thead className="bg-muted/30">
@@ -1837,7 +1891,11 @@ export default function EmployeeManagementPage() {
                                                     }}>
                                                         <Edit2 className="mr-2 h-4 w-4" /> Edit
                                                     </DropdownMenuItem>
-
+                                                    {emp.status === "Invited" && (
+                                                        <DropdownMenuItem onClick={() => handleResend(emp.id)}>
+                                                            <Mail className="mr-2 h-4 w-4" /> Resend Invite
+                                                        </DropdownMenuItem>
+                                                    )}
                                                     <DropdownMenuItem
                                                         className="text-destructive"
                                                         onClick={() => handleDelete(emp.id)}

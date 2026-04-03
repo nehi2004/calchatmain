@@ -58,5 +58,6 @@ namespace CalChatAPI.Models
         public bool IsActive { get; set; } = true;
         public string? ResetToken { get; set; }
         public DateTime? TokenExpiry { get; set; }
+        public string? CreatedByHrId { get; set; }
     }
 }

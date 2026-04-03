@@ -141,6 +141,7 @@ public class HrController : ControllerBase
         var existing = await _userManager.FindByEmailAsync(model.Email);
         if (existing != null)
             return BadRequest("Email already exists");
+        var hrId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 
         // ✅ Create user
         var user = new ApplicationUser
@@ -150,7 +151,8 @@ public class HrController : ControllerBase
             Email = model.Email,
             Name = model.Name,
             FullName = model.Name,
-            Department = model.Department
+            Department = model.Department,
+            CreatedByHrId = hrId
         };
 
         var createResult = await _userManager.CreateAsync(user);
@@ -185,11 +187,34 @@ public class HrController : ControllerBase
         var link = $"https://calchatmain-le3p.vercel.app/set-password?token={token}";
 
         var emailBody = $@"
-        <h2>Welcome to CalChat 🚀</h2>
-        <p>Hello {user.Name},</p>
-        <p>Click below to set your password:</p>
-        <a href='{link}'>Set Password</a>
-    ";
+<div style='font-family: Arial, sans-serif; max-width: 600px; margin: auto; border: 1px solid #e5e5e5; padding: 20px; border-radius: 10px;'>
+
+    <h2 style='color: #4CAF50; text-align: center;'>Welcome to CalChat 🚀</h2>
+
+    <p style='font-size: 16px;'>Hello <b>{user.Name}</b>,</p>
+
+    <p style='font-size: 15px; color: #555;'>
+        You have been invited to join <b>CalChat</b>. Click the button below to set your password and activate your account.
+    </p>
+
+    <div style='text-align: center; margin: 30px 0;'>
+        <a href='{link}' 
+           style='background-color: #4CAF50; color: white; padding: 12px 20px; text-decoration: none; border-radius: 5px; font-weight: bold; display: inline-block;'>
+           Set Your Password
+        </a>
+    </div>
+
+    <p style='font-size: 14px; color: #777;'>Or copy this link:</p>
+    <p style='word-break: break-all; font-size: 13px; color: #333;'>{link}</p>
+
+    <hr style='margin: 20px 0;' />
+
+    <p style='font-size: 12px; color: #aaa; text-align: center;'>
+        If you did not request this, please ignore this email.
+    </p>
+
+</div>
+";
 
         // ✅ EMAIL SEND (FINAL FIXED VERSION)
         try
@@ -227,7 +252,11 @@ public class HrController : ControllerBase
     [HttpGet("employees")]
     public async Task<IActionResult> GetEmployees()
     {
-        var users = await _userManager.GetUsersInRoleAsync("professional");
+        var hrId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+        var users = await _userManager.Users
+            .Where(u => u.CreatedByHrId == hrId)
+            .ToListAsync();
 
         var result = users.Select(u =>
         {
@@ -318,11 +347,34 @@ public class HrController : ControllerBase
 
         // SAME PROFESSIONAL TEMPLATE
         var emailBody = $@"
-    <h2>Resend Invitation</h2>
-    <p>Hello {user.Name},</p>
-    <p>Click below to set your password:</p>
-    <a href='{link}'>Set Password</a>
-    ";
+<div style='font-family: Arial, sans-serif; max-width: 600px; margin: auto; border: 1px solid #e5e5e5; padding: 20px; border-radius: 10px;'>
+
+    <h2 style='color: #FF9800; text-align: center;'>🔁 Resend Invitation</h2>
+
+    <p style='font-size: 16px;'>Hello <b>{user.Name}</b>,</p>
+
+    <p style='font-size: 15px; color: #555;'>
+        We noticed you haven’t set your password yet. Please click the button below to complete your account setup.
+    </p>
+
+    <div style='text-align: center; margin: 30px 0;'>
+        <a href='{link}' 
+           style='background-color: #FF9800; color: white; padding: 12px 20px; text-decoration: none; border-radius: 5px; font-weight: bold; display: inline-block;'>
+           Set Your Password
+        </a>
+    </div>
+
+    <p style='font-size: 14px; color: #777;'>Or copy this link:</p>
+    <p style='word-break: break-all; font-size: 13px; color: #333;'>{link}</p>
+
+    <hr style='margin: 20px 0;' />
+
+    <p style='font-size: 12px; color: #aaa; text-align: center;'>
+        If you already completed your setup, you can safely ignore this email.
+    </p>
+
+</div>
+";
 
         await _emailService.SendEmail(user.Email!, "Resend Invite", emailBody);
 
