@@ -230,6 +230,7 @@ using CalChatAPI.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
+builder.Configuration.AddEnvironmentVariables(); // ✅ MUST
 //////////////////////////////////////////////////
 // DATABASE
 //////////////////////////////////////////////////

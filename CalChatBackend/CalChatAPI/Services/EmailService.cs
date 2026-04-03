@@ -14,7 +14,15 @@ namespace CalChatAPI.Services
 
         public async Task SendEmail(string to, string subject, string body)
         {
-            var apiKey = _config["SendGrid:ApiKey"];
+            var apiKey = Environment.GetEnvironmentVariable("SendGrid__ApiKey");
+
+            Console.WriteLine("🔥 SENDGRID KEY: " + apiKey);
+
+            if (string.IsNullOrEmpty(apiKey))
+            {
+                throw new Exception("SendGrid API Key missing");
+            }
+           ?? Environment.GetEnvironmentVariable("SendGrid__ApiKey");
 
             if (string.IsNullOrEmpty(apiKey))
                 throw new Exception("SendGrid API Key missing");
