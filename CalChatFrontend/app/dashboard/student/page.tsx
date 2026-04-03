@@ -210,8 +210,8 @@
 //    { label: "Analytics", href: "/dashboard/student/analytics", icon: BarChart3 },
 //]
 
-//const TASK_API = "https://calchat-backend.onrender.com/api/Tasks"
-//const EVENT_API = "https://calchat-backend.onrender.com/api/CalendarEvents"
+//const TASK_API = "https://calchatmain-production-75c1.up.railway.app/api/Tasks"
+//const EVENT_API = "https://calchatmain-production-75c1.up.railway.app/api/CalendarEvents"
 
 ///* ================= UTIL ================= */
 
@@ -584,8 +584,8 @@
 //    { label: "Analytics", href: "/dashboard/student/analytics", icon: BarChart3 },
 //]
 
-//const TASK_API = "https://calchat-backend.onrender.com/api/Tasks"
-//const EVENT_API = "https://calchat-backend.onrender.com/api/CalendarEvents"
+//const TASK_API = "https://calchatmain-production-75c1.up.railway.app/api/Tasks"
+//const EVENT_API = "https://calchatmain-production-75c1.up.railway.app/api/CalendarEvents"
 
 ///* ================= UTIL ================= */
 
@@ -1016,8 +1016,8 @@ const navItems = [
     { label: "Analytics", href: "/dashboard/student/analytics", icon: BarChart3 },
 ]
 
-const TASK_API = "https://calchat-backend.onrender.com/api/Tasks"
-const EVENT_API = "https://calchat-backend.onrender.com/api/CalendarEvents"
+const TASK_API = "https://calchatmain-production-75c1.up.railway.app/api/Tasks"
+const EVENT_API = "https://calchatmain-production-75c1.up.railway.app/api/CalendarEvents"
 
 /* ================= UTIL ================= */
 

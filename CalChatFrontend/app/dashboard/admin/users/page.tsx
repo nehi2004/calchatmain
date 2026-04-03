@@ -181,7 +181,7 @@
 //        try {
 //            const token = localStorage.getItem("token")
 
-//            const res = await fetch("https://calchat-backend.onrender.com/api/users", {
+//            const res = await fetch("https://calchatmain-production-75c1.up.railway.app/api/users", {
 //                headers: {
 //                    Authorization: `Bearer ${token}`
 //                }
@@ -398,7 +398,7 @@
 //        try {
 //            const token = localStorage.getItem("token")
 
-//            const res = await fetch("https://calchat-backend.onrender.com/api/account/users", {
+//            const res = await fetch("https://calchatmain-production-75c1.up.railway.app/api/account/users", {
 //                headers: {
 //                    Authorization: `Bearer ${token}`
 //                }
@@ -639,7 +639,7 @@
 //        try {
 //            const token = localStorage.getItem("token")
 
-//            const res = await fetch("https://calchat-backend.onrender.com/api/account/users", {
+//            const res = await fetch("https://calchatmain-production-75c1.up.railway.app/api/account/users", {
 //                headers: {
 //                    Authorization: `Bearer ${token}`
 //                }
@@ -693,7 +693,7 @@
 
 //        const token = localStorage.getItem("token")
 
-//        await fetch(`https://calchat-backend.onrender.com/api/account/users/${user.id}`, {
+//        await fetch(`https://calchatmain-production-75c1.up.railway.app/api/account/users/${user.id}`, {
 //            method: "PUT",
 //            headers: {
 //                "Content-Type": "application/json",
@@ -713,7 +713,7 @@
 
 //        const token = localStorage.getItem("token")
 
-//        await fetch(`https://calchat-backend.onrender.com/api/account/users/${userId}/deactivate`, {
+//        await fetch(`https://calchatmain-production-75c1.up.railway.app/api/account/users/${userId}/deactivate`, {
 //            method: "PUT",
 //            headers: {
 //                Authorization: `Bearer ${token}`
@@ -729,7 +729,7 @@
 
 //        const token = localStorage.getItem("token")
 
-//        await fetch(`https://calchat-backend.onrender.com/api/account/send-email`, {
+//        await fetch(`https://calchatmain-production-75c1.up.railway.app/api/account/send-email`, {
 //            method: "POST",
 //            headers: {
 //                "Content-Type": "application/json",
@@ -986,7 +986,7 @@
 //        try {
 //            const token = localStorage.getItem("token")
 
-//            const res = await fetch("https://calchat-backend.onrender.com/api/account/users", {
+//            const res = await fetch("https://calchatmain-production-75c1.up.railway.app/api/account/users", {
 //                headers: {
 //                    Authorization: `Bearer ${token}`
 //                }
@@ -1229,7 +1229,7 @@ export default function AdminUsersPage() {
         try {
             const token = localStorage.getItem("token")
 
-            const res = await fetch("https://calchat-backend.onrender.com/api/account/users", {
+            const res = await fetch("https://calchatmain-production-75c1.up.railway.app/api/account/users", {
                 headers: { Authorization: `Bearer ${token}` }
             })
 
@@ -1255,7 +1255,7 @@ export default function AdminUsersPage() {
 
         const token = localStorage.getItem("token")
 
-        await fetch(`https://calchat-backend.onrender.com/api/account/users/${user.id}`, {
+        await fetch(`https://calchatmain-production-75c1.up.railway.app/api/account/users/${user.id}`, {
             method: "PUT",
             headers: {
                 "Content-Type": "application/json",
@@ -1272,7 +1272,7 @@ export default function AdminUsersPage() {
 
         const token = localStorage.getItem("token")
 
-        await fetch(`https://calchat-backend.onrender.com/api/account/users/${userId}/deactivate`, {
+        await fetch(`https://calchatmain-production-75c1.up.railway.app/api/account/users/${userId}/deactivate`, {
             method: "PUT",
             headers: { Authorization: `Bearer ${token}` }
         })
@@ -1286,7 +1286,7 @@ export default function AdminUsersPage() {
 
         const token = localStorage.getItem("token")
 
-        await fetch(`https://calchat-backend.onrender.com/api/account/send-email`, {
+        await fetch(`https://calchatmain-production-75c1.up.railway.app/api/account/send-email`, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",

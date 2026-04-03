@@ -202,7 +202,7 @@
 //    color?: string
 //}
 
-//const API_URL = "https://calchat-backend.onrender.com/api/CalendarEvents"
+//const API_URL = "https://calchatmain-production-75c1.up.railway.app/api/CalendarEvents"
 
 //function getAuthHeaders() {
 //    const token = localStorage.getItem("token")
@@ -591,8 +591,8 @@ interface Task {
 
 /* ================= API ================= */
 
-const EVENTS_API = "https://calchat-backend.onrender.com/api/CalendarEvents"
-const TASKS_API = "https://calchat-backend.onrender.com/api/Tasks"
+const EVENTS_API = "https://calchatmain-production-75c1.up.railway.app/api/CalendarEvents"
+const TASKS_API = "https://calchatmain-production-75c1.up.railway.app/api/Tasks"
 
 function getAuthHeaders() {
     const token = localStorage.getItem("token")

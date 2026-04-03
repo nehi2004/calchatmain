@@ -401,44 +401,44 @@
 
 //        return Ok("User deactivated");
 //    }
-//    [HttpPost("send-email")]
-//    public async Task<IActionResult> SendEmail([FromBody] EmailDto dto)
+//[HttpPost("send-email")]
+//public async Task<IActionResult> SendEmail([FromBody] EmailDto dto)
+//{
+//    try
 //    {
-//        try
+//        var smtpClient = new SmtpClient("smtp.gmail.com")
 //        {
-//            var smtpClient = new SmtpClient("smtp.gmail.com")
-//            {
-//                Port = 587,
-//                Credentials = new NetworkCredential("yourgmail@gmail.com", "your-app-password"),
-//                EnableSsl = true,
-//            };
+//            Port = 587,
+//            Credentials = new NetworkCredential("yourgmail@gmail.com", "your-app-password"),
+//            EnableSsl = true,
+//        };
 
-//            var mailMessage = new MailMessage
-//            {
-//                From = new MailAddress("yourgmail@gmail.com"),
-//                Subject = dto.Subject,
-//                Body = dto.Message,
-//                IsBodyHtml = false,
-//            };
-
-//            mailMessage.To.Add(dto.To);
-
-//            await smtpClient.SendMailAsync(mailMessage);
-
-//            return Ok("Email sent successfully ✅");
-//        }
-//        catch (Exception ex)
+//        var mailMessage = new MailMessage
 //        {
-//            return BadRequest(ex.Message);
-//        }
+//            From = new MailAddress("yourgmail@gmail.com"),
+//            Subject = dto.Subject,
+//            Body = dto.Message,
+//            IsBodyHtml = false,
+//        };
+
+//        mailMessage.To.Add(dto.To);
+
+//        await smtpClient.SendMailAsync(mailMessage);
+
+//        return Ok("Email sent successfully ✅");
 //    }
+//    catch (Exception ex)
+//    {
+//        return BadRequest(ex.Message);
+//    }
+    //    }
 
 
-//}
+    //}
 
 
 
-using Microsoft.AspNetCore.Identity;
+    using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.EntityFrameworkCore;
@@ -737,19 +737,16 @@ public class AccountController : ControllerBase
     {
         try
         {
-            var smtpClient = new SmtpClient(_emailSettings.Host)
+            var smtpClient = new SmtpClient("smtp.gmail.com")
             {
-                Port = _emailSettings.Port,
-                Credentials = new NetworkCredential(
-                    _emailSettings.Email,
-                    _emailSettings.Password
-                ),
+                Port = 587,
+                Credentials = new NetworkCredential("yourgmail@gmail.com", "your-app-password"),
                 EnableSsl = true,
             };
 
             var mailMessage = new MailMessage
             {
-                From = new MailAddress(_emailSettings.Email),
+                From = new MailAddress("yourgmail@gmail.com"),
                 Subject = dto.Subject,
                 Body = dto.Message,
                 IsBodyHtml = false,
@@ -766,7 +763,8 @@ public class AccountController : ControllerBase
             return BadRequest(ex.Message);
         }
     }
-    [HttpPost("forgot-password")]
+
+        [HttpPost("forgot-password")]
     public async Task<IActionResult> ForgotPassword([FromBody] ForgotDto dto)
     {
         var user = await _userManager.FindByEmailAsync(dto.Email);
@@ -838,6 +836,8 @@ public class AccountController : ControllerBase
         // ✅ RETURN RESPONSE (VERY IMPORTANT ❗)
         return Ok("Reset link sent to email");
     }
+
+
     [HttpPost("reset-password")]
     public async Task<IActionResult> ResetPassword([FromBody] ResetDto dto)
     {
