@@ -754,24 +754,7 @@ public class AccountController : ControllerBase
 
         var port = int.Parse(portStr);
 
-        var smtpClient = new SmtpClient(host)
-        {
-            Port = port,
-            Credentials = new NetworkCredential(email, password),
-            EnableSsl = true,
-        };
-
-        var mail = new MailMessage
-        {
-            From = new MailAddress(email),
-            Subject = dto.Subject,
-            Body = dto.Message,
-            IsBodyHtml = true
-        };
-
-        mail.To.Add(dto.To);
-
-        await smtpClient.SendMailAsync(mail);
+    
 
         return Ok(new
         {
