@@ -15,7 +15,7 @@ namespace CalChatAPI.Services
         public async Task SendEmail(string to, string subject, string body)
         {
             // ✅ Direct ENV variable
-            var apiKey = Environment.GetEnvironmentVariable("SendGrid__ApiKey");
+            var apiKey = Environment.GetEnvironmentVariable("SendGrid__ApiKey")?.Trim();
 
             Console.WriteLine("🔥 SENDGRID KEY: " + apiKey);
 
