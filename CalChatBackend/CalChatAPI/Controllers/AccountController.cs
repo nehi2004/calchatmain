@@ -732,39 +732,48 @@ public class AccountController : ControllerBase
     }
 
     // ================= SEND EMAIL =================
+
     [HttpPost("send-email")]
     public async Task<IActionResult> SendEmail([FromBody] EmailDto dto)
     {
-        try
+        var email = _configuration["EmailSettings:Email"];
+        var password = _configuration["EmailSettings:Password"];
+        var host = _configuration["EmailSettings:Host"];
+        var portStr = _configuration["EmailSettings:Port"];
+
+        if (string.IsNullOrEmpty(email) ||
+            string.IsNullOrEmpty(password) ||
+            string.IsNullOrEmpty(host) ||
+            string.IsNullOrEmpty(portStr))
         {
-            var smtpClient = new SmtpClient("smtp.gmail.com")
-            {
-                Port = 587,
-                Credentials = new NetworkCredential("yourgmail@gmail.com", "your-app-password"),
-                EnableSsl = true,
-            };
-
-            var mailMessage = new MailMessage
-            {
-                From = new MailAddress("yourgmail@gmail.com"),
-                Subject = dto.Subject,
-                Body = dto.Message,
-                IsBodyHtml = false,
-            };
-
-            mailMessage.To.Add(dto.To);
-
-            await smtpClient.SendMailAsync(mailMessage);
-
-            return Ok("Email sent successfully ✅");
+            return BadRequest("❌ Email config missing");
         }
-        catch (Exception ex)
+
+        var port = int.Parse(portStr);
+
+        var smtpClient = new SmtpClient(host)
         {
-            return BadRequest(ex.Message);
-        }
+            Port = port,
+            Credentials = new NetworkCredential(email, password),
+            EnableSsl = true,
+        };
+
+        var mail = new MailMessage
+        {
+            From = new MailAddress(email),
+            Subject = dto.Subject,
+            Body = dto.Message,
+            IsBodyHtml = true
+        };
+
+        mail.To.Add(dto.To);
+
+        await smtpClient.SendMailAsync(mail);
+
+        return Ok("✅ Email sent");
     }
 
-        [HttpPost("forgot-password")]
+    [HttpPost("forgot-password")]
     public async Task<IActionResult> ForgotPassword([FromBody] ForgotDto dto)
     {
         var user = await _userManager.FindByEmailAsync(dto.Email);

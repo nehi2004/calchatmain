@@ -109,26 +109,25 @@ public class HrController : ControllerBase
 </div>";
 
         // 🔥 IMPORTANT: Background email sending (NO DELAY)
-        _ = Task.Run(async () =>
+        try
         {
-            try
-            {
-                Console.WriteLine("📧 Sending email to: " + user.Email);
+            Console.WriteLine("📧 Sending email to: " + user.Email);
 
-                await _emailService.SendEmail(
-                    user.Email!,
-                    "Activate your CalChat account",
-                    emailBody
-                );
+            await _emailService.SendEmail(
+                user.Email!,
+                "Activate your CalChat account",
+                emailBody
+            );
 
-                Console.WriteLine("✅ Email sent successfully");
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine("❌ EMAIL FAILED:");
-                Console.WriteLine(ex.ToString());
-            }
-        });
+            Console.WriteLine("✅ Email sent successfully");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine("❌ EMAIL FAILED:");
+            Console.WriteLine(ex.ToString());
+
+            return StatusCode(500, "Email failed: " + ex.Message);
+        }
 
         // ✅ RETURN IMMEDIATELY (NO WAIT)
         return Ok(new
