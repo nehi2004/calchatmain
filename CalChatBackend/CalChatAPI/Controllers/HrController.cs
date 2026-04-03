@@ -137,6 +137,7 @@ public class HrController : ControllerBase
         if (!ModelState.IsValid)
             return BadRequest(ModelState);
 
+        // ✅ Check existing email
         var existing = await _userManager.FindByEmailAsync(model.Email);
         if (existing != null)
             return BadRequest("Email already exists");
@@ -180,32 +181,36 @@ public class HrController : ControllerBase
         _db.PasswordTokens.Add(passwordToken);
         await _db.SaveChangesAsync();
 
+        // ✅ Create password link
         var link = $"https://calchatmain-le3p.vercel.app/set-password?token={token}";
 
         var emailBody = $@"
         <h2>Welcome to CalChat 🚀</h2>
         <p>Hello {user.Name},</p>
+        <p>Click below to set your password:</p>
         <a href='{link}'>Set Password</a>
     ";
 
-        // ✅ CRITICAL FIX (EMAIL FAIL SHOULD NOT BREAK API)
+        // ✅ EMAIL SEND (FINAL FIXED VERSION)
         try
         {
+            Console.WriteLine("📨 Sending email to: " + user.Email);
+
             await _emailService.SendEmail(
                 user.Email!,
                 "Activate your CalChat account",
                 emailBody
             );
 
-            Console.WriteLine("✅ Email sent");
+            Console.WriteLine("✅ Email sent successfully");
         }
         catch (Exception ex)
         {
             Console.WriteLine("❌ Email failed: " + ex.Message);
-            // ❗ DO NOT THROW
+            // ❗ API break nahi hoga
         }
 
-        // ✅ ALWAYS SUCCESS RESPONSE
+        // ✅ RESPONSE
         return Ok(new
         {
             id = user.Id,
@@ -215,7 +220,6 @@ public class HrController : ControllerBase
             message = "Employee created successfully 🚀"
         });
     }
-
 
     // ================= GET EMPLOYEES =================
 
