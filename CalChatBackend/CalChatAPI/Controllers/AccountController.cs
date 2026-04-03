@@ -876,5 +876,14 @@ public class AccountController : ControllerBase
                 message = ex.Message
             });
         }
+
+
+    }
+
+    [HttpGet("check-env")]
+    public IActionResult CheckEnv()
+    {
+        var key = Environment.GetEnvironmentVariable("SendGrid__ApiKey");
+        return Ok(new { key });
     }
 }
