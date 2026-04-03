@@ -321,14 +321,15 @@ builder.Services.AddCors(options =>
     options.AddPolicy("AllowFrontend", policy =>
     {
         policy.WithOrigins(
-     "http://localhost:3000",
-     "https://calchatmain-le3p.vercel.app",
-     "https://calchatmain-le3p-5lo2wq4ul-nehis-projects-5b192a68.vercel.app",
-     "https://calchatmain-le3p-lwfs66uce-nehis-projects-5b192a68.vercel.app" // ✅ ADD THIS
- )
- .AllowAnyHeader()
- .AllowAnyMethod()
- .AllowCredentials();// ✅ allowed ONLY with specific origins
+            "http://localhost:3000",
+            "https://calchatmain-le3p.vercel.app",
+            "https://calchatmain-le3p-j0x9o1pur-nehis-projects-5b192a68.vercel.app", // ✅ IMPORTANT (tera current)
+            "https://calchatmain-le3p-5lo2wq4ul-nehis-projects-5b192a68.vercel.app",
+            "https://calchatmain-le3p-lwfs66uce-nehis-projects-5b192a68.vercel.app"
+        )
+        .AllowAnyHeader()
+        .AllowAnyMethod()
+        .AllowCredentials();
     });
 });
 
