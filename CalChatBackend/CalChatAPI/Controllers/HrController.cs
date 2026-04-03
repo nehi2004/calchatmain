@@ -32,6 +32,104 @@ public class HrController : ControllerBase
     }
 
     // ================= ADD EMPLOYEE =================
+    //    [Authorize(Roles = "hr")]
+    //    [HttpPost("add-employee")]
+    //    public async Task<IActionResult> AddEmployee([FromBody] AddEmployeeDto model)
+    //    {
+    //        if (!ModelState.IsValid)
+    //            return BadRequest(ModelState);
+
+    //        var existing = await _userManager.FindByEmailAsync(model.Email);
+    //        if (existing != null)
+    //            return BadRequest("Email already exists");
+
+    //        // ✅ Create user
+    //        var user = new ApplicationUser
+    //        {
+    //            Id = Guid.NewGuid().ToString(),
+    //            UserName = model.Email,
+    //            Email = model.Email,
+    //            Name = model.Name,
+    //            FullName = model.Name,
+    //            Department = model.Department
+    //        };
+
+    //        var createResult = await _userManager.CreateAsync(user);
+    //        if (!createResult.Succeeded)
+    //            return BadRequest(createResult.Errors);
+
+    //        // ✅ Role assign
+    //        var roleName = "professional";
+
+    //        if (!await _roleManager.RoleExistsAsync(roleName))
+    //        {
+    //            await _roleManager.CreateAsync(new IdentityRole(roleName));
+    //        }
+
+    //        await _userManager.AddToRoleAsync(user, roleName);
+
+    //        // ✅ Generate token
+    //        var token = Convert.ToHexString(RandomNumberGenerator.GetBytes(32));
+
+    //        var passwordToken = new PasswordToken
+    //        {
+    //            UserId = user.Id,
+    //            Token = token,
+    //            ExpiresAt = DateTime.UtcNow.AddHours(24),
+    //            IsUsed = false
+    //        };
+
+    //        _db.PasswordTokens.Add(passwordToken);
+    //        await _db.SaveChangesAsync();
+
+    //        var link = $"https://calchatmain-le3p.vercel.app/set-password?token={token}";
+
+    //        Console.WriteLine("SET PASSWORD LINK: " + link);
+
+    //        // ✅ Email body
+    //var emailBody = $@"
+    //<div style='font-family: Arial, sans-serif; max-width: 600px; margin: auto; border: 1px solid #eee; padding: 20px; border-radius: 10px;'>
+
+    //    <h2 style='color: #4CAF50;'>Welcome to CalChat 🚀</h2>
+
+    //    <p>Hello <b>{user.Name}</b>,</p>
+
+    //    <p>You have been invited to join our platform. Please click below to set your password.</p>
+
+    //    <div style='text-align: center; margin: 30px 0;'>
+    //        <a href='{link}' 
+    //           style='background-color: #4CAF50; color: white; padding: 12px 20px; text-decoration: none; border-radius: 5px; font-weight: bold;'>
+    //           Set Password
+    //        </a>
+    //    </div>
+
+    //    <p>Or copy link:</p>
+    //    <p>{link}</p>
+
+    //</div>";
+    //        var emailSent = true;
+
+    //        try
+    //        {
+    //            await _emailService.SendEmail(user.Email!, "Activate your CalChat account", emailBody);
+    //        }
+    //        catch (Exception ex)
+    //        {
+    //            emailSent = false;
+    //            Console.WriteLine("❌ Email failed: " + ex.Message);
+    //        }
+
+    //        return Ok(new
+    //        {
+    //            id = user.Id,
+    //            name = user.Name,
+    //            email = user.Email,
+    //            department = user.Department,
+    //            emailSent = emailSent,
+    //            message = "Employee created successfully 🚀"
+    //        });
+    //    }
+    // ================= ADD EMPLOYEE =================
     [Authorize(Roles = "hr")]
     [HttpPost("add-employee")]
     public async Task<IActionResult> AddEmployee([FromBody] AddEmployeeDto model)
@@ -84,53 +182,43 @@ public class HrController : ControllerBase
 
         var link = $"https://calchatmain-le3p.vercel.app/set-password?token={token}";
 
-        Console.WriteLine("SET PASSWORD LINK: " + link);
-
-        // ✅ Email body
         var emailBody = $@"
-<div style='font-family: Arial, sans-serif; max-width: 600px; margin: auto; border: 1px solid #eee; padding: 20px; border-radius: 10px;'>
+        <h2>Welcome to CalChat 🚀</h2>
+        <p>Hello {user.Name},</p>
+        <a href='{link}'>Set Password</a>
+    ";
 
-    <h2 style='color: #4CAF50;'>Welcome to CalChat 🚀</h2>
-
-    <p>Hello <b>{user.Name}</b>,</p>
-
-    <p>You have been invited to join our platform. Please click below to set your password.</p>
-
-    <div style='text-align: center; margin: 30px 0;'>
-        <a href='{link}' 
-           style='background-color: #4CAF50; color: white; padding: 12px 20px; text-decoration: none; border-radius: 5px; font-weight: bold;'>
-           Set Password
-        </a>
-    </div>
-
-    <p>Or copy link:</p>
-    <p>{link}</p>
-
-</div>";
-        var emailSent = true;
-
+        // ✅ CRITICAL FIX (EMAIL FAIL SHOULD NOT BREAK API)
         try
         {
-            await _emailService.SendEmail(user.Email!, "Activate your CalChat account", emailBody);
+            await _emailService.SendEmail(
+                user.Email!,
+                "Activate your CalChat account",
+                emailBody
+            );
+
+            Console.WriteLine("✅ Email sent");
         }
         catch (Exception ex)
         {
-            emailSent = false;
             Console.WriteLine("❌ Email failed: " + ex.Message);
+            // ❗ DO NOT THROW
         }
 
+        // ✅ ALWAYS SUCCESS RESPONSE
         return Ok(new
         {
             id = user.Id,
             name = user.Name,
             email = user.Email,
             department = user.Department,
-            emailSent = emailSent,
             message = "Employee created successfully 🚀"
         });
     }
-        // ================= GET EMPLOYEES =================
-        [Authorize(Roles = "hr")]
+
+
+    // ================= GET EMPLOYEES =================
+
     [Authorize(Roles = "hr")]
     [HttpGet("employees")]
     public async Task<IActionResult> GetEmployees()
