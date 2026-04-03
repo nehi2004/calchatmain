@@ -1682,14 +1682,25 @@ export default function EmployeeManagementPage() {
                 body: JSON.stringify(newEmployee),
             })
 
-            const data = await res.json()
+            const text = await res.text()
+
+            let data
+            try {
+                data = JSON.parse(text)
+            } catch {
+                data = { message: text }
+            }
+            if (!res.ok) {
+                toast({ title: "Error ❌", description: data.message || "Failed" })
+                return
+            }
 
             console.log("RESPONSE:", data) // 🔥 DEBUG
 
-            if (!res.ok) {
-                toast({ title: "Error ❌", description: data })
-                return
-            }
+            //if (!res.ok) {
+            //    toast({ title: "Error ❌", description: data })
+            //    return
+            //}
 
             toast({ title: "Success ✅", description: "Employee created & email sent" })
 

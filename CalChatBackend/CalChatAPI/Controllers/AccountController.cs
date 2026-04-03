@@ -746,7 +746,10 @@ public class AccountController : ControllerBase
             string.IsNullOrEmpty(host) ||
             string.IsNullOrEmpty(portStr))
         {
-            return BadRequest("❌ Email config missing");
+            return BadRequest(new
+            {
+                message = "Email config missing"
+            });
         }
 
         var port = int.Parse(portStr);
@@ -770,7 +773,10 @@ public class AccountController : ControllerBase
 
         await smtpClient.SendMailAsync(mail);
 
-        return Ok("✅ Email sent");
+        return Ok(new
+        {
+            message = "Email sent"
+        });
     }
 
     [HttpPost("forgot-password")]
@@ -882,7 +888,10 @@ public class AccountController : ControllerBase
         catch (Exception ex)
         {
             Console.WriteLine("❌ DB ERROR: " + ex.Message);
-            return StatusCode(500, ex.Message);
+            return StatusCode(500, new
+            {
+                message = ex.Message
+            });
         }
     }
 }

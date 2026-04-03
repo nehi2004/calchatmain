@@ -107,40 +107,30 @@ public class HrController : ControllerBase
     <p>{link}</p>
 
 </div>";
+        var emailSent = true;
 
-        // 🔥 IMPORTANT: Background email sending (NO DELAY)
         try
         {
-            Console.WriteLine("📧 Sending email to: " + user.Email);
-
-            await _emailService.SendEmail(
-                user.Email!,
-                "Activate your CalChat account",
-                emailBody
-            );
-
-            Console.WriteLine("✅ Email sent successfully");
+            await _emailService.SendEmail(user.Email!, "Activate your CalChat account", emailBody);
         }
         catch (Exception ex)
         {
-            Console.WriteLine("❌ EMAIL FAILED:");
-            Console.WriteLine(ex.ToString());
-
-            return StatusCode(500, "Email failed: " + ex.Message);
+            emailSent = false;
+            Console.WriteLine("❌ Email failed: " + ex.Message);
         }
 
-        // ✅ RETURN IMMEDIATELY (NO WAIT)
         return Ok(new
         {
-            user.Id,
-            user.Name,
-            user.Email,
-            user.Department,
+            id = user.Id,
+            name = user.Name,
+            email = user.Email,
+            department = user.Department,
+            emailSent = emailSent,
             message = "Employee created successfully 🚀"
         });
     }
-    // ================= GET EMPLOYEES =================
-    [Authorize(Roles = "hr")]
+        // ================= GET EMPLOYEES =================
+        [Authorize(Roles = "hr")]
     [Authorize(Roles = "hr")]
     [HttpGet("employees")]
     public async Task<IActionResult> GetEmployees()
