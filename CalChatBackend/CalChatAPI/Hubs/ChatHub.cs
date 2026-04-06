@@ -184,6 +184,8 @@
 //        }
 //    }
 //}
+
+
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;
 
@@ -248,7 +250,15 @@ namespace CalChatAPI.Hubs
 
             if (string.IsNullOrEmpty(chatId)) return;
 
-            await Clients.Group(chatId).SendAsync("ReceiveMessage", message);
+            await Clients.Group(chatId).SendAsync("ReceiveMessage", new
+            {
+                id = message.GetType().GetProperty("Id")?.GetValue(message),
+                senderId = message.GetType().GetProperty("SenderId")?.GetValue(message),
+                senderName = message.GetType().GetProperty("SenderName")?.GetValue(message),
+                message = message.GetType().GetProperty("Message")?.GetValue(message), // ✅ FIX
+                fileUrl = message.GetType().GetProperty("FileUrl")?.GetValue(message),
+                time = message.GetType().GetProperty("Time")?.GetValue(message)
+            });
         }
 
         // ===============================

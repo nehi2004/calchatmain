@@ -556,11 +556,19 @@ export function GroupStudyView() {
         const savedMessage = await res.json()
 
         // ✅ 1. INSTANT UI UPDATE (sender)
-        setMessages(prev => {
-            const exists = prev.some(m => m.id === savedMessage.id)
-            if (exists) return prev
-            return [...prev, savedMessage]
-        })
+        // ✅ INSTANT UI UPDATE (VERY IMPORTANT)
+        setMessages(prev => [
+            ...prev,
+            {
+                id: savedMessage.id,
+                senderId: savedMessage.senderId,
+                senderName: savedMessage.senderName,
+                message: savedMessage.message || savedMessage.text || savedMessage.Text || "",// make sure correct field
+                fileUrl: savedMessage.fileUrl,
+                time: savedMessage.time,
+                status: "sent"
+            }
+        ])
 
         // ✅ 2. SEND FULL MESSAGE VIA SIGNALR
         connectionRef.current?.invoke(
@@ -724,27 +732,22 @@ export function GroupStudyView() {
             if (!msg) return
 
             setMessages(prev => {
-                const exists = prev.some(m => m.id === msg.id)
-                if (exists) return prev
-
-                return [...prev, {
-                    id: msg.id,
-                    senderId: msg.senderId,
-                    senderName: msg.senderName,
-                    message: msg.message || msg.text || "",   // 🔥 FIX
-                    fileUrl: msg.fileUrl,
-                    time: msg.time,
-                    status: msg.status
-                }]
-            })
-        
-
-            setMessages(prev => {
 
                 const exists = prev.some(m => m.id === msg.id)
                 if (exists) return prev
 
-                return [...prev, msg]   // ✅ FULL MESSAGE COMES HERE
+                return [
+                    ...prev,
+                    {
+                        id: msg.id,
+                        senderId: msg.senderId,
+                        senderName: msg.senderName,
+                        message: msg.message || msg.Text, // 🔥 FIX BOTH CASE
+                        fileUrl: msg.fileUrl,
+                        time: msg.time,
+                        status: msg.status
+                    }
+                ]
             })
         })
 

@@ -1044,11 +1044,13 @@ export function EventsView() {
 
             const reminder = {
                 id: Date.now(),
-                text: `Reminder: ${newEvent.title} is tomorrow`,
+                text: `Reminder: ${newEvent.title}`, // ❌ removed "tomorrow"
+                eventDate: newEvent.date,            // ✅ ADD THIS
                 triggerTime: eventDate.getTime(),
                 isRead: false,
                 triggered: false,
-                userId: localStorage.getItem("userId") // ✅ IMPORTANT
+                userId: localStorage.getItem("userId"),
+                createdAt: new Date().toISOString() // ✅ ADD THIS (sorting ke liye)
             }
 
             const existing = JSON.parse(localStorage.getItem("globalNotifications") || "[]")

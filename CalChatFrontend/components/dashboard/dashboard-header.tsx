@@ -4774,7 +4774,7 @@ export function DashboardHeader({ onMenuClick, title }: DashboardHeaderProps) {
 
                                     {/* 🗓 CALENDAR */}
                                     {/* 🗓 CALENDAR */}
-                                    {[...calendarNotifs]
+                                    {[...calendarNotifs.filter(n => n.triggered)]
                                         .sort((a, b) =>
                                             new Date(b.createdAt || 0).getTime() -
                                             new Date(a.createdAt || 0).getTime()
@@ -4789,7 +4789,9 @@ export function DashboardHeader({ onMenuClick, title }: DashboardHeaderProps) {
                                                     }`}
                                             >
                                                 <p className="text-sm flex items-center gap-2">
-                                                    ⏰ <span>{n.text}</span>
+                                                    ⏰<span>
+                                                        {n.text} - {formatDateOnly(n.eventDate)} • {formatTimeOnly(n.eventDate)}
+                                                    </span>
                                                 </p>
                                             </div>
                                         ))
