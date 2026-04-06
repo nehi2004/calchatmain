@@ -448,9 +448,9 @@ using System.Text;
 using CalChatAPI.Models;
 using CalChatAPI.Data;
 using Microsoft.AspNetCore.Authorization;
-using System.Net;
-using System.Net.Mail;
 using Microsoft.Extensions.Options;
+using SendGrid;
+using SendGrid.Helpers.Mail;
 
 [Route("api/[controller]")]
 [ApiController]
@@ -763,96 +763,165 @@ public class AccountController : ControllerBase
     }
 
 
-    [AllowAnonymous]
-    [HttpPost("forgot-password")]
-    public async Task<IActionResult> ForgotPassword([FromBody] ForgotDto dto)
+    //[AllowAnonymous]
+    //[HttpPost("forgot-password")]
+    //public async Task<IActionResult> ForgotPassword([FromBody] ForgotDto dto)
+    //{
+    //    var user = await _userManager.FindByEmailAsync(dto.Email);
+
+    //    if (user == null)
+    //        return Ok("If email exists, reset link sent");
+
+    //    var token = Guid.NewGuid().ToString();
+
+    //    user.ResetToken = token;
+    //    user.TokenExpiry = DateTime.UtcNow.AddMinutes(15);
+
+    //    await _userManager.UpdateAsync(user);
+
+    //    var resetLink = $"https://calchatmain-le3p.vercel.app/dashboard/reset-password?token={token}";
+
+    //    // ✅ SMTP CONFIG
+    //    var smtpClient = new SmtpClient(_emailSettings.Host)
+    //    {
+    //        Port = _emailSettings.Port,
+    //        Credentials = new NetworkCredential(
+    //            _emailSettings.Email,
+    //            _emailSettings.Password
+    //        ),
+    //        EnableSsl = true,
+    //    };
+
+    //    // ✅ EMAIL DESIGN
+    //    var mail = new MailMessage
+    //    {
+    //        From = new MailAddress(_emailSettings.Email),
+    //        Subject = "Reset Your Password - CalChat+",
+    //        IsBodyHtml = true,
+    //        Body = $@"
+    //    <div style='font-family: Arial, sans-serif; background-color:#f4f6f8; padding:40px;'>
+    //        <div style='max-width:500px; margin:auto; background:white; padding:30px; border-radius:10px; text-align:center;'>
+
+    //            <h2 style='color:#333;'>🔐 Reset Your Password</h2>
+
+    //            <p style='color:#555; font-size:14px;'>
+    //                We received a request to reset your password for your <b>CalChat+</b> account.
+    //            </p>
+
+    //            <a href='{resetLink}' 
+    //               style='display:inline-block; margin-top:20px; padding:12px 20px; background:#6366f1; color:white; text-decoration:none; border-radius:6px; font-weight:bold;'>
+    //                Reset Password
+    //            </a>
+
+    //            <p style='margin-top:20px; font-size:12px; color:#888;'>
+    //                This link will expire in 15 minutes.
+    //            </p>
+
+    //            <hr style='margin:30px 0;' />
+
+    //            <p style='font-size:12px; color:#aaa;'>
+    //                If you did not request this, you can safely ignore this email.
+    //            </p>
+
+    //        </div>
+    //    </div>"
+    //    };
+
+    //    Console.WriteLine("PORT: " + _emailSettings.Port);
+
+    //    // ✅ ADD RECEIVER
+    //    mail.To.Add(dto.Email);
+
+    //    // ✅ SEND EMAIL (MISSING BEFORE ❌)
+    //    try
+    //    {
+    //        Console.WriteLine("PORT: " + _emailSettings.Port);
+
+    //        await smtpClient.SendMailAsync(mail);
+
+    //        Console.WriteLine("✅ EMAIL SENT");
+    //    }
+    //    catch (Exception ex)
+    //    {
+    //        Console.WriteLine("❌ EMAIL ERROR: " + ex.Message);
+    //        return StatusCode(500, ex.Message);
+    //    }
+
+    //    // ✅ RETURN RESPONSE (VERY IMPORTANT ❗)
+    //    return Ok("Reset link sent to email");
+    //}
+
+
+
+
+[AllowAnonymous]
+[HttpPost("forgot-password")]
+public async Task<IActionResult> ForgotPassword([FromBody] ForgotDto dto)
+{
+    var user = await _userManager.FindByEmailAsync(dto.Email);
+
+    if (user == null)
+        return Ok("If email exists, reset link sent");
+
+    var token = Guid.NewGuid().ToString();
+
+    user.ResetToken = token;
+    user.TokenExpiry = DateTime.UtcNow.AddMinutes(15);
+
+    await _userManager.UpdateAsync(user);
+
+    var resetLink = $"https://calchatmain-le3p.vercel.app/dashboard/reset-password?token={token}";
+
+    try
     {
-        var user = await _userManager.FindByEmailAsync(dto.Email);
+        var apiKey = Environment.GetEnvironmentVariable("SendGrid__ApiKey");
 
-        if (user == null)
-            return Ok("If email exists, reset link sent");
+        if (string.IsNullOrEmpty(apiKey))
+            return StatusCode(500, "SendGrid API key missing");
 
-        var token = Guid.NewGuid().ToString();
+        var client = new SendGridClient(apiKey);
 
-        user.ResetToken = token;
-        user.TokenExpiry = DateTime.UtcNow.AddMinutes(15);
+        var from = new EmailAddress("nehipatel2004@gmail.com", "CalChat+");
+        var to = new EmailAddress(dto.Email);
 
-        await _userManager.UpdateAsync(user);
+        var subject = "Reset Your Password - CalChat+";
 
-        var resetLink = $"https://calchatmain-le3p.vercel.app/dashboard/reset-password?token={token}";
-
-        // ✅ SMTP CONFIG
-        var smtpClient = new SmtpClient(_emailSettings.Host)
-        {
-            Port = _emailSettings.Port,
-            Credentials = new NetworkCredential(
-                _emailSettings.Email,
-                _emailSettings.Password
-            ),
-            EnableSsl = true,
-        };
-
-        // ✅ EMAIL DESIGN
-        var mail = new MailMessage
-        {
-            From = new MailAddress(_emailSettings.Email),
-            Subject = "Reset Your Password - CalChat+",
-            IsBodyHtml = true,
-            Body = $@"
-        <div style='font-family: Arial, sans-serif; background-color:#f4f6f8; padding:40px;'>
+        var htmlContent = $@"
+        <div style='font-family: Arial; padding:40px; background:#f4f6f8;'>
             <div style='max-width:500px; margin:auto; background:white; padding:30px; border-radius:10px; text-align:center;'>
 
-                <h2 style='color:#333;'>🔐 Reset Your Password</h2>
+                <h2>🔐 Reset Your Password</h2>
 
-                <p style='color:#555; font-size:14px;'>
-                    We received a request to reset your password for your <b>CalChat+</b> account.
-                </p>
+                <p>Click below to reset your password</p>
 
                 <a href='{resetLink}' 
-                   style='display:inline-block; margin-top:20px; padding:12px 20px; background:#6366f1; color:white; text-decoration:none; border-radius:6px; font-weight:bold;'>
-                    Reset Password
+                   style='display:inline-block; margin-top:20px; padding:12px 20px; background:#6366f1; color:white; text-decoration:none; border-radius:6px;'>
+                   Reset Password
                 </a>
 
                 <p style='margin-top:20px; font-size:12px; color:#888;'>
-                    This link will expire in 15 minutes.
-                </p>
-
-                <hr style='margin:30px 0;' />
-
-                <p style='font-size:12px; color:#aaa;'>
-                    If you did not request this, you can safely ignore this email.
+                    This link expires in 15 minutes.
                 </p>
 
             </div>
-        </div>"
-        };
+        </div>";
 
-        Console.WriteLine("PORT: " + _emailSettings.Port);
+        var msg = MailHelper.CreateSingleEmail(from, to, subject, "", htmlContent);
 
-        // ✅ ADD RECEIVER
-        mail.To.Add(dto.Email);
+        var response = await client.SendEmailAsync(msg);
 
-        // ✅ SEND EMAIL (MISSING BEFORE ❌)
-        try
-        {
-            Console.WriteLine("PORT: " + _emailSettings.Port);
+        Console.WriteLine("SENDGRID STATUS: " + response.StatusCode);
 
-            await smtpClient.SendMailAsync(mail);
-
-            Console.WriteLine("✅ EMAIL SENT");
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine("❌ EMAIL ERROR: " + ex.Message);
-            return StatusCode(500, ex.Message);
-        }
-
-        // ✅ RETURN RESPONSE (VERY IMPORTANT ❗)
         return Ok("Reset link sent to email");
     }
+    catch (Exception ex)
+    {
+        Console.WriteLine("❌ SENDGRID ERROR: " + ex.Message);
+        return StatusCode(500, ex.Message);
+    }
+}
 
-
-    [HttpPost("reset-password")]
+[HttpPost("reset-password")]
     public async Task<IActionResult> ResetPassword([FromBody] ResetDto dto)
     {
         var user = await _userManager.Users
