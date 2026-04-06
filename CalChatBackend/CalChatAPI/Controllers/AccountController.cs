@@ -825,6 +825,8 @@ public class AccountController : ControllerBase
         </div>"
         };
 
+
+
         // ✅ ADD RECEIVER
         mail.To.Add(dto.Email);
 
