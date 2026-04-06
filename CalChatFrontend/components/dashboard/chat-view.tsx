@@ -1336,9 +1336,10 @@ export function ChatView() {
                         content: item.message,
                         timestamp: item.timestamp
                     }))
-
                 if (historyMessages.length > 0) {
-                    setMessages(historyMessages.length ? historyMessages : initialMessages)
+                    setMessages(historyMessages)
+                } else {
+                    setMessages(initialMessages)
                 }
 
             } catch (err) {
@@ -1578,7 +1579,7 @@ You're all set! 🚀`
                                                                     ])
 
                                                                     // 🔥 SAVE (THIS WAS MISSING)
-                                                                    //await saveMessageToDB("assistant", confirmMessage)
+                                                                    await saveMessageToDB("assistant", confirmMessage)
 
                                                                 }}
                                                             >
@@ -1625,7 +1626,7 @@ If you'd like, you can schedule another one anytime. 😊`
                                                                     ])
 
                                                                     // 🔥 SAVE
-                                                                    //await saveMessageToDB("assistant", cancelMessage)
+                                                                    await saveMessageToDB("assistant", cancelMessage)
 
                                                                 }}
                                                             >

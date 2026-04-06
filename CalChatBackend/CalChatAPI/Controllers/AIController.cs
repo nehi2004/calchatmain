@@ -52,6 +52,8 @@ namespace CalChatAPI.Controllers
                 .ToString();
 
             // SAVE AI REPLY
+            // SAVE AI REPLY (WITH DUPLICATE CHECK)
+
             var aiChat = new AIChatHistory
             {
                 UserId = userId,
@@ -59,6 +61,19 @@ namespace CalChatAPI.Controllers
                 Message = replyText,
                 Timestamp = DateTime.UtcNow
             };
+
+            // 🔥 CHECK DUPLICATE
+            bool exists = await _context.AIChatHistories
+                .AnyAsync(x => x.UserId == userId
+                    && x.Message == replyText
+                    && x.Role == "assistant"
+                    && x.Timestamp > DateTime.UtcNow.AddSeconds(-2));
+
+            // ✅ SAVE ONLY IF NOT EXISTS
+            if (!exists)
+            {
+                _context.AIChatHistories.Add(aiChat);
+            }
 
             _context.AIChatHistories.Add(aiChat);
 

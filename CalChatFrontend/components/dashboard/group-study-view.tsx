@@ -1408,26 +1408,476 @@ export function GroupStudyView() {
 
                 {/* PROFILE MODAL */}
 
+                {/*{showProfile && (*/}
+
+                {/*    <div*/}
+                {/*        className="fixed inset-0 bg-black/40 flex items-center justify-center z-50"*/}
+                {/*        onClick={() => setShowProfile(false)}*/}
+                {/*    >*/}
+
+                {/*        <div*/}
+                {/*            className="bg-white rounded-xl w-[360px] max-h-[90vh] overflow-y-auto"*/}
+                {/*            onClick={(e) => e.stopPropagation()}*/}
+                {/*        >*/}
+
+                {/*            */}{/* HEADER */}
+
+                {/*            <div className="flex justify-between items-center border-b p-4">*/}
+
+                {/*                <h2 className="font-semibold text-lg">*/}
+
+                {/*                    {activeTab === "group" ? "Group Profile" : "Profile"}*/}
+
+                {/*                </h2>*/}
+
+                {/*                <button*/}
+                {/*                    onClick={() => setShowProfile(false)}*/}
+                {/*                    className="text-xl"*/}
+                {/*                >*/}
+                {/*                    ✕*/}
+                {/*                </button>*/}
+
+                {/*            </div>*/}
+
+
+                {/*            */}{/* AVATAR */}
+
+                {/*            <div className="text-center p-6">*/}
+
+                {/*                <div className={`w-20 h-20 mx-auto rounded-full flex items-center justify-center text-white text-2xl font-bold ${getAvatarColor(profileName)}`}>*/}
+
+                {/*                    {profileName.charAt(0).toUpperCase()}*/}
+
+                {/*                </div>*/}
+
+                {/*                <h2 className="mt-4 font-semibold text-lg">*/}
+
+                {/*                    {profileName}*/}
+
+                {/*                </h2>*/}
+
+                {/*                {activeTab === "group" && (*/}
+
+                {/*                    <p className="text-sm text-muted-foreground">*/}
+                {/*                        Group • {groupMembers.length} Members*/}
+                {/*                    </p>*/}
+
+                {/*                )}*/}
+
+                {/*            </div>*/}
+
+
+                {/*            */}{/* PERSONAL PROFILE */}
+
+                {/*            {activeTab === "personal" && (*/}
+
+                {/*                <div className="px-6 pb-6 space-y-4">*/}
+
+                {/*                    */}{/* ACTION BUTTONS */}
+
+                {/*                    <div className="flex justify-around text-sm">*/}
+
+                {/*                        <span*/}
+                {/*                            onClick={() => startCall("voice")}*/}
+                {/*                            className="flex items-center gap-1 text-green-500 cursor-pointer"*/}
+                {/*                        >*/}
+                {/*                            <Phone className="h-4 w-4" /> Voice*/}
+                {/*                        </span>*/}
+
+                {/*                        <span*/}
+                {/*                            onClick={() => startCall("video")}*/}
+                {/*                            className="flex items-center gap-1 text-blue-500 cursor-pointer"*/}
+                {/*                        >*/}
+                {/*                            <Video className="h-4 w-4" /> Video*/}
+                {/*                        </span>*/}
+
+                {/*                        <span*/}
+                {/*                            className="flex items-center gap-1 text-purple-500 cursor-pointer"*/}
+                {/*                            onClick={async () => {*/}
+
+                {/*                                if (!activeChat) return*/}
+
+                {/*                                try {*/}
+
+                {/*                                    if (!activeChat) return*/}
+
+                {/*                                    const res = await fetch(*/}
+                {/*                                        `https://calchatmain-production-75c1.up.railway.app/api/messages/export/${activeChat}`,*/}
+                {/*                                        {*/}
+                {/*                                            headers: {*/}
+                {/*                                                Authorization: `Bearer ${localStorage.getItem("token")}`*/}
+                {/*                                            }*/}
+                {/*                                        }*/}
+                {/*                                    )*/}
+
+                {/*                                    if (!res.ok) throw new Error()*/}
+
+                {/*                                    const blob = await res.blob()*/}
+
+                {/*                                    const url = window.URL.createObjectURL(blob)*/}
+
+                {/*                                    const a = document.createElement("a")*/}
+                {/*                                    a.href = url*/}
+                {/*                                    a.download = `chat-${activeChat}.txt`*/}
+                {/*                                    a.click()*/}
+
+                {/*                                    window.URL.revokeObjectURL(url)*/}
+
+                {/*                                } catch {*/}
+                {/*                                    alert("Export failed")*/}
+                {/*                                }*/}
+
+                {/*                            }}*/}
+                {/*                        >*/}
+                {/*                            📤 Export*/}
+                {/*                        </span>*/}
+
+                {/*                        <span*/}
+                {/*                            onClick={() => {*/}
+                {/*                                alert(`User ID: ${profileId}\nName: ${profileName}`)*/}
+                {/*                            }}*/}
+                {/*                            className="flex items-center gap-1 text-gray-500 cursor-pointer"*/}
+                {/*                        >*/}
+                {/*                            <User className="h-4 w-4" /> Info*/}
+                {/*                        </span>*/}
+
+                {/*                    </div>*/}
+
+
+                {/*                    */}{/* STUDENT INFO */}
+
+                {/*                    <div className="bg-gray-100 rounded-lg p-3 text-sm">*/}
+
+                {/*                        <p className="text-gray-500 text-xs">*/}
+                {/*                            Student ID*/}
+                {/*                        </p>*/}
+
+                {/*                        <p className="font-medium break-all">*/}
+                {/*                            {profileId}*/}
+                {/*                        </p>*/}
+
+                {/*                    </div>*/}
+
+
+                {/*                    */}{/* OPTIONS */}
+
+                {/*                    <div className="bg-gray-100 rounded-lg divide-y text-sm">*/}
+
+                {/*                        <button*/}
+                {/*                            className="w-full p-3 text-left"*/}
+                {/*                            onClick={async () => {*/}
+
+                {/*                                if (!activeChat) return*/}
+
+                {/*                                await fetch(`https://calchatmain-production-75c1.up.railway.app/api/messages/clear/${activeChat}`, {*/}
+                {/*                                    method: "DELETE",*/}
+                {/*                                    headers: {*/}
+                {/*                                        Authorization: `Bearer ${localStorage.getItem("token")}`*/}
+                {/*                                    }*/}
+                {/*                                })*/}
+
+                {/*                                setMessages([])*/}
+                {/*                            }}*/}
+
+                {/*                        >*/}
+                {/*                            🧹 Clear Chat*/}
+                {/*                        </button>*/}
+                {/*                        <button*/}
+                {/*                            className="w-full p-3 text-left"*/}
+                {/*                            onClick={async () => {*/}
+
+                {/*                                if (!activeChat) return*/}
+
+                {/*                                try {*/}
+
+                {/*                                    const res = await fetch(*/}
+                {/*                                        `https://calchatmain-production-75c1.up.railway.app/api/chat/mute/${activeChat}`,*/}
+                {/*                                        {*/}
+                {/*                                            method: "POST",*/}
+                {/*                                            headers: {*/}
+                {/*                                                "Content-Type": "application/json",*/}
+                {/*                                                UserId: currentUserId*/}
+                {/*                                            }*/}
+                {/*                                        }*/}
+                {/*                                    )*/}
+
+                {/*                                    const data = await res.json()*/}
+
+                {/*                                    setIsMuted(data.isMuted)*/}
+                {/*                                    window.dispatchEvent(new Event("chat-updated"))  // ✅ ADD THIS*/}
+
+                {/*                                    alert(data.isMuted ? "Chat muted 🔕" : "Chat unmuted 🔔")*/}
+
+                {/*                                } catch {*/}
+                {/*                                    alert("Mute failed")*/}
+                {/*                                }*/}
+
+                {/*                            }}*/}
+                {/*                        >*/}
+                {/*                            {isMuted ? "🔔 Unmute Chat" : "🔕 Mute Chat"}*/}
+                {/*                        </button>*/}
+
+                {/*                        <button*/}
+                {/*                            className={cn(*/}
+                {/*                                "w-full p-3 text-left flex items-center gap-2",*/}
+                {/*                                isBlocked ? "text-green-600" : "text-red-500"*/}
+                {/*                            )}*/}
+                {/*                            onClick={toggleBlockUser}*/}
+                {/*                        >*/}
+
+                {/*                            {blockLoading*/}
+                {/*                                ? "Please wait a moment..."*/}
+                {/*                                : isBlocked*/}
+                {/*                                    ? "🔓 Unblock User"*/}
+                {/*                                    : "🚫 Block User"*/}
+                {/*                            }*/}
+
+                {/*                        </button>*/}
+
+                {/*                    </div>*/}
+
+                {/*                </div>*/}
+
+                {/*            )}*/}
+
+
+                {/*            */}{/* GROUP PROFILE */}
+
+                {/*            {activeTab === "group" && (*/}
+
+                {/*                <div className="px-6 pb-6 space-y-4">*/}
+
+                {/*                    */}{/* ACTION BUTTONS */}
+
+                {/*                    <div className="flex justify-around text-sm">*/}
+
+                {/*                        <span*/}
+                {/*                            onClick={() => startCall("voice")}*/}
+                {/*                            className="flex items-center gap-1 text-green-500 cursor-pointer"*/}
+                {/*                        >*/}
+                {/*                            <Phone className="h-4 w-4" /> Voice*/}
+                {/*                        </span>*/}
+
+                {/*                        <span*/}
+                {/*                            onClick={() => startCall("video")}*/}
+                {/*                            className="flex items-center gap-1 text-blue-500 cursor-pointer"*/}
+                {/*                        >*/}
+                {/*                            <Video className="h-4 w-4" /> Video*/}
+                {/*                        </span>*/}
+                {/*                        <span*/}
+                {/*                            onClick={() => {*/}
+                {/*                                setShowProfile(false)*/}
+                {/*                                setSelectedStudents([])*/}
+                {/*                                setShowCreateGroup(true)*/}
+                {/*                            }}*/}
+                {/*                            className="flex items-center gap-1 text-purple-500 cursor-pointer"*/}
+                {/*                        >*/}
+                {/*                            <Plus className="h-4 w-4" /> Add*/}
+                {/*                        </span>*/}
+
+                {/*                        <span*/}
+                {/*                            onClick={() => {*/}
+                {/*                                alert(`Group: ${profileName}\nMembers: ${groupMembers.length}`)*/}
+                {/*                            }}*/}
+                {/*                            className="flex items-center gap-1 text-gray-500 cursor-pointer"*/}
+                {/*                        >*/}
+                {/*                            <User className="h-4 w-4" /> Info*/}
+                {/*                        </span>*/}
+
+                {/*                    </div>*/}
+
+                {/*                    <Input*/}
+                {/*                        placeholder="Search messages..."*/}
+                {/*                        onChange={(e) => {*/}
+
+                {/*                            const text = e.target.value.toLowerCase()*/}
+
+                {/*                            setMessages(prev =>*/}
+                {/*                                prev.filter(m =>*/}
+                {/*                                    m.message.toLowerCase().includes(text)*/}
+                {/*                                )*/}
+                {/*                            )*/}
+
+                {/*                        }}*/}
+                {/*                    />*/}
+
+
+                {/*                    */}{/* DESCRIPTION */}
+
+                {/*                    <div className="bg-gray-100 rounded-lg p-3 text-sm">*/}
+
+                {/*                        <p className="text-gray-500 text-xs">*/}
+                {/*                            Group Description*/}
+                {/*                        </p>*/}
+
+                {/*                        <p>*/}
+                {/*                            {groupDescription || "Add group description"}*/}
+                {/*                        </p>*/}
+
+                {/*                        <p className="text-xs text-gray-400 mt-1">*/}
+
+                {/*                            Created by {profileId}*/}
+
+                {/*                        </p>*/}
+
+                {/*                    </div>*/}
+
+
+                {/*                    <div className="text-sm cursor-pointer">*/}
+                {/*                        🔔 Mute Notifications*/}
+                {/*                    </div>*/}
+
+
+
+
+                {/*                    */}{/* MEMBERS */}
+
+                {/*                    <div className="bg-gray-100 rounded-lg p-3">*/}
+
+                {/*                        <p className="font-semibold mb-2">*/}
+
+                {/*                            Members ({groupMembers.length})*/}
+
+                {/*                        </p>*/}
+
+                {/*                        {groupMembers.map(member => (*/}
+
+                {/*                            <div*/}
+                {/*                                key={member.id}*/}
+                {/*                                className="flex justify-between text-sm py-1"*/}
+                {/*                            >*/}
+
+                {/*                                <span>{member.name}</span>*/}
+
+                {/*                                {member.id === groupAdminId && (*/}
+
+                {/*                                    <span className="bg-green-500 text-white text-xs px-2 py-0.5 rounded">*/}
+
+                {/*                                        Admin*/}
+
+                {/*                                    </span>*/}
+
+                {/*                                )}*/}
+
+                {/*                            </div>*/}
+
+                {/*                        ))}*/}
+
+                {/*                    </div>*/}
+
+
+                {/*                    <div*/}
+                {/*                        className="text-purple-600 text-sm cursor-pointer"*/}
+                {/*                        onClick={() => setShowCreateGroup(true)}*/}
+                {/*                    >*/}
+                {/*                        + Add Members*/}
+                {/*                    </div>*/}
+
+
+                {/*                    <div className="bg-gray-100 rounded-lg divide-y text-sm">*/}
+
+                {/*                        <button*/}
+                {/*                            className="w-full p-3 text-left"*/}
+                {/*                            onClick={async () => {*/}
+
+                {/*                                if (!activeChat) return*/}
+
+                {/*                                await fetch(`https://calchatmain-production-75c1.up.railway.app/api/messages/clear/${activeChat}`, {*/}
+                {/*                                    method: "DELETE",*/}
+                {/*                                    headers: {*/}
+                {/*                                        UserId: currentUserId*/}
+                {/*                                    }*/}
+                {/*                                })*/}
+
+                {/*                                setMessages([])*/}
+                {/*                            }}*/}
+                {/*                        >*/}
+                {/*                            🧹 Clear Chat*/}
+                {/*                        </button>*/}
+
+                {/*                        <button*/}
+                {/*                            className="w-full p-3 text-left"*/}
+                {/*                            onClick={async () => {*/}
+
+                {/*                                if (!activeChat) return*/}
+
+                {/*                                await fetch(`https://calchatmain-production-75c1.up.railway.app/api/chat/mute/${activeChat}`, {*/}
+                {/*                                    method: "POST",*/}
+                {/*                                    headers: {*/}
+                {/*                                        UserId: currentUserId*/}
+                {/*                                    }*/}
+                {/*                                })*/}
+                {/*                                window.dispatchEvent(new Event("chat-updated"))*/}
+
+                {/*                                alert("Chat muted")*/}
+                {/*                            }}*/}
+                {/*                        >*/}
+                {/*                            🔔 Mute / Unmute*/}
+                {/*                        </button>*/}
+
+                {/*                        <button*/}
+                {/*                            className="w-full p-3 text-left text-red-500"*/}
+                {/*                            onClick={async () => {*/}
+
+                {/*                                if (!activeChat) return*/}
+                {/*                                await fetch(`https://calchatmain-production-75c1.up.railway.app/api/groups/exit/${activeChat}`, {*/}
+                {/*                                    method: "POST",*/}
+                {/*                                    headers: {*/}
+                {/*                                        "Content-Type": "application/json",*/}
+                {/*                                        "UserId": currentUserId, // ✅ IMPORTANT FIX*/}
+                {/*                                        Authorization: `Bearer ${localStorage.getItem("token")}`*/}
+                {/*                                    }*/}
+                {/*                                })*/}
+
+
+                {/*                                alert("Exited group")*/}
+
+                {/*                                setActiveChat(null)*/}
+                {/*                                setMessages([])*/}
+
+                {/*                                // 🔥 ADD THIS*/}
+                {/*                                const updatedChats = await safeFetch<Chat[]>(*/}
+                {/*                                    `https://calchatmain-production-75c1.up.railway.app/api/chat/group/${currentUserId}`*/}
+                {/*                                )*/}
+                {/*                                setChats(updatedChats)*/}
+                {/*                            }}*/}
+                {/*                        >*/}
+                {/*                            🚪 Exit Group*/}
+                {/*                        </button>*/}
+
+
+
+                {/*                    </div>*/}
+
+                {/*                </div>*/}
+
+                {/*            )}*/}
+
+                {/*        </div>*/}
+
+                {/*    </div>*/}
+
+                {/*)}*/}
+                {/* PROFILE MODAL */}
+
                 {showProfile && (
 
                     <div
-                        className="fixed inset-0 bg-black/40 flex items-center justify-center z-50"
+                        className="fixed inset-0 bg-black/70 backdrop-blur-md flex items-center justify-center z-50"
                         onClick={() => setShowProfile(false)}
                     >
 
                         <div
-                            className="bg-white rounded-xl w-[360px] max-h-[90vh] overflow-y-auto"
+                            className="bg-white dark:bg-gray-900 rounded-xl w-[360px] max-h-[90vh] overflow-y-auto text-black dark:text-white shadow-2xl"
                             onClick={(e) => e.stopPropagation()}
                         >
 
                             {/* HEADER */}
 
-                            <div className="flex justify-between items-center border-b p-4">
+                            <div className="flex justify-between items-center border-b border-gray-200 dark:border-gray-700 p-4">
 
                                 <h2 className="font-semibold text-lg">
-
                                     {activeTab === "group" ? "Group Profile" : "Profile"}
-
                                 </h2>
 
                                 <button
@@ -1445,23 +1895,17 @@ export function GroupStudyView() {
                             <div className="text-center p-6">
 
                                 <div className={`w-20 h-20 mx-auto rounded-full flex items-center justify-center text-white text-2xl font-bold ${getAvatarColor(profileName)}`}>
-
                                     {profileName.charAt(0).toUpperCase()}
-
                                 </div>
 
                                 <h2 className="mt-4 font-semibold text-lg">
-
                                     {profileName}
-
                                 </h2>
 
                                 {activeTab === "group" && (
-
-                                    <p className="text-sm text-muted-foreground">
+                                    <p className="text-sm text-gray-500 dark:text-gray-400">
                                         Group • {groupMembers.length} Members
                                     </p>
-
                                 )}
 
                             </div>
@@ -1473,82 +1917,32 @@ export function GroupStudyView() {
 
                                 <div className="px-6 pb-6 space-y-4">
 
-                                    {/* ACTION BUTTONS */}
-
                                     <div className="flex justify-around text-sm">
 
-                                        <span
-                                            onClick={() => startCall("voice")}
-                                            className="flex items-center gap-1 text-green-500 cursor-pointer"
-                                        >
+                                        <span onClick={() => startCall("voice")}
+                                            className="flex items-center gap-1 text-green-500 cursor-pointer">
                                             <Phone className="h-4 w-4" /> Voice
                                         </span>
 
-                                        <span
-                                            onClick={() => startCall("video")}
-                                            className="flex items-center gap-1 text-blue-500 cursor-pointer"
-                                        >
+                                        <span onClick={() => startCall("video")}
+                                            className="flex items-center gap-1 text-blue-500 cursor-pointer">
                                             <Video className="h-4 w-4" /> Video
                                         </span>
 
-                                        <span
-                                            className="flex items-center gap-1 text-purple-500 cursor-pointer"
-                                            onClick={async () => {
-
-                                                if (!activeChat) return
-
-                                                try {
-
-                                                    if (!activeChat) return
-
-                                                    const res = await fetch(
-                                                        `https://calchatmain-production-75c1.up.railway.app/api/messages/export/${activeChat}`,
-                                                        {
-                                                            headers: {
-                                                                Authorization: `Bearer ${localStorage.getItem("token")}`
-                                                            }
-                                                        }
-                                                    )
-
-                                                    if (!res.ok) throw new Error()
-
-                                                    const blob = await res.blob()
-
-                                                    const url = window.URL.createObjectURL(blob)
-
-                                                    const a = document.createElement("a")
-                                                    a.href = url
-                                                    a.download = `chat-${activeChat}.txt`
-                                                    a.click()
-
-                                                    window.URL.revokeObjectURL(url)
-
-                                                } catch {
-                                                    alert("Export failed")
-                                                }
-
-                                            }}
-                                        >
+                                        <span className="flex items-center gap-1 text-purple-500 cursor-pointer">
                                             📤 Export
                                         </span>
 
-                                        <span
-                                            onClick={() => {
-                                                alert(`User ID: ${profileId}\nName: ${profileName}`)
-                                            }}
-                                            className="flex items-center gap-1 text-gray-500 cursor-pointer"
-                                        >
+                                        <span className="flex items-center gap-1 text-gray-500 dark:text-gray-400 cursor-pointer">
                                             <User className="h-4 w-4" /> Info
                                         </span>
 
                                     </div>
 
 
-                                    {/* STUDENT INFO */}
+                                    <div className="bg-gray-100 dark:bg-gray-800 rounded-lg p-3 text-sm">
 
-                                    <div className="bg-gray-100 rounded-lg p-3 text-sm">
-
-                                        <p className="text-gray-500 text-xs">
+                                        <p className="text-gray-500 dark:text-gray-400 text-xs">
                                             Student ID
                                         </p>
 
@@ -1559,79 +1953,25 @@ export function GroupStudyView() {
                                     </div>
 
 
-                                    {/* OPTIONS */}
+                                    <div className="bg-gray-100 dark:bg-gray-800 rounded-lg divide-y divide-gray-200 dark:divide-gray-700 text-sm">
 
-                                    <div className="bg-gray-100 rounded-lg divide-y text-sm">
-
-                                        <button
-                                            className="w-full p-3 text-left"
-                                            onClick={async () => {
-
-                                                if (!activeChat) return
-
-                                                await fetch(`https://calchatmain-production-75c1.up.railway.app/api/messages/clear/${activeChat}`, {
-                                                    method: "DELETE",
-                                                    headers: {
-                                                        Authorization: `Bearer ${localStorage.getItem("token")}`
-                                                    }
-                                                })
-
-                                                setMessages([])
-                                            }}
-
-                                        >
+                                        <button className="w-full p-3 text-left">
                                             🧹 Clear Chat
                                         </button>
-                                        <button
-                                            className="w-full p-3 text-left"
-                                            onClick={async () => {
 
-                                                if (!activeChat) return
-
-                                                try {
-
-                                                    const res = await fetch(
-                                                        `https://calchatmain-production-75c1.up.railway.app/api/chat/mute/${activeChat}`,
-                                                        {
-                                                            method: "POST",
-                                                            headers: {
-                                                                "Content-Type": "application/json",
-                                                                UserId: currentUserId
-                                                            }
-                                                        }
-                                                    )
-
-                                                    const data = await res.json()
-
-                                                    setIsMuted(data.isMuted)
-                                                    window.dispatchEvent(new Event("chat-updated"))  // ✅ ADD THIS
-
-                                                    alert(data.isMuted ? "Chat muted 🔕" : "Chat unmuted 🔔")
-
-                                                } catch {
-                                                    alert("Mute failed")
-                                                }
-
-                                            }}
-                                        >
+                                        <button className="w-full p-3 text-left">
                                             {isMuted ? "🔔 Unmute Chat" : "🔕 Mute Chat"}
                                         </button>
 
                                         <button
                                             className={cn(
                                                 "w-full p-3 text-left flex items-center gap-2",
-                                                isBlocked ? "text-green-600" : "text-red-500"
+                                                isBlocked
+                                                    ? "text-green-600 dark:text-green-400"
+                                                    : "text-red-500 dark:text-red-400"
                                             )}
-                                            onClick={toggleBlockUser}
                                         >
-
-                                            {blockLoading
-                                                ? "Please wait a moment..."
-                                                : isBlocked
-                                                    ? "🔓 Unblock User"
-                                                    : "🚫 Block User"
-                                            }
-
+                                            {isBlocked ? "🔓 Unblock User" : "🚫 Block User"}
                                         </button>
 
                                     </div>
@@ -1647,66 +1987,36 @@ export function GroupStudyView() {
 
                                 <div className="px-6 pb-6 space-y-4">
 
-                                    {/* ACTION BUTTONS */}
-
                                     <div className="flex justify-around text-sm">
 
-                                        <span
-                                            onClick={() => startCall("voice")}
-                                            className="flex items-center gap-1 text-green-500 cursor-pointer"
-                                        >
+                                        <span className="flex items-center gap-1 text-green-500 cursor-pointer">
                                             <Phone className="h-4 w-4" /> Voice
                                         </span>
 
-                                        <span
-                                            onClick={() => startCall("video")}
-                                            className="flex items-center gap-1 text-blue-500 cursor-pointer"
-                                        >
+                                        <span className="flex items-center gap-1 text-blue-500 cursor-pointer">
                                             <Video className="h-4 w-4" /> Video
                                         </span>
-                                        <span
-                                            onClick={() => {
-                                                setShowProfile(false)
-                                                setSelectedStudents([])
-                                                setShowCreateGroup(true)
-                                            }}
-                                            className="flex items-center gap-1 text-purple-500 cursor-pointer"
-                                        >
+
+                                        <span className="flex items-center gap-1 text-purple-500 cursor-pointer">
                                             <Plus className="h-4 w-4" /> Add
                                         </span>
 
-                                        <span
-                                            onClick={() => {
-                                                alert(`Group: ${profileName}\nMembers: ${groupMembers.length}`)
-                                            }}
-                                            className="flex items-center gap-1 text-gray-500 cursor-pointer"
-                                        >
+                                        <span className="flex items-center gap-1 text-gray-500 dark:text-gray-400 cursor-pointer">
                                             <User className="h-4 w-4" /> Info
                                         </span>
 
                                     </div>
 
+
                                     <Input
+                                        className="bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-700 text-black dark:text-white"
                                         placeholder="Search messages..."
-                                        onChange={(e) => {
-
-                                            const text = e.target.value.toLowerCase()
-
-                                            setMessages(prev =>
-                                                prev.filter(m =>
-                                                    m.message.toLowerCase().includes(text)
-                                                )
-                                            )
-
-                                        }}
                                     />
 
 
-                                    {/* DESCRIPTION */}
+                                    <div className="bg-gray-100 dark:bg-gray-800 rounded-lg p-3 text-sm">
 
-                                    <div className="bg-gray-100 rounded-lg p-3 text-sm">
-
-                                        <p className="text-gray-500 text-xs">
+                                        <p className="text-gray-500 dark:text-gray-400 text-xs">
                                             Group Description
                                         </p>
 
@@ -1714,138 +2024,50 @@ export function GroupStudyView() {
                                             {groupDescription || "Add group description"}
                                         </p>
 
-                                        <p className="text-xs text-gray-400 mt-1">
-
+                                        <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
                                             Created by {profileId}
-
                                         </p>
 
                                     </div>
 
 
-                                    <div className="text-sm cursor-pointer">
-                                        🔔 Mute Notifications
-                                    </div>
-
-
-
-
-                                    {/* MEMBERS */}
-
-                                    <div className="bg-gray-100 rounded-lg p-3">
+                                    <div className="bg-gray-100 dark:bg-gray-800 rounded-lg p-3">
 
                                         <p className="font-semibold mb-2">
-
                                             Members ({groupMembers.length})
-
                                         </p>
 
                                         {groupMembers.map(member => (
-
-                                            <div
-                                                key={member.id}
-                                                className="flex justify-between text-sm py-1"
-                                            >
+                                            <div key={member.id}
+                                                className="flex justify-between text-sm py-1">
 
                                                 <span>{member.name}</span>
 
                                                 {member.id === groupAdminId && (
-
                                                     <span className="bg-green-500 text-white text-xs px-2 py-0.5 rounded">
-
                                                         Admin
-
                                                     </span>
-
                                                 )}
 
                                             </div>
-
                                         ))}
 
                                     </div>
 
 
-                                    <div
-                                        className="text-purple-600 text-sm cursor-pointer"
-                                        onClick={() => setShowCreateGroup(true)}
-                                    >
-                                        + Add Members
-                                    </div>
+                                    <div className="bg-gray-100 dark:bg-gray-800 rounded-lg divide-y divide-gray-200 dark:divide-gray-700 text-sm">
 
-
-                                    <div className="bg-gray-100 rounded-lg divide-y text-sm">
-
-                                        <button
-                                            className="w-full p-3 text-left"
-                                            onClick={async () => {
-
-                                                if (!activeChat) return
-
-                                                await fetch(`https://calchatmain-production-75c1.up.railway.app/api/messages/clear/${activeChat}`, {
-                                                    method: "DELETE",
-                                                    headers: {
-                                                        UserId: currentUserId
-                                                    }
-                                                })
-
-                                                setMessages([])
-                                            }}
-                                        >
+                                        <button className="w-full p-3 text-left">
                                             🧹 Clear Chat
                                         </button>
 
-                                        <button
-                                            className="w-full p-3 text-left"
-                                            onClick={async () => {
-
-                                                if (!activeChat) return
-
-                                                await fetch(`https://calchatmain-production-75c1.up.railway.app/api/chat/mute/${activeChat}`, {
-                                                    method: "POST",
-                                                    headers: {
-                                                        UserId: currentUserId
-                                                    }
-                                                })
-                                                window.dispatchEvent(new Event("chat-updated"))
-
-                                                alert("Chat muted")
-                                            }}
-                                        >
+                                        <button className="w-full p-3 text-left">
                                             🔔 Mute / Unmute
                                         </button>
 
-                                        <button
-                                            className="w-full p-3 text-left text-red-500"
-                                            onClick={async () => {
-
-                                                if (!activeChat) return
-                                                await fetch(`https://calchatmain-production-75c1.up.railway.app/api/groups/exit/${activeChat}`, {
-                                                    method: "POST",
-                                                    headers: {
-                                                        "Content-Type": "application/json",
-                                                        "UserId": currentUserId, // ✅ IMPORTANT FIX
-                                                        Authorization: `Bearer ${localStorage.getItem("token")}`
-                                                    }
-                                                })
-
-
-                                                alert("Exited group")
-
-                                                setActiveChat(null)
-                                                setMessages([])
-
-                                                // 🔥 ADD THIS
-                                                const updatedChats = await safeFetch<Chat[]>(
-                                                    `https://calchatmain-production-75c1.up.railway.app/api/chat/group/${currentUserId}`
-                                                )
-                                                setChats(updatedChats)
-                                            }}
-                                        >
+                                        <button className="w-full p-3 text-left text-red-500 dark:text-red-400">
                                             🚪 Exit Group
                                         </button>
-
-
 
                                     </div>
 
@@ -1858,7 +2080,6 @@ export function GroupStudyView() {
                     </div>
 
                 )}
-
                 {/* MESSAGES */}
 
                 <ScrollArea className="flex-1 p-4">
