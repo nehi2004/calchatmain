@@ -184,11 +184,8 @@
 //        }
 //    }
 //}
-
-
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;
-using System.Security.Claims;
 
 namespace CalChatAPI.Hubs
 {
@@ -201,18 +198,12 @@ namespace CalChatAPI.Hubs
 
         public override async Task OnConnectedAsync()
         {
-            var userId = Context.UserIdentifier; // ✅ IMPORTANT
+            var userId = Context.UserIdentifier;
 
             if (!string.IsNullOrEmpty(userId))
             {
-                // ✅ Map user to personal group
                 await Groups.AddToGroupAsync(Context.ConnectionId, userId);
-
                 Console.WriteLine($"✅ User CONNECTED: {userId}");
-            }
-            else
-            {
-                Console.WriteLine("❌ UserIdentifier NULL (JWT issue)");
             }
 
             await base.OnConnectedAsync();
@@ -231,59 +222,46 @@ namespace CalChatAPI.Hubs
         }
 
         // ===============================
-        // PRIVATE CHAT
+        // JOIN CHAT (🔥 IMPORTANT)
         // ===============================
 
-        public async Task JoinConversation(string conversationId)
+        public async Task JoinChat(string chatId)
         {
-            if (string.IsNullOrEmpty(conversationId))
+            if (string.IsNullOrEmpty(chatId))
                 return;
 
-            await Groups.AddToGroupAsync(Context.ConnectionId, conversationId);
-        }
-
-        public async Task SendMessage(string conversationId, string message)
-        {
-            var userId = Context.UserIdentifier;
-            var userName = Context.User?.Identity?.Name ?? "User";
-
-            var msg = new
-            {
-                id = Guid.NewGuid().ToString(),
-                conversationId,
-                senderId = userId,
-                senderName = userName,
-                message,
-                time = DateTime.UtcNow,
-                status = "sent"
-            };
-
-            await Clients.Group(conversationId).SendAsync("ReceiveMessage", msg);
-        }
-
-        public async Task MessageRead(string conversationId)
-        {
-            await Clients.Group(conversationId).SendAsync("MessageRead");
+            await Groups.AddToGroupAsync(Context.ConnectionId, chatId);
         }
 
         // ===============================
-        // MESSAGE REACTIONS
+        // SEND MESSAGE (🔥 FIXED)
         // ===============================
 
-        public async Task SendReaction(string conversationId, string messageId, string emoji)
+        public async Task SendMessage(object message)
         {
-            var userId = Context.UserIdentifier;
+            if (message == null) return;
 
-            await Clients.Group(conversationId).SendAsync("ReceiveReaction", new
-            {
-                messageId,
-                emoji,
-                userId
-            });
+            var chatId = message.GetType()
+                .GetProperty("chatId")?
+                .GetValue(message)?
+                .ToString();
+
+            if (string.IsNullOrEmpty(chatId)) return;
+
+            await Clients.Group(chatId).SendAsync("ReceiveMessage", message);
         }
 
         // ===============================
-        // GROUP CHAT
+        // MESSAGE READ
+        // ===============================
+
+        public async Task MessageRead(string chatId)
+        {
+            await Clients.Group(chatId).SendAsync("MessageRead");
+        }
+
+        // ===============================
+        // GROUP CHAT (OPTIONAL)
         // ===============================
 
         public async Task JoinGroup(string groupId)
@@ -294,27 +272,8 @@ namespace CalChatAPI.Hubs
             await Groups.AddToGroupAsync(Context.ConnectionId, groupId);
         }
 
-        public async Task SendGroupMessage(string groupId, string message)
-        {
-            var userId = Context.UserIdentifier;
-            var userName = Context.User?.Identity?.Name ?? "User";
-
-            var msg = new
-            {
-                id = Guid.NewGuid().ToString(),
-                groupId,
-                senderId = userId,
-                senderName = userName,
-                message,
-                time = DateTime.UtcNow,
-                status = "sent"
-            };
-
-            await Clients.Group(groupId).SendAsync("ReceiveGroupMessage", msg);
-        }
-
         // ===============================
-        // NOTIFICATIONS (🔥 IMPORTANT FOR YOU)
+        // NOTIFICATIONS
         // ===============================
 
         public async Task SendNotificationToUser(string targetUserId, string message)
@@ -337,8 +296,6 @@ namespace CalChatAPI.Hubs
             var fromUserId = Context.UserIdentifier;
             var fromUserName = Context.User?.Identity?.Name ?? "User";
 
-            Console.WriteLine($"📞 Calling {toUserId} from {fromUserName}");
-
             await Clients.User(toUserId).SendAsync("IncomingCall", new
             {
                 fromUserId,
@@ -357,19 +314,12 @@ namespace CalChatAPI.Hubs
             await Clients.User(toUserId).SendAsync("CallRejected");
         }
 
-        public async Task SendIceCandidate(string toUserId, object candidate)
-        {
-            await Clients.User(toUserId).SendAsync("ReceiveIceCandidate", candidate);
-        }
-
         public async Task EndCall(string targetUserId)
         {
             var callerId = Context.UserIdentifier;
 
             if (string.IsNullOrEmpty(callerId))
                 return;
-
-            Console.WriteLine($"📴 Call ended between {callerId} and {targetUserId}");
 
             await Clients.User(targetUserId).SendAsync("CallEnded", callerId);
             await Clients.User(callerId).SendAsync("CallEnded", targetUserId);

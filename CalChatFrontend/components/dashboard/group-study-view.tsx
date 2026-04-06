@@ -524,13 +524,10 @@ export function GroupStudyView() {
     }
 
     /* ---------------- SEND MESSAGE ---------------- */
-
     const sendMessage = async () => {
 
         if (isBlocked) {
-
             alert("You blocked this user")
-
             return
         }
 
@@ -538,33 +535,43 @@ export function GroupStudyView() {
 
         const formData = new FormData()
 
-        formData.append("chatId", Number(activeChat).toString())
+        formData.append("chatId", String(activeChat))
         formData.append("message", message || "")
 
-        if (file)
+        if (file) {
             formData.append("file", file)
+        }
 
-        await fetch("https://calchatmain-production-75c1.up.railway.app/api/messages", {
-            method: "POST",
-            headers: {
-                UserId: currentUserId
-            },
-            body: formData
+        const res = await fetch(
+            "https://calchatmain-production-75c1.up.railway.app/api/messages",
+            {
+                method: "POST",
+                headers: {
+                    UserId: currentUserId
+                },
+                body: formData
+            }
+        )
+
+        const savedMessage = await res.json()
+
+        // ✅ 1. INSTANT UI UPDATE (sender)
+        setMessages(prev => {
+            const exists = prev.some(m => m.id === savedMessage.id)
+            if (exists) return prev
+            return [...prev, savedMessage]
         })
 
-        const userName = localStorage.getItem("name") || "Student"
-
+        // ✅ 2. SEND FULL MESSAGE VIA SIGNALR
         connectionRef.current?.invoke(
             "SendMessage",
-            String(activeChat),
-            String(currentUserId),
-            userName,
-            message
+            savedMessage   // 🔥 SEND FULL OBJECT (IMPORTANT)
         )
 
         setMessage("")
         setFile(null)
     }
+
 
     const addEmoji = (emoji: any) => setMessage(prev => prev + emoji.emoji)
 
@@ -712,37 +719,37 @@ export function GroupStudyView() {
                 console.error("❌ SignalR Connection Error:", err)
             })
             .catch(err => console.log(err))
+        connection.on("ReceiveMessage", (msg: any) => {
 
-        connection.on("ReceiveMessage", async (msg: Message) => {
+            if (!msg) return
 
-            // ✅ MUTE CHECK (correct)
-            if (isMuted && String(msg.senderId) !== String(currentUserId)) {
-                return
-            }
+            setMessages(prev => {
+                const exists = prev.some(m => m.id === msg.id)
+                if (exists) return prev
 
-            // ✅ ADD MESSAGE
-            setMessages(prev => [...prev, msg])
+                return [...prev, {
+                    id: msg.id,
+                    senderId: msg.senderId,
+                    senderName: msg.senderName,
+                    message: msg.message || msg.text || "",   // 🔥 FIX
+                    fileUrl: msg.fileUrl,
+                    time: msg.time,
+                    status: msg.status
+                }]
+            })
+        
 
-            // ✅ FIXED API URL
-            try {
+            setMessages(prev => {
 
-                const url =
-                    activeTab === "personal"
-                        ? `https://calchatmain-production-75c1.up.railway.app/api/chat/personal/${currentUserId}`
-                        : `https://calchatmain-production-75c1.up.railway.app/api/chat/group/${currentUserId}`
+                const exists = prev.some(m => m.id === msg.id)
+                if (exists) return prev
 
-                const updatedChats = await safeFetch<Chat[]>(url)
-
-                setChats(updatedChats)
-
-                // 🔥 IMPORTANT → force UI refresh
-                window.dispatchEvent(new Event("chat-updated"))
-
-            } catch (err) {
-                console.error("Chat refresh error", err)
-            }
-
+                return [...prev, msg]   // ✅ FULL MESSAGE COMES HERE
+            })
         })
+
+            // ✅ NO DUPLICATE + REALTIME UPDATE
+          
 
         connection.on("IncomingCall", (fromUserId, fromUserName, callType) => {
 

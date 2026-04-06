@@ -14,7 +14,7 @@ namespace CalChatAPI.Models
 
         public string SenderName { get; set; } = "";
 
-        public string Text { get; set; } = "";
+        public string Text { get; set; } = "";   // 🔥 CHANGE THIS
 
         public string? FileUrl { get; set; }
 

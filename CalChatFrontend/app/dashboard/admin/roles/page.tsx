@@ -356,66 +356,100 @@ const ALL_FEATURES = [
 
 export default function AdminRolesPage() {
 
-    const [roles, setRoles] = useState<any>({})
+    const [roles, setRoles] = useState<any>({
+        Student: ALL_FEATURES.map(f => ({ name: f, enabled: true })),
+        Personal: ALL_FEATURES.map(f => ({ name: f, enabled: false })),
+        Professional: ALL_FEATURES.map(f => ({ name: f, enabled: true })),
+        Admin: ALL_FEATURES.map(f => ({ name: f, enabled: true })),
+        HR: ALL_FEATURES.map(f => ({ name: f, enabled: false })),
+    })
+
+    //useEffect(() => {
+    //    fetchPermissions()
+    //}, [])
+
 
     useEffect(() => {
-        fetchPermissions()
+        const savedRoles = localStorage.getItem("roles")
+
+        if (savedRoles) {
+            setRoles(JSON.parse(savedRoles))
+        }
     }, [])
+
+    useEffect(() => {
+        localStorage.setItem("roles", JSON.stringify(roles))
+    }, [roles])
 
     /* ================= FETCH ================= */
 
     async function fetchPermissions() {
-        const token = localStorage.getItem("token")
+        try {
+            const token = localStorage.getItem("token")
 
-        const res = await fetch("https://calchatmain-production-75c1.up.railway.app/api/RolePermission", {
-            headers: { Authorization: `Bearer ${token}` }
-        })
+            console.log("TOKEN:", token)
 
-        const data = await res.json()
+            const res = await fetch("https://calchatmain-production-75c1.up.railway.app/api/RolePermission", {
+                headers: { Authorization: `Bearer ${token}` }
+            })
 
-        const grouped: any = {}
+            console.log("STATUS:", res.status)
 
-        // group DB data
-        data.forEach((item: any) => {
-            if (!grouped[item.role]) {
-                grouped[item.role] = {}
+            if (!res.ok) {
+                console.error("API FAILED")
+                return
             }
-            grouped[item.role][item.feature] = item.isEnabled
-        })
 
-        // 🔥 merge with ALL_FEATURES
-        const finalRoles: any = {}
+            const data = await res.json()
 
-        Object.keys(grouped).forEach(role => {
+            console.log("DATA:", data)
 
-            finalRoles[role] = ALL_FEATURES.map(feature => ({
-                name: feature,
-                enabled: grouped[role][feature] ?? false
-            }))
+            if (!data || data.length === 0) {
+                console.warn("No role permissions found")
+            }
 
-        })
+            const grouped: any = {}
 
-        setRoles(finalRoles)
+            data.forEach((item: any) => {
+                if (!grouped[item.role]) {
+                    grouped[item.role] = {}
+                }
+                grouped[item.role][item.feature] = item.isEnabled
+            })
+
+            const finalRoles: any = {}
+
+            Object.keys(grouped).forEach(role => {
+                finalRoles[role] = ALL_FEATURES.map(feature => ({
+                    name: feature,
+                    enabled: grouped[role][feature] ?? false
+                }))
+            })
+
+            setRoles(finalRoles)
+
+        } catch (err) {
+            console.error("FETCH ERROR:", err)
+        }
     }
-
     /* ================= TOGGLE ================= */
 
     async function togglePermission(role: string, feature: string, value: boolean) {
 
         const token = localStorage.getItem("token")
 
-        await fetch("https://calchatmain-production-75c1.up.railway.app/api/RolePermission", {
-            method: "PUT",
-            headers: {
-                "Content-Type": "application/json",
-                Authorization: `Bearer ${token}`
-            },
-            body: JSON.stringify({
-                role,
-                feature,
-                isEnabled: value
-            })
-        })
+        //await fetch("https://calchatmain-production-75c1.up.railway.app/api/RolePermission", {
+        //    method: "PUT",
+        //    headers: {
+        //        "Content-Type": "application/json",
+        //        Authorization: `Bearer ${token}`
+        //    },
+        //    body: JSON.stringify({
+        //        role,
+        //        feature,
+        //        isEnabled: value
+        //    })
+        //})
 
         // UI update
         setRoles((prev: any) => ({
