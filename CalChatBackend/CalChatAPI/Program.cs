@@ -331,6 +331,13 @@ builder.Services.AddCors(options =>
     });
 });
 
+
+builder.Services.AddScoped<IEmailService, EmailService>();
+
+// ✅ ADD THIS BELOW
+builder.Services.Configure<EmailSettings>(
+    builder.Configuration.GetSection("EmailSettings")
+);
 //////////////////////////////////////////////////
 // SWAGGER
 //////////////////////////////////////////////////

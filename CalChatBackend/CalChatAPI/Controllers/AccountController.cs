@@ -825,7 +825,7 @@ public class AccountController : ControllerBase
         </div>"
         };
 
-
+        Console.WriteLine("PORT: " + _emailSettings.Port);
 
         // ✅ ADD RECEIVER
         mail.To.Add(dto.Email);
