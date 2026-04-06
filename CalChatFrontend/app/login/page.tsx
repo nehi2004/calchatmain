@@ -20,7 +20,7 @@
 
 
 //        try {
-//            const response = await fetch("https://calchatmain-production-75c1.up.railway.app/api/account/login", {
+//            const response = await fetch("https://steadfast-warmth-production-31cc.up.railway.app/api/account/login", {
 //                method: "POST",
 //                headers: {
 //                    "Content-Type": "application/json",
@@ -131,7 +131,7 @@ export default function LoginPage() {
         setLoading(true)
 
         try {
-            const response = await fetch("https://calchatmain-production-75c1.up.railway.app/api/account/login", {
+            const response = await fetch("https://steadfast-warmth-production-31cc.up.railway.app/api/account/login", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",

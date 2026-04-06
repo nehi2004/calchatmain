@@ -47,7 +47,7 @@
 //        try {
 //            const token = localStorage.getItem("token")
 
-//            const res = await fetch("https://calchatmain-production-75c1.up.railway.app/api/meeting/my-meetings", {
+//            const res = await fetch("https://steadfast-warmth-production-31cc.up.railway.app/api/meeting/my-meetings", {
 //                headers: { Authorization: `Bearer ${token}` }
 //            })
 
@@ -68,7 +68,7 @@
 //    const fetchUsers = async () => {
 //        const token = localStorage.getItem("token")
 
-//        const res = await fetch("https://calchatmain-production-75c1.up.railway.app/api/meeting/users", {
+//        const res = await fetch("https://steadfast-warmth-production-31cc.up.railway.app/api/meeting/users", {
 //            headers: { Authorization: `Bearer ${token}` }
 //        })
 
@@ -80,7 +80,7 @@
 //    const createMeeting = async () => {
 //        const token = localStorage.getItem("token")
 
-//        const res = await fetch("https://calchatmain-production-75c1.up.railway.app/api/meeting/create", {
+//        const res = await fetch("https://steadfast-warmth-production-31cc.up.railway.app/api/meeting/create", {
 //            method: "POST",
 //            headers: {
 //                "Content-Type": "application/json",
@@ -347,7 +347,7 @@
 //        try {
 //            const token = localStorage.getItem("token")
 
-//            const res = await fetch("https://calchatmain-production-75c1.up.railway.app/api/meeting/my-meetings", {
+//            const res = await fetch("https://steadfast-warmth-production-31cc.up.railway.app/api/meeting/my-meetings", {
 //                headers: { Authorization: `Bearer ${token}` }
 //            })
 
@@ -365,7 +365,7 @@
 //    const fetchUsers = async () => {
 //        const token = localStorage.getItem("token")
 
-//        const res = await fetch("https://calchatmain-production-75c1.up.railway.app/api/meeting/users", {
+//        const res = await fetch("https://steadfast-warmth-production-31cc.up.railway.app/api/meeting/users", {
 //            headers: { Authorization: `Bearer ${token}` }
 //        })
 
@@ -378,7 +378,7 @@
 //    const createMeeting = async () => {
 //        const token = localStorage.getItem("token")
 
-//        const res = await fetch("https://calchatmain-production-75c1.up.railway.app/api/meeting/create", {
+//        const res = await fetch("https://steadfast-warmth-production-31cc.up.railway.app/api/meeting/create", {
 //            method: "POST",
 //            headers: {
 //                "Content-Type": "application/json",
@@ -656,7 +656,7 @@
 //        try {
 //            const token = localStorage.getItem("token")
 
-//            const res = await fetch("https://calchatmain-production-75c1.up.railway.app/api/meeting/my-meetings", {
+//            const res = await fetch("https://steadfast-warmth-production-31cc.up.railway.app/api/meeting/my-meetings", {
 //                headers: { Authorization: `Bearer ${token}` }
 //            })
 
@@ -674,7 +674,7 @@
 //    const fetchUsers = async () => {
 //        const token = localStorage.getItem("token")
 
-//        const res = await fetch("https://calchatmain-production-75c1.up.railway.app/api/meeting/users", {
+//        const res = await fetch("https://steadfast-warmth-production-31cc.up.railway.app/api/meeting/users", {
 //            headers: { Authorization: `Bearer ${token}` }
 //        })
 
@@ -695,7 +695,7 @@
 //    const createMeeting = async () => {
 //        const token = localStorage.getItem("token")
 
-//        const res = await fetch("https://calchatmain-production-75c1.up.railway.app/api/meeting/create", {
+//        const res = await fetch("https://steadfast-warmth-production-31cc.up.railway.app/api/meeting/create", {
 //            method: "POST",
 //            headers: {
 //                "Content-Type": "application/json",
@@ -870,7 +870,7 @@
 //        try {
 //            const token = localStorage.getItem("token")
 
-//            const res = await fetch("https://calchatmain-production-75c1.up.railway.app/api/meeting/my-meetings", {
+//            const res = await fetch("https://steadfast-warmth-production-31cc.up.railway.app/api/meeting/my-meetings", {
 //                headers: { Authorization: `Bearer ${token}` }
 //            })
 
@@ -888,7 +888,7 @@
 //    const fetchUsers = async () => {
 //        const token = localStorage.getItem("token")
 
-//        const res = await fetch("https://calchatmain-production-75c1.up.railway.app/api/meeting/users", {
+//        const res = await fetch("https://steadfast-warmth-production-31cc.up.railway.app/api/meeting/users", {
 //            headers: { Authorization: `Bearer ${token}` }
 //        })
 
@@ -911,7 +911,7 @@
 //    const createMeeting = async () => {
 //        const token = localStorage.getItem("token")
 
-//        const res = await fetch("https://calchatmain-production-75c1.up.railway.app/api/meeting/create", {
+//        const res = await fetch("https://steadfast-warmth-production-31cc.up.railway.app/api/meeting/create", {
 //            method: "POST",
 //            headers: {
 //                "Content-Type": "application/json",
@@ -1253,7 +1253,7 @@ export function MeetingsView() {
     const fetchMeetings = async () => {
         const token = localStorage.getItem("token")
 
-        const res = await fetch("https://calchatmain-production-75c1.up.railway.app/api/meeting/my-meetings", {
+        const res = await fetch("https://steadfast-warmth-production-31cc.up.railway.app/api/meeting/my-meetings", {
             headers: { Authorization: `Bearer ${token}` }
         })
 
@@ -1270,7 +1270,7 @@ export function MeetingsView() {
         try {
             const token = localStorage.getItem("token")
 
-            const res = await fetch("https://calchatmain-production-75c1.up.railway.app/api/meeting/users", {
+            const res = await fetch("https://steadfast-warmth-production-31cc.up.railway.app/api/meeting/users", {
                 headers: { Authorization: `Bearer ${token}` }
             })
 
@@ -1287,7 +1287,7 @@ export function MeetingsView() {
     const createMeeting = async () => {
         const token = localStorage.getItem("token")
 
-        await fetch("https://calchatmain-production-75c1.up.railway.app/api/meeting/create", {
+        await fetch("https://steadfast-warmth-production-31cc.up.railway.app/api/meeting/create", {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",

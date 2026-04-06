@@ -5,7 +5,7 @@
       "commandName": "Project",
       "dotnetRunMessages": true,
       "launchBrowser": false,
-      "applicationUrl": "https://calchatmain-production-75c1.up.railway.app",
+      "applicationUrl": "https://steadfast-warmth-production-31cc.up.railway.app",
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development"
       }
@@ -14,7 +14,7 @@
       "commandName": "Project",
       "dotnetRunMessages": true,
       "launchBrowser": false,
-      "applicationUrl": "https://localhost:7271;https://calchatmain-production-75c1.up.railway.app",
+      "applicationUrl": "https://localhost:7271;https://steadfast-warmth-production-31cc.up.railway.app",
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development"
       }

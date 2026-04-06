@@ -30,7 +30,7 @@ export default function ResetPasswordContent() {
         setLoading(true)
 
         try {
-            const res = await fetch("https://calchatmain-production-75c1.up.railway.app/api/account/reset-password", {
+            const res = await fetch("https://steadfast-warmth-production-31cc.up.railway.app/api/account/reset-password", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json"

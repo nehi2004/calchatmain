@@ -48,7 +48,7 @@
 //        console.log("Sending data:", formData)
 
 //        try {
-//            const response = await fetch("https://calchatmain-production-75c1.up.railway.app/api/account/register", {
+//            const response = await fetch("https://steadfast-warmth-production-31cc.up.railway.app/api/account/register", {
 //                method: "POST",
 //                headers: {
 //                    "Content-Type": "application/json"

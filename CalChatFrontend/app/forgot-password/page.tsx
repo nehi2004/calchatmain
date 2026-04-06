@@ -9,7 +9,7 @@
 //    async function handleSubmit(e: React.FormEvent) {
 //        e.preventDefault()
 
-//        const res = await fetch("https://calchatmain-production-75c1.up.railway.app/api/account/forgot-password", {
+//        const res = await fetch("https://steadfast-warmth-production-31cc.up.railway.app/api/account/forgot-password", {
 //            method: "POST",
 //            headers: {
 //                "Content-Type": "application/json"
@@ -64,7 +64,7 @@ export default function ForgotPasswordPage() {
         setLoading(true)
 
         try {
-            const res = await fetch("https://calchatmain-production-75c1.up.railway.app/api/account/forgot-password", {
+            const res = await fetch("https://steadfast-warmth-production-31cc.up.railway.app/api/account/forgot-password", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json"
