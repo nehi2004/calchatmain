@@ -1400,7 +1400,7 @@ export function ChatView() {
             setMessages(prev => [...prev, aiMessage])
 
             // 🔥 SAVE AI MESSAGE
-            await saveMessageToDB("assistant", aiMessage.content)
+            //await saveMessageToDB("assistant", aiMessage.content)
 
 
         } catch {
@@ -1578,7 +1578,7 @@ You're all set! 🚀`
                                                                     ])
 
                                                                     // 🔥 SAVE (THIS WAS MISSING)
-                                                                    await saveMessageToDB("assistant", confirmMessage)
+                                                                    //await saveMessageToDB("assistant", confirmMessage)
 
                                                                 }}
                                                             >
@@ -1625,7 +1625,7 @@ If you'd like, you can schedule another one anytime. 😊`
                                                                     ])
 
                                                                     // 🔥 SAVE
-                                                                    await saveMessageToDB("assistant", cancelMessage)
+                                                                    //await saveMessageToDB("assistant", cancelMessage)
 
                                                                 }}
                                                             >
