@@ -762,6 +762,8 @@ public class AccountController : ControllerBase
         });
     }
 
+
+    [AllowAnonymous]
     [HttpPost("forgot-password")]
     public async Task<IActionResult> ForgotPassword([FromBody] ForgotDto dto)
     {
@@ -831,7 +833,19 @@ public class AccountController : ControllerBase
         mail.To.Add(dto.Email);
 
         // ✅ SEND EMAIL (MISSING BEFORE ❌)
-        await smtpClient.SendMailAsync(mail);
+        try
+        {
+            Console.WriteLine("PORT: " + _emailSettings.Port);
+
+            await smtpClient.SendMailAsync(mail);
+
+            Console.WriteLine("✅ EMAIL SENT");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine("❌ EMAIL ERROR: " + ex.Message);
+            return StatusCode(500, ex.Message);
+        }
 
         // ✅ RETURN RESPONSE (VERY IMPORTANT ❗)
         return Ok("Reset link sent to email");
