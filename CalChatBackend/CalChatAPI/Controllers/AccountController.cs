@@ -870,9 +870,9 @@ public async Task<IActionResult> ForgotPassword([FromBody] ForgotDto dto)
 
     await _userManager.UpdateAsync(user);
 
-    var resetLink = $"https://calchatmain-le3p.vercel.app/dashboard/reset-password?token={token}";
+        var resetLink = $"https://calchatmain-le3p.vercel.app/reset-password?token={token}";
 
-    try
+        try
     {
         var apiKey = Environment.GetEnvironmentVariable("SendGrid__ApiKey");
 
