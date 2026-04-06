@@ -1,0 +1,9 @@
+{
+  "$schema": "https://railway.app/railway.schema.json",
+  "build": {
+    "buildCommand": "dotnet publish CalChatBackend/CalChatAPI/CalChatAPI.csproj -c Release -o out"
+  },
+  "deploy": {
+    "startCommand": "dotnet out/CalChatAPI.dll"
+  }
+}
