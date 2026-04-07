@@ -9,7 +9,7 @@ export default function ResetSuccessPage() {
     useEffect(() => {
         const timer = setTimeout(() => {
             router.push("/login")
-        }, 3000)
+        }, 5000)
 
         return () => clearTimeout(timer)
     }, [])

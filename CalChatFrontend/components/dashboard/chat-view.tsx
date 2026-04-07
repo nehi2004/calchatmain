@@ -1233,14 +1233,14 @@ const suggestedActions: SuggestedAction[] = [
     { label: "Schedule a meeting", prompt: "Schedule a meeting tomorrow 2pm", icon: Calendar },
     { label: "Find free time", prompt: "When am I free this week?", icon: Clock },
     { label: "Show my Schedule", prompt: "Show my schedule", icon: Clock },
-    { label: "Create reminder", prompt: "Remind me about my task tomorrow", icon: Sparkles }
+    { label: "Normal Chat", prompt: "How are you?", icon: Sparkles }
 ]
 
 const initialMessages: Message[] = [
     {
         id: uuidv4(),
         role: "assistant",
-        content: "Hello! I'm your CalChat AI assistant.",
+        content: "Hello! I'm your CalChat AI assistant🤖🤖.",
         timestamp: new Date().toISOString()
     }
 ]
