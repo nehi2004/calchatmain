@@ -42,11 +42,15 @@ export default function ResetPasswordContent() {
             })
 
             const msg = await res.text()
-            alert(msg)
 
-            if (res.ok) {
-                router.push("/login")
+            if (!res.ok) {
+                alert(msg || "Error occurred")
+                return
             }
+
+            // ✅ redirect
+            router.push("/reset-password/success")
+
         } catch (err) {
             alert("Something went wrong")
         }
