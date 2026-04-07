@@ -37,26 +37,44 @@ namespace CalChatAPI.Controllers
 			return Ok(notifications);
 		}
 
-		// =========================
-		// GET USER NOTIFICATIONS BY ID
-		// =========================
+        // =========================
+        // GET USER NOTIFICATIONS BY ID
+        // =========================
+        [HttpGet("{userId}")]
+        public async Task<IActionResult> GetNotifications(string userId)
+        {
+            // 🔥 GET CURRENT USER ROLES
+            var roles = await _context.UserRoles
+                .Where(ur => ur.UserId == userId)
+                .Join(_context.Roles,
+                    ur => ur.RoleId,
+                    r => r.Id,
+                    (ur, r) => r.Name)
+                .ToListAsync();
 
-		[HttpGet("{userId}")]
-		public async Task<IActionResult> GetNotifications(string userId)
-		{
-			var notifications = await _context.Notifications
-				.Where(n => n.ToUserId == userId)
-				.OrderByDescending(n => n.CreatedAt)
-				.ToListAsync();
+            var isEmployee = roles.Contains("employee");
 
-			return Ok(notifications);
-		}
+            var notifications = await _context.Notifications
+                .Where(n => n.ToUserId == userId)
+                .OrderByDescending(n => n.CreatedAt)
+                .ToListAsync();
 
-		// =========================
-		// SEND CHAT REQUEST
-		// =========================
+            // 🚫 REMOVE ANNOUNCEMENT FOR NON-EMPLOYEE
+            if (!isEmployee)
+            {
+                notifications = notifications
+                    .Where(n => n.Type != "announcement")
+                    .ToList();
+            }
 
-		[HttpPost("request")]
+            return Ok(notifications);
+        }
+
+        // =========================
+        // SEND CHAT REQUEST
+        // =========================
+
+        [HttpPost("request")]
 		public async Task<IActionResult> SendRequest(NotificationRequest request)
 		{
 			var already = await _context.Notifications

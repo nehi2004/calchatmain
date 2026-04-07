@@ -188,6 +188,7 @@
 
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;
+using System.Security.Claims;
 
 namespace CalChatAPI.Hubs
 {
@@ -200,12 +201,21 @@ namespace CalChatAPI.Hubs
 
         public override async Task OnConnectedAsync()
         {
-            var userId = Context.UserIdentifier;
+            var userId = Context.UserIdentifier; // ✅ FIX
+            var role = Context.User?.FindFirst(ClaimTypes.Role)?.Value;
 
             if (!string.IsNullOrEmpty(userId))
             {
+                // ✅ user specific group
                 await Groups.AddToGroupAsync(Context.ConnectionId, userId);
-                Console.WriteLine($"✅ User CONNECTED: {userId}");
+
+                // ✅ ONLY EMPLOYEES GROUP
+                if (role == "employee")
+                {
+                    await Groups.AddToGroupAsync(Context.ConnectionId, "Employees");
+                }
+
+                Console.WriteLine($"✅ User CONNECTED: {userId} | Role: {role}");
             }
 
             await base.OnConnectedAsync();
@@ -294,6 +304,21 @@ namespace CalChatAPI.Hubs
             await Clients.User(targetUserId).SendAsync("ReceiveNotification", new
             {
                 message
+            });
+        }
+
+        public async Task SendAnnouncementToEmployees(string title, string content)
+        {
+            var role = Context.User?.FindFirst(ClaimTypes.Role)?.Value;
+
+            // 🚫 BLOCK NON-EMPLOYEE CALL
+            if (role != "employee")
+                return;
+
+            await Clients.Group("Employees").SendAsync("ReceiveNotification", new
+            {
+                title,
+                content
             });
         }
 

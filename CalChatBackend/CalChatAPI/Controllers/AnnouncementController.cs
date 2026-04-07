@@ -170,12 +170,23 @@ namespace CalChatAPI.Controllers
                 await _context.SaveChangesAsync();
 
                 // ✅ GET ALL EMPLOYEES (EXCEPT CREATOR)
-                var employees = await _context.Users
-                    .Where(u => u.Id != userId)
+                var employeeUsers = await _context.UserRoles
+    .Join(_context.Roles,
+        ur => ur.RoleId,
+        r => r.Id,
+        (ur, r) => new { ur.UserId, r.Name })
+    .Where(x => x.Name == "employee")
+    .Select(x => x.UserId)
+    .ToListAsync();
+
+                var users = await _context.Users
+                    .Where(u => employeeUsers.Contains(u.Id) && u.Id != userId)
                     .ToListAsync();
 
+              
+
                 // ✅ CREATE NOTIFICATIONS
-                var notifications = employees.Select(user => new Notification
+                var notifications = users.Select(user => new Notification
                 {
                     FromUserId = userId,
                     ToUserId = user.Id,
@@ -191,7 +202,7 @@ namespace CalChatAPI.Controllers
                 await _context.SaveChangesAsync();
 
                 // ✅ 🚀 REAL-TIME SIGNALR
-                foreach (var user in employees)
+                foreach (var user in users)
                 {
                     await _hub.Clients.User(user.Id).SendAsync("ReceiveNotification", new
                     {
@@ -218,18 +229,28 @@ namespace CalChatAPI.Controllers
         [HttpGet]
         public async Task<IActionResult> GetAnnouncements()
         {
-            try
-            {
-                var data = await _context.Announcements
-                    .OrderByDescending(a => a.CreatedAt)
-                    .ToListAsync();
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 
-                return Ok(data);
-            }
-            catch (Exception ex)
+            // 🔥 GET USER ROLES
+            var roles = await _context.UserRoles
+                .Where(ur => ur.UserId == userId)
+                .Join(_context.Roles,
+                    ur => ur.RoleId,
+                    r => r.Id,
+                    (ur, r) => r.Name)
+                .ToListAsync();
+
+            // 🚫 BLOCK NON-EMPLOYEES
+            if (!roles.Contains("employee"))
             {
-                return StatusCode(500, $"Error fetching data: {ex.Message}");
+                return Forbid(); // 🔥 VERY IMPORTANT
             }
+
+            var data = await _context.Announcements
+                .OrderByDescending(a => a.CreatedAt)
+                .ToListAsync();
+
+            return Ok(data);
         }
 
         // ✅ DELETE

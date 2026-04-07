@@ -4223,6 +4223,7 @@ interface Notification {
     status: string
     isRead: boolean
     createdAt?: string   // ✅ ADD THIS
+    type: string 
 }
 
 interface Meeting {
@@ -4265,6 +4266,7 @@ export function DashboardHeader({ onMenuClick, title }: DashboardHeaderProps) {
     const [currentUserId, setCurrentUserId] = useState("")
 
     const [userRole, setUserRole] = useState("")
+    const role = typeof window !== "undefined" ? localStorage.getItem("role") : null
 
 
     const getMeetingReadIds = () => {
@@ -4326,6 +4328,12 @@ export function DashboardHeader({ onMenuClick, title }: DashboardHeaderProps) {
 
 
     useEffect(() => {
+
+        const role = localStorage.getItem("role")
+
+        // 🚫 STOP CONNECTION FOR NON-EMPLOYEE
+        if (role !== "employee") return
+
         const connection = new signalR.HubConnectionBuilder()
             .withUrl("https://steadfast-warmth-production-31cc.up.railway.app/chatHub", {
                 accessTokenFactory: () => localStorage.getItem("token") || ""
@@ -4333,12 +4341,10 @@ export function DashboardHeader({ onMenuClick, title }: DashboardHeaderProps) {
             .withAutomaticReconnect()
             .build()
 
-        connection.start()
-            .then(() => console.log("SignalR Connected ✅"))
-            .catch(err => console.error("SignalR Error ❌", err))
+        connection.start().catch(err => console.error("SignalR Error:", err))
 
-        // 🔔 LISTEN EVENT
         connection.on("ReceiveNotification", (data) => {
+
             setChatNotifs(prev => [
                 {
                     id: Date.now(),
@@ -4347,54 +4353,19 @@ export function DashboardHeader({ onMenuClick, title }: DashboardHeaderProps) {
                     toUserId: currentUserId,
                     content: `${data.title} - ${data.content}`,
                     status: "info",
+                    type: "announcement",
                     isRead: false,
-                    createdAt: new Date().toISOString() // ✅ FIX
+                    createdAt: new Date().toISOString()
                 },
                 ...prev
             ])
         })
 
-
+        // ✅ CLEANUP (VERY IMPORTANT)
         return () => {
             connection.stop()
         }
-    }, [])
 
-    useEffect(() => {
-        const token = localStorage.getItem("token")
-
-        const connection = new signalR.HubConnectionBuilder()
-            .withUrl("https://steadfast-warmth-production-31cc.up.railway.app/chatHub", {
-                accessTokenFactory: () => token || ""
-            })
-            .withAutomaticReconnect()
-            .build()
-
-        connection.start()
-            .then(() => console.log("SignalR Connected ✅"))
-            .catch(err => console.error("SignalR Error ❌", err))
-
-        connection.on("ReceiveNotification", (data) => {
-
-            console.log("NEW ANNOUNCEMENT 🔥", data)
-
-            setChatNotifs(prev => [
-                {
-                    id: Date.now(),
-                    fromUserId: "system",
-                    fromUserName: "HR",
-                    toUserId: currentUserId,
-                    content: `${data.title} - ${data.content}`,
-                    status: "info",
-                    isRead: false
-                },
-                ...prev
-            ])
-        })
-
-        return () => {
-            connection.stop()
-        }
     }, [currentUserId])
     /* ================= LOAD PROFILE ================= */
 
@@ -4450,21 +4421,23 @@ export function DashboardHeader({ onMenuClick, title }: DashboardHeaderProps) {
             const res = await fetch(
                 `https://steadfast-warmth-production-31cc.up.railway.app/api/notifications/${currentUserId}`
             )
+
             const data = await res.json()
+
+            const role = localStorage.getItem("role")
+
+            // 🚫 FINAL UI FILTER (EXTRA SAFETY)
+            const filtered =
+                role === "employee"
+                    ? data
+                    : data.filter((n: Notification) => n.type !== "announcement")
 
             const readIds = getReadIds()
 
-            //setChatNotifs(
-            //    data.map((n: Notification) => ({
-            //        ...n,
-            //        isRead: readIds.includes(n.id) || n.isRead
-            //    }))
-            //)
-
             setChatNotifs(
-                data.map((n: Notification) => ({
+                filtered.map((n: Notification) => ({
                     ...n,
-                    createdAt: n.createdAt || new Date().toISOString(), // ✅ IMPORTANT
+                    createdAt: n.createdAt || new Date().toISOString(),
                     isRead: readIds.includes(n.id) ? true : n.isRead
                 }))
             )
@@ -4473,7 +4446,6 @@ export function DashboardHeader({ onMenuClick, title }: DashboardHeaderProps) {
             setChatNotifs([])
         }
     }
-
     /* ================= MEETING NOTIFICATIONS ================= */
 
     const fetchMeetings = async () => {
