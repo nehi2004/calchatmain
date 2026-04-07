@@ -1018,6 +1018,7 @@ const navItems = [
 
 const TASK_API = "https://steadfast-warmth-production-31cc.up.railway.app/api/Tasks"
 const EVENT_API = "https://steadfast-warmth-production-31cc.up.railway.app/api/CalendarEvents"
+const CUSTOM_EVENT_API = "https://steadfast-warmth-production-31cc.up.railway.app/api/Events"
 
 /* ================= UTIL ================= */
 
@@ -1031,12 +1032,29 @@ export default function StudentDashboard() {
 
     const [tasks, setTasks] = useState<Task[]>([])
     const [events, setEvents] = useState<EventType[]>([])
+    const [customEvents, setCustomEvents] = useState<any[]>([])
 
     const today = formatDate(new Date())
 
     useEffect(() => {
         fetchTasks()
         fetchEvents()
+        fetchCustomEvents()
+    }, [])
+
+
+    useEffect(() => {
+
+        const handleEventUpdate = () => {
+            fetchCustomEvents()
+        }
+
+        window.addEventListener("event-added", handleEventUpdate)
+
+        return () => {
+            window.removeEventListener("event-added", handleEventUpdate)
+        }
+
     }, [])
 
     async function fetchTasks() {
@@ -1069,6 +1087,28 @@ export default function StudentDashboard() {
         })))
     }
 
+    async function fetchCustomEvents() {
+        const token = localStorage.getItem("token")
+
+        const res = await fetch(CUSTOM_EVENT_API, {
+            headers: { Authorization: `Bearer ${token}` }
+        })
+
+        const data = await res.json()
+
+        setCustomEvents(
+            data.map((e: any) => ({
+                id: e.id,
+                title: e.title,
+                date: e.date?.split("T")[0],
+                time: e.time || "",
+                priority: "Medium",
+            }))
+        )
+    }
+    const allEvents = useMemo(() => {
+        return [...events, ...customEvents]
+    }, [events, customEvents])
     /* ================= STATS ================= */
 
     const completed = tasks.filter(t => t.status === "Completed").length
@@ -1081,16 +1121,19 @@ export default function StudentDashboard() {
     /* ================= FILTERS ================= */
 
     const todayEvents = useMemo(() =>
-        events.filter(e => e.date === today)
-        , [events, today])
+        allEvents.filter(e => e.date === today)
+        , [allEvents, today])
 
     const todayTasks = useMemo(() =>
         tasks.filter(t => t.deadline === today)
         , [tasks, today])
 
     const upcomingEvents = useMemo(() =>
-        events.filter(e => e.date > today).slice(0, 5)
-        , [events, today])
+        allEvents
+            .filter(e => e.date > today)
+            .sort((a, b) => a.date.localeCompare(b.date))
+            .slice(0, 5)
+        , [allEvents, today])
 
     /* ================= ANALYTICS ================= */
 
