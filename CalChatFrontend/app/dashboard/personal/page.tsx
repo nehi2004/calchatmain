@@ -1253,6 +1253,8 @@ export default function PersonalDashboard() {
 
     const today = formatDate(new Date())
 
+    const todayTasks = tasks.filter(t => t.deadline === today)
+
     useEffect(() => {
         fetchTasks()
         fetchCalendarEvents()
@@ -1387,8 +1389,46 @@ export default function PersonalDashboard() {
                             <span>Progress: {progress}</span>
                             <span>Done: {completed}</span>
                         </div>
+
+
+                        {/* 🔥 TODAY TASKS LIST */}
+                        <div className="mt-5 flex flex-col gap-3 max-h-[200px] overflow-y-auto pr-2">
+
+                            {todayTasks.length === 0 && (
+                                <p className="text-sm text-muted-foreground text-center">
+                                    No tasks for today
+                                </p>
+                            )}
+
+                            {todayTasks.map(task => (
+                                <div
+                                    key={task.id}
+                                    className="flex items-center gap-3 p-3 rounded-lg bg-muted/50 hover:shadow-md transition"
+                                >
+
+                                    {/* STATUS DOT */}
+                                    <div className={`h-2 w-2 rounded-full ${task.status === "Completed"
+                                        ? "bg-green-500"
+                                        : task.status === "In Progress"
+                                            ? "bg-blue-500"
+                                            : "bg-gray-400"
+                                        }`} />
+
+                                    {/* TITLE */}
+                                    <p className="flex-1 text-sm font-medium">
+                                        {task.title}
+                                    </p>
+
+                                    {/* PRIORITY */}
+                                    <PriorityBadge priority={task.priority} />
+
+                                </div>
+                            ))}
+
+                        </div>
                     </div>
                 </div>
+
 
                 {/* PRODUCTIVITY */}
                 <div className="rounded-xl border bg-card p-6">
@@ -1405,6 +1445,7 @@ export default function PersonalDashboard() {
                             </LineChart>
                         </ResponsiveContainer>
                     </div>
+
                 </div>
 
                 {/* UPCOMING */}

@@ -1095,15 +1095,25 @@ export default function StudentDashboard() {
         })
 
         const data = await res.json()
-
         setCustomEvents(
-            data.map((e: any) => ({
-                id: e.id,
-                title: e.title,
-                date: e.date?.split("T")[0],
-                time: e.time || "",
-                priority: "Medium",
-            }))
+            data.map((e: any) => {
+
+                // 🔥 SMART PRIORITY L
+
+                //if (e.status === "Upcoming") priority = "High"
+                //else if (e.type?.toLowerCase().includes("exam")) priority = "High"
+                //else if (e.type?.toLowerCase().includes("meeting")) priority = "Medium"
+                //else if (e.type?.toLowerCase().includes("study")) priority = "Low"
+
+                return {
+                    id: e.id,
+                    title: e.title,
+                    date: e.date?.split("T")[0],
+                    time: e.time || "",
+                    type: e.type || "General",        // ✅ ADD THIS
+                    location: e.location || "",       // ✅ ADD THIS (optional)
+                }
+            })
         )
     }
     const allEvents = useMemo(() => {
@@ -1202,7 +1212,12 @@ export default function StudentDashboard() {
                 </div>
 
                 {/* UPCOMING EVENTS */}
-                <Card title="Upcoming Events" items={upcomingEvents} type="event" />
+                <Card
+                    title="Upcoming Events"
+                    items={upcomingEvents}
+                    type="event"
+                    hidePriority={true}   // ✅ ADD THIS
+                />
 
             </div>
         </DashboardShell>
@@ -1211,16 +1226,16 @@ export default function StudentDashboard() {
 
 /* ================= REUSABLE UI ================= */
 
-function Card({ title, items, type }: any) {
+function Card({ title, items, type, hidePriority }: any) {
     return (
         <div className="rounded-xl border bg-card p-6">
             <h3 className="font-semibold text-lg">{title}</h3>
-            <CardList items={items} type={type} />
+            <CardList items={items} type={type} hidePriority={hidePriority} />
         </div>
     )
 }
 
-function CardList({ items, type }: any) {
+function CardList({ items, type, hidePriority }: any) {
 
     return (
         <div className={`mt-4 flex flex-col gap-3 pr-2 ${items.length > 3 ? "max-h-60 overflow-y-auto scrollbar-thin" : ""}`}>
@@ -1257,25 +1272,37 @@ function CardList({ items, type }: any) {
                             {item.title}
                         </p>
                         {type === "event" && (
-                            <p className="text-xs text-muted-foreground">
-                                {item.date}
-                            </p>
+                            <>
+                                <p className="text-xs text-muted-foreground">
+                                    {item.date}
+                                </p>
+                                <p className="text-xs text-purple-500">
+                                    {item.type || "General"}
+                                </p>
+                            </>
                         )}
                     </div>
 
                     {/* RIGHT */}
-                    <Badge
-                        variant="outline"
-                        className={
-                            item.priority === "High"
-                                ? "text-red-600 border-red-300"
-                                : item.priority === "Medium"
-                                    ? "text-yellow-600 border-yellow-300"
-                                    : "text-green-600 border-green-300"
-                        }
-                    >
-                        {item.priority}
-                    </Badge>
+                    {/* RIGHT */}
+                    {!hidePriority ? (
+                        <Badge
+                            variant="outline"
+                            className={
+                                item.priority === "High"
+                                    ? "text-red-600 border-red-300"
+                                    : item.priority === "Medium"
+                                        ? "text-yellow-600 border-yellow-300"
+                                        : "text-green-600 border-green-300"
+                            }
+                        >
+                            {item.priority}
+                        </Badge>
+                    ) : (
+                        <span className="text-xs text-blue-500 font-medium">
+                            {item.location || item.type}
+                        </span>
+                    )}
 
                 </div>
             ))}
