@@ -133,6 +133,7 @@ export function GroupStudyView() {
     const connectionRef = useRef<signalR.HubConnection | null>(null)
     const [isMuted, setIsMuted] = useState(false)
 
+
     useEffect(() => {
 
         if (!activeChat) return

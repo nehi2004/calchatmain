@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
 import { Lock } from "lucide-react"
+import { useRouter } from "next/navigation"
 
 export default function SetPasswordContent() {
 
@@ -16,7 +17,7 @@ export default function SetPasswordContent() {
     const [password, setPassword] = useState("")
     const [confirmPassword, setConfirmPassword] = useState("")
     const [loading, setLoading] = useState(false)
-
+    const router = useRouter()
     const handleSubmit = async () => {
 
         if (!token) {
@@ -47,7 +48,7 @@ export default function SetPasswordContent() {
                 return
             }
 
-            alert("Password set successfully ✅")
+            router.push("/set-password/success")
 
         } catch (err) {
             console.error(err)
