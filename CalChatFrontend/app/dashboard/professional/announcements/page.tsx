@@ -137,7 +137,6 @@ export default function ProfessionalAnnouncementsPage() {
     useEffect(() => {
         fetchAnnouncements()
     }, [])
-
     async function fetchAnnouncements() {
         const token = localStorage.getItem("token")
 
@@ -147,18 +146,18 @@ export default function ProfessionalAnnouncementsPage() {
             },
         })
 
-        if (res.ok) {
-            const data = await res.json()
+        console.log("STATUS:", res.status)
 
-            // ✅ Filter only relevant announcements
-            const filtered = data.filter((a: Announcement) =>
-                a.audience === "All Users" || a.audience === userRole
-            )
-
-            setAnnouncements(filtered)
+        if (!res.ok) {
+            console.log("ERROR FETCHING")
+            return
         }
-    }
 
+        const data = await res.json() // ✅ ONLY ONCE
+        console.log("DATA:", data)
+
+        setAnnouncements(Array.isArray(data) ? data : [])
+    }
     return (
         <DashboardShell navItems={navItems} role="Professional" title="Announcements">
             <div className="flex flex-col gap-6">

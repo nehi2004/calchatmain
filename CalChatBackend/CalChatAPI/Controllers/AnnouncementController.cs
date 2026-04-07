@@ -241,11 +241,14 @@ namespace CalChatAPI.Controllers
                 .ToListAsync();
 
             // 🚫 BLOCK NON-EMPLOYEES
-            if (!roles.Any(r => r.ToLower() == "employee" || r.ToLower() == "hr"))
+            if (!roles.Any(r =>
+     r.ToLower() == "employee" ||
+     r.ToLower() == "hr" 
+ ))
             {
                 return Forbid();
             }
-           
+
 
             var data = await _context.Announcements
                 .OrderByDescending(a => a.CreatedAt)

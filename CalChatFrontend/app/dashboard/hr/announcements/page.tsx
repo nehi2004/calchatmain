@@ -53,7 +53,6 @@ export default function AdminAnnouncementsPage() {
     useEffect(() => {
         fetchAnnouncements()
     }, [])
-
     async function fetchAnnouncements() {
         const token = localStorage.getItem("token")
 
@@ -63,18 +62,19 @@ export default function AdminAnnouncementsPage() {
             },
         })
 
-        console.log("STATUS:", res.status) // 👈 ADD THIS
+        console.log("STATUS:", res.status)
 
-        const data = await res.json()
-        console.log("DATA:", data) // 👈 ADD THIS
-
-
-        if (res.ok) {
-            const data = await res.json()
-            setAnnouncements(data)
+        if (!res.ok) {
+            console.log("ERROR FETCH")
+            setAnnouncements([])
+            return
         }
-    }
 
+        const data = await res.json() // ✅ ONLY ONCE
+        console.log("DATA:", data)
+
+        setAnnouncements(Array.isArray(data) ? data : [])
+    }
     // ✅ Create announcement (ONLY PROFESSIONAL)
     async function handlePublish() {
         if (!newAnnouncement.title || !newAnnouncement.content) return
@@ -97,7 +97,7 @@ export default function AdminAnnouncementsPage() {
         if (res.ok) {
             const data = await res.json()
 
-            setAnnouncements([data.data, ...announcements])
+            await fetchAnnouncements()
 
             setNewAnnouncement({ title: "", content: "" })
             setDialogOpen(false)
