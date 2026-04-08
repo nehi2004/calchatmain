@@ -27,7 +27,7 @@
 //        try {
 //            const token = localStorage.getItem("token")
 
-//            const res = await fetch("https://calchat-backend.onrender.com/api/account/users", {
+//            const res = await fetch("https://steadfast-warmth-production-64c8.up.railway.app/api/account/users", {
 //                headers: {
 //                    Authorization: `Bearer ${token}`
 //                }
@@ -188,7 +188,7 @@
 //        try {
 //            const token = localStorage.getItem("token")
 
-//            const res = await fetch("https://calchat-backend.onrender.com/api/account/users", {
+//            const res = await fetch("https://steadfast-warmth-production-64c8.up.railway.app/api/account/users", {
 //                headers: {
 //                    Authorization: `Bearer ${token}`
 //                }
@@ -388,7 +388,7 @@ export default function AdminAnalyticsView() {
         try {
             const token = localStorage.getItem("token")
 
-            const res = await fetch("https://calchat-backend.onrender.com/api/account/users", {
+            const res = await fetch("https://steadfast-warmth-production-64c8.up.railway.app/api/account/users", {
                 headers: {
                     Authorization: `Bearer ${token}`
                 }

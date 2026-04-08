@@ -210,8 +210,8 @@
 //    { label: "Analytics", href: "/dashboard/student/analytics", icon: BarChart3 },
 //]
 
-//const TASK_API = "https://calchat-backend.onrender.com/api/Tasks"
-//const EVENT_API = "https://calchat-backend.onrender.com/api/CalendarEvents"
+//const TASK_API = "https://steadfast-warmth-production-64c8.up.railway.app/api/Tasks"
+//const EVENT_API = "https://steadfast-warmth-production-64c8.up.railway.app/api/CalendarEvents"
 
 ///* ================= UTIL ================= */
 
@@ -584,8 +584,8 @@
 //    { label: "Analytics", href: "/dashboard/student/analytics", icon: BarChart3 },
 //]
 
-//const TASK_API = "https://calchat-backend.onrender.com/api/Tasks"
-//const EVENT_API = "https://calchat-backend.onrender.com/api/CalendarEvents"
+//const TASK_API = "https://steadfast-warmth-production-64c8.up.railway.app/api/Tasks"
+//const EVENT_API = "https://steadfast-warmth-production-64c8.up.railway.app/api/CalendarEvents"
 
 ///* ================= UTIL ================= */
 
@@ -1016,9 +1016,9 @@ const navItems = [
     { label: "Analytics", href: "/dashboard/student/analytics", icon: BarChart3 },
 ]
 
-const TASK_API = "https://calchat-backend.onrender.com/api/Tasks"
-const EVENT_API = "https://calchat-backend.onrender.com/api/CalendarEvents"
-const CUSTOM_EVENT_API = "https://calchat-backend.onrender.com/api/Events"
+const TASK_API = "https://steadfast-warmth-production-64c8.up.railway.app/api/Tasks"
+const EVENT_API = "https://steadfast-warmth-production-64c8.up.railway.app/api/CalendarEvents"
+const CUSTOM_EVENT_API = "https://steadfast-warmth-production-64c8.up.railway.app/api/Events"
 
 /* ================= UTIL ================= */
 

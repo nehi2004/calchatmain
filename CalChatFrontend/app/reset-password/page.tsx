@@ -12,7 +12,7 @@
 //    async function handleSubmit(e: React.FormEvent) {
 //        e.preventDefault()
 
-//        const res = await fetch("https://calchat-backend.onrender.com/api/account/reset-password", {
+//        const res = await fetch("https://steadfast-warmth-production-64c8.up.railway.app/api/account/reset-password", {
 //            method: "POST",
 //            headers: {
 //                "Content-Type": "application/json"
@@ -80,7 +80,7 @@
 
 //        setLoading(true)
 
-//        const res = await fetch("https://calchat-backend.onrender.com/api/account/reset-password", {
+//        const res = await fetch("https://steadfast-warmth-production-64c8.up.railway.app/api/account/reset-password", {
 //            method: "POST",
 //            headers: {
 //                "Content-Type": "application/json"

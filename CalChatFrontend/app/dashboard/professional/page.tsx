@@ -215,7 +215,7 @@
 
 //    async function fetchMeetings() {
 //        try {
-//            const res = await fetch("https://calchat-backend.onrender.com/api/Meeting/my-meetings", {
+//            const res = await fetch("https://steadfast-warmth-production-64c8.up.railway.app/api/Meeting/my-meetings", {
 //                headers: getAuthHeaders()
 //            })
 //            const data = await res.json()
@@ -227,7 +227,7 @@
 
 //    async function fetchTasks() {
 //        try {
-//            const res = await fetch("https://calchat-backend.onrender.com/api/tasks", {
+//            const res = await fetch("https://steadfast-warmth-production-64c8.up.railway.app/api/tasks", {
 //                headers: getAuthHeaders()
 //            })
 //            const data = await res.json()
@@ -456,8 +456,8 @@
 //    async function fetchAll() {
 //        try {
 //            const [mRes, tRes] = await Promise.all([
-//                fetch("https://calchat-backend.onrender.com/api/Meeting/my-meetings", { headers: getHeaders() }),
-//                fetch("https://calchat-backend.onrender.com/api/Tasks", { headers: getHeaders() })
+//                fetch("https://steadfast-warmth-production-64c8.up.railway.app/api/Meeting/my-meetings", { headers: getHeaders() }),
+//                fetch("https://steadfast-warmth-production-64c8.up.railway.app/api/Tasks", { headers: getHeaders() })
 //            ])
 
 //            const mData = await safeJson(mRes)
@@ -704,8 +704,8 @@
 //    async function fetchAll() {
 //        try {
 //            const [mRes, tRes] = await Promise.all([
-//                fetch("https://calchat-backend.onrender.com/api/Meeting/my-meetings", { headers: getHeaders() }),
-//                fetch("https://calchat-backend.onrender.com/api/Tasks", { headers: getHeaders() })
+//                fetch("https://steadfast-warmth-production-64c8.up.railway.app/api/Meeting/my-meetings", { headers: getHeaders() }),
+//                fetch("https://steadfast-warmth-production-64c8.up.railway.app/api/Tasks", { headers: getHeaders() })
 //            ])
 
 //            setMeetings(await safeJson(mRes))
@@ -959,8 +959,8 @@
 //    async function fetchAll() {
 //        try {
 //            const [mRes, tRes] = await Promise.all([
-//                fetch("https://calchat-backend.onrender.com/api/Meeting/my-meetings", { headers: getHeaders() }),
-//                fetch("https://calchat-backend.onrender.com/api/Tasks", { headers: getHeaders() })
+//                fetch("https://steadfast-warmth-production-64c8.up.railway.app/api/Meeting/my-meetings", { headers: getHeaders() }),
+//                fetch("https://steadfast-warmth-production-64c8.up.railway.app/api/Tasks", { headers: getHeaders() })
 //            ])
 
 //            setMeetings(await safeJson(mRes))
@@ -1219,9 +1219,9 @@
 //    async function fetchAll() {
 //        try {
 //            const [mRes, tRes, aRes] = await Promise.all([
-//                fetch("https://calchat-backend.onrender.com/api/Meeting/my-meetings", { headers: getHeaders() }),
-//                fetch("https://calchat-backend.onrender.com/api/Tasks", { headers: getHeaders() }),
-//                fetch("https://calchat-backend.onrender.com/api/Announcement", { headers: getHeaders() })
+//                fetch("https://steadfast-warmth-production-64c8.up.railway.app/api/Meeting/my-meetings", { headers: getHeaders() }),
+//                fetch("https://steadfast-warmth-production-64c8.up.railway.app/api/Tasks", { headers: getHeaders() }),
+//                fetch("https://steadfast-warmth-production-64c8.up.railway.app/api/Announcement", { headers: getHeaders() })
 //            ])
 
 //            const aData = await safeJson(aRes)
@@ -1525,9 +1525,9 @@ export default function ProfessionalDashboard() {
     async function fetchAll() {
         try {
             const [mRes, tRes, aRes] = await Promise.all([
-                fetch("https://calchat-backend.onrender.com/api/Meeting/my-meetings", { headers: getHeaders() }),
-                fetch("https://calchat-backend.onrender.com/api/Tasks", { headers: getHeaders() }),
-                fetch("https://calchat-backend.onrender.com/api/Announcement", { headers: getHeaders() })
+                fetch("https://steadfast-warmth-production-64c8.up.railway.app/api/Meeting/my-meetings", { headers: getHeaders() }),
+                fetch("https://steadfast-warmth-production-64c8.up.railway.app/api/Tasks", { headers: getHeaders() }),
+                fetch("https://steadfast-warmth-production-64c8.up.railway.app/api/Announcement", { headers: getHeaders() })
             ])
 
             const aData = await safeJson(aRes)

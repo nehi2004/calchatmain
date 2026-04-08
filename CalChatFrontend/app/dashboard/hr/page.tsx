@@ -195,13 +195,13 @@
 
 //        try {
 //            const [meetingRes, taskRes, announcementRes] = await Promise.all([
-//                fetch("https://calchat-backend.onrender.com/api/Meeting", {
+//                fetch("https://steadfast-warmth-production-64c8.up.railway.app/api/Meeting", {
 //                    headers: { Authorization: `Bearer ${token}` }
 //                }),
-//                fetch("https://calchat-backend.onrender.com/api/Task", {
+//                fetch("https://steadfast-warmth-production-64c8.up.railway.app/api/Task", {
 //                    headers: { Authorization: `Bearer ${token}` }
 //                }),
-//                fetch("https://calchat-backend.onrender.com/api/Announcement", {
+//                fetch("https://steadfast-warmth-production-64c8.up.railway.app/api/Announcement", {
 //                    headers: { Authorization: `Bearer ${token}` }
 //                })
 //            ])
@@ -390,13 +390,13 @@
 
 //        try {
 //            const [meetingRes, taskRes, announcementRes] = await Promise.all([
-//                fetch("https://calchat-backend.onrender.com/api/Meeting/my-meetings", {
+//                fetch("https://steadfast-warmth-production-64c8.up.railway.app/api/Meeting/my-meetings", {
 //                    headers: { Authorization: `Bearer ${token}` }
 //                }),
-//                fetch("https://calchat-backend.onrender.com/api/Tasks", {
+//                fetch("https://steadfast-warmth-production-64c8.up.railway.app/api/Tasks", {
 //                    headers: { Authorization: `Bearer ${token}` }
 //                }),
-//                fetch("https://calchat-backend.onrender.com/api/Announcement", {
+//                fetch("https://steadfast-warmth-production-64c8.up.railway.app/api/Announcement", {
 //                    headers: { Authorization: `Bearer ${token}` }
 //                })
 //            ])
@@ -580,13 +580,13 @@
 
 //        try {
 //            const [meetingRes, taskRes, announcementRes] = await Promise.all([
-//                fetch("https://calchat-backend.onrender.com/api/Meeting/my-meetings", {
+//                fetch("https://steadfast-warmth-production-64c8.up.railway.app/api/Meeting/my-meetings", {
 //                    headers: { Authorization: `Bearer ${token}` }
 //                }),
-//                fetch("https://calchat-backend.onrender.com/api/Tasks", {
+//                fetch("https://steadfast-warmth-production-64c8.up.railway.app/api/Tasks", {
 //                    headers: { Authorization: `Bearer ${token}` }
 //                }),
-//                fetch("https://calchat-backend.onrender.com/api/Announcement", {
+//                fetch("https://steadfast-warmth-production-64c8.up.railway.app/api/Announcement", {
 //                    headers: { Authorization: `Bearer ${token}` }
 //                })
 //            ])
@@ -848,13 +848,13 @@ export default function ProfessionalDashboard() {
 
         try {
             const [meetingRes, taskRes, announcementRes] = await Promise.all([
-                fetch("https://calchat-backend.onrender.com/api/Meeting/my-meetings", {
+                fetch("https://steadfast-warmth-production-64c8.up.railway.app/api/Meeting/my-meetings", {
                     headers: { Authorization: `Bearer ${token}` }
                 }),
-                fetch("https://calchat-backend.onrender.com/api/Tasks", {
+                fetch("https://steadfast-warmth-production-64c8.up.railway.app/api/Tasks", {
                     headers: { Authorization: `Bearer ${token}` }
                 }),
-                fetch("https://calchat-backend.onrender.com/api/Announcement", {
+                fetch("https://steadfast-warmth-production-64c8.up.railway.app/api/Announcement", {
                     headers: { Authorization: `Bearer ${token}` }
                 })
             ])

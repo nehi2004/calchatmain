@@ -118,7 +118,7 @@
 
 
 
-//            const res = await fetch("https://calchat-backend.onrender.com/api/ai/chat", {
+//            const res = await fetch("https://steadfast-warmth-production-64c8.up.railway.app/api/ai/chat", {
 //                method: "POST",
 //                headers: {
 //                    "Content-Type": "application/json",
@@ -205,7 +205,7 @@
 
 
 
-//            const res = await fetch("https://calchat-backend.onrender.com/api/ai/chat", {
+//            const res = await fetch("https://steadfast-warmth-production-64c8.up.railway.app/api/ai/chat", {
 //                method: "POST",
 //                headers: {
 //                    "Content-Type": "application/json",
@@ -271,7 +271,7 @@
 //                    return
 //                }
 
-//                const res = await fetch("https://calchat-backend.onrender.com/api/ai/history", {
+//                const res = await fetch("https://steadfast-warmth-production-64c8.up.railway.app/api/ai/history", {
 //                    method: "GET",
 //                    headers: {
 //                        "Content-Type": "application/json",
@@ -328,7 +328,7 @@
 
 
 
-//            await fetch("https://calchat-backend.onrender.com/api/CalendarEvents", {
+//            await fetch("https://steadfast-warmth-production-64c8.up.railway.app/api/CalendarEvents", {
 //                method: "POST",
 //                headers: {
 //                    "Content-Type": "application/json",
@@ -761,7 +761,7 @@
 
 //                const token = localStorage.getItem("token")
 
-//                const res = await fetch("https://calchat-backend.onrender.com/api/ai/history", {
+//                const res = await fetch("https://steadfast-warmth-production-64c8.up.railway.app/api/ai/history", {
 //                    headers: {
 //                        Authorization: `Bearer ${token}`
 //                    }
@@ -815,7 +815,7 @@
 
 //            const token = localStorage.getItem("token")
 
-//            const res = await fetch("https://calchat-backend.onrender.com/api/ai/chat", {
+//            const res = await fetch("https://steadfast-warmth-production-64c8.up.railway.app/api/ai/chat", {
 //                method: "POST",
 //                headers: {
 //                    "Content-Type": "application/json",
@@ -870,7 +870,7 @@
 
 //            const token = localStorage.getItem("token")
 
-//            await fetch("https://calchat-backend.onrender.com/api/CalendarEvents", {
+//            await fetch("https://steadfast-warmth-production-64c8.up.railway.app/api/CalendarEvents", {
 //                method: "POST",
 //                headers: {
 //                    "Content-Type": "application/json",
@@ -899,7 +899,7 @@
 //        try {
 //            const token = localStorage.getItem("token")
 
-//            await fetch("https://calchat-backend.onrender.com/api/ai/save-action", {
+//            await fetch("https://steadfast-warmth-production-64c8.up.railway.app/api/ai/save-action", {
 //                method: "POST",
 //                headers: {
 //                    "Content-Type": "application/json",
@@ -1266,7 +1266,7 @@ export function ChatView() {
             if (!token) return
 
             connection = new signalR.HubConnectionBuilder()
-                .withUrl("https://calchat-backend.onrender.com/chatHub", {
+                .withUrl("https://steadfast-warmth-production-64c8.up.railway.app/chatHub", {
                     accessTokenFactory: () => token,
                     transport: signalR.HttpTransportType.WebSockets
                 })
@@ -1318,7 +1318,7 @@ export function ChatView() {
 
                 const token = localStorage.getItem("token")
 
-                const res = await fetch("https://calchat-backend.onrender.com/api/ai/history", {
+                const res = await fetch("https://steadfast-warmth-production-64c8.up.railway.app/api/ai/history", {
                     headers: {
                         Authorization: `Bearer ${token}`
                     }
@@ -1373,7 +1373,7 @@ export function ChatView() {
 
             const token = localStorage.getItem("token")
 
-            const res = await fetch("https://calchat-backend.onrender.com/api/ai/chat", {
+            const res = await fetch("https://steadfast-warmth-production-64c8.up.railway.app/api/ai/chat", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
@@ -1428,7 +1428,7 @@ export function ChatView() {
 
             const token = localStorage.getItem("token")
 
-            await fetch("https://calchat-backend.onrender.com/api/CalendarEvents", {
+            await fetch("https://steadfast-warmth-production-64c8.up.railway.app/api/CalendarEvents", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
@@ -1457,7 +1457,7 @@ export function ChatView() {
         try {
             const token = localStorage.getItem("token")
 
-            await fetch("https://calchat-backend.onrender.com/api/ai/save-action", {
+            await fetch("https://steadfast-warmth-production-64c8.up.railway.app/api/ai/save-action", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",

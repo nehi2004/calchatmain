@@ -174,7 +174,7 @@
 //    async function fetchPermissions() {
 //        const token = localStorage.getItem("token")
 
-//        const res = await fetch("https://calchat-backend.onrender.com/api/RolePermission", {
+//        const res = await fetch("https://steadfast-warmth-production-64c8.up.railway.app/api/RolePermission", {
 //            headers: { Authorization: `Bearer ${token}` }
 //        })
 
@@ -201,7 +201,7 @@
 
 //        const token = localStorage.getItem("token")
 
-//        await fetch("https://calchat-backend.onrender.com/api/RolePermission", {
+//        await fetch("https://steadfast-warmth-production-64c8.up.railway.app/api/RolePermission", {
 //            method: "PUT",
 //            headers: {
 //                "Content-Type": "application/json",
@@ -389,7 +389,7 @@ export default function AdminRolesPage() {
 
             console.log("TOKEN:", token)
 
-            const res = await fetch("https://calchat-backend.onrender.com/api/RolePermission", {
+            const res = await fetch("https://steadfast-warmth-production-64c8.up.railway.app/api/RolePermission", {
                 headers: { Authorization: `Bearer ${token}` }
             })
 
@@ -438,7 +438,7 @@ export default function AdminRolesPage() {
 
         const token = localStorage.getItem("token")
 
-        //await fetch("https://calchat-backend.onrender.com/api/RolePermission", {
+        //await fetch("https://steadfast-warmth-production-64c8.up.railway.app/api/RolePermission", {
         //    method: "PUT",
         //    headers: {
         //        "Content-Type": "application/json",
