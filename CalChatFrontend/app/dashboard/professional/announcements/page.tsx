@@ -48,7 +48,7 @@ export default function ProfessionalAnnouncementsPage() {
         console.log("TOKEN:", token) // 🔥 check this
 
         const res = await fetch(
-            "https://steadfast-warmth-production-31cc.up.railway.app/api/Announcement",
+            "https://calchat-backend.onrender.com/api/Announcement",
             {
                 headers: {
                     Authorization: `Bearer ${token}`,

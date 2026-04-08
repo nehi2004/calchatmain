@@ -5,7 +5,7 @@
       "commandName": "Project",
       "dotnetRunMessages": true,
       "launchBrowser": false,
-      "applicationUrl": "https://steadfast-warmth-production-2fd8.up.railway.app",
+      "applicationUrl": "https://calchat-backend.onrender.com",
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development"
       }
@@ -14,7 +14,7 @@
       "commandName": "Project",
       "dotnetRunMessages": true,
       "launchBrowser": false,
-      "applicationUrl": "https://localhost:7271;https://steadfast-warmth-production-2fd8.up.railway.app",
+      "applicationUrl": "https://localhost:7271;https://calchat-backend.onrender.com",
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development"
       }

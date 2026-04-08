@@ -1,4 +1,4 @@
-@CalChatAPI_HostAddress = https://steadfast-warmth-production-2fd8.up.railway.app
+@CalChatAPI_HostAddress = https://calchat-backend.onrender.com
 
 GET {{CalChatAPI_HostAddress}}/weatherforecast/
 Accept: application/json

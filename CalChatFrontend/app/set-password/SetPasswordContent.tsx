@@ -33,7 +33,7 @@
 //        try {
 //            setLoading(true)
 
-//            const res = await fetch("https://steadfast-warmth-production-31cc.up.railway.app/api/hr/set-password", {
+//            const res = await fetch("https://calchat-backend.onrender.com/api/hr/set-password", {
 //                method: "POST",
 //                headers: {
 //                    "Content-Type": "application/json"
@@ -173,7 +173,7 @@ export default function SetPasswordContent() {
         try {
             setLoading(true)
 
-            const res = await fetch("https://steadfast-warmth-production-31cc.up.railway.app/api/hr/set-password", {
+            const res = await fetch("https://calchat-backend.onrender.com/api/hr/set-password", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json"

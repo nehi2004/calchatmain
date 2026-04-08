@@ -7,7 +7,7 @@ export interface CalendarEventPayload {
     color?: string
 }
 
-const API_URL = "https://steadfast-warmth-production-31cc.up.railway.app/api/CalendarEvents"
+const API_URL = "https://calchat-backend.onrender.com/api/CalendarEvents"
 
 export async function createCalendarEvent(event: CalendarEventPayload) {
 

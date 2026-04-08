@@ -58,7 +58,7 @@ export function MeetingsView() {
     const fetchMeetings = async () => {
         const token = localStorage.getItem("token")
 
-        const res = await fetch("https://steadfast-warmth-production-31cc.up.railway.app/api/meeting/my-meetings", {
+        const res = await fetch("https://calchat-backend.onrender.com/api/meeting/my-meetings", {
             headers: { Authorization: `Bearer ${token}` }
         })
 
@@ -75,7 +75,7 @@ export function MeetingsView() {
         try {
             const token = localStorage.getItem("token")
 
-            const res = await fetch("https://steadfast-warmth-production-31cc.up.railway.app/api/meeting/users", {
+            const res = await fetch("https://calchat-backend.onrender.com/api/meeting/users", {
                 headers: { Authorization: `Bearer ${token}` }
             })
 
@@ -92,7 +92,7 @@ export function MeetingsView() {
     const createMeeting = async () => {
         const token = localStorage.getItem("token")
 
-        await fetch("https://steadfast-warmth-production-31cc.up.railway.app/api/meeting/create", {
+        await fetch("https://calchat-backend.onrender.com/api/meeting/create", {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",

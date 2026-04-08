@@ -486,7 +486,7 @@ export function NotesView() {
     // ✅ Fetch Users (HR only)
     useEffect(() => {
         if (role?.toLowerCase() === "hr") {
-            fetch("https://steadfast-warmth-production-31cc.up.railway.app/api/hr/employees", {
+            fetch("https://calchat-backend.onrender.com/api/hr/employees", {
                 headers: {
                     Authorization: `Bearer ${localStorage.getItem("token")}`,
                 },
@@ -521,8 +521,8 @@ export function NotesView() {
         }
 
         const url = editMode
-            ? `https://steadfast-warmth-production-31cc.up.railway.app/api/Notes/${editId}`
-            : `https://steadfast-warmth-production-31cc.up.railway.app/api/Notes/create`
+            ? `https://calchat-backend.onrender.com/api/Notes/${editId}`
+            : `https://calchat-backend.onrender.com/api/Notes/create`
 
         const method = editMode ? "PUT" : "POST"
 
@@ -558,7 +558,7 @@ export function NotesView() {
     }
 
     const fetchNotes = async () => {
-        const res = await fetch("https://steadfast-warmth-production-31cc.up.railway.app/api/Notes", {
+        const res = await fetch("https://calchat-backend.onrender.com/api/Notes", {
             headers: {
                 Authorization: `Bearer ${localStorage.getItem("token")}`,
             },
@@ -584,7 +584,7 @@ export function NotesView() {
 
         if (!confirmDelete) return
 
-        const res = await fetch(`https://steadfast-warmth-production-31cc.up.railway.app/api/Notes/${id}`, {
+        const res = await fetch(`https://calchat-backend.onrender.com/api/Notes/${id}`, {
             method: "DELETE",
             headers: {
                 Authorization: `Bearer ${localStorage.getItem("token")}`,
