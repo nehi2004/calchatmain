@@ -132,6 +132,13 @@ public class MeetingController : ControllerBase
 
         return Ok(users);
     }
+
+    [HttpGet("test-db")]
+    public IActionResult TestDb()
+    {
+        var data = _context.MeetingRecords.ToList();
+        return Ok(data);
+    }
 }
 
 
