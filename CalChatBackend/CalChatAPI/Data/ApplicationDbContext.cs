@@ -52,6 +52,7 @@ namespace CalChatAPI.Data
         public DbSet<RolePermission> RolePermissions { get; set; }
         public DbSet<ChatMessage> ChatMessages { get; set; }
         public DbSet<MessageRead> MessageReads { get; set; }
+        public DbSet<MeetingRecord> MeetingRecords { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
