@@ -73,7 +73,12 @@ export default function AdminAnnouncementsPage() {
         const data = await res.json() // ✅ ONLY ONCE
         console.log("DATA:", data)
 
-        setAnnouncements(Array.isArray(data) ? data : [])
+        const filtered = data.filter(
+            (a: Announcement) =>
+                a.audience?.toLowerCase() === "professional"
+        )
+
+        setAnnouncements(filtered)
     }
     // ✅ Create announcement (ONLY PROFESSIONAL)
     async function handlePublish() {

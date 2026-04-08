@@ -1,122 +1,3 @@
-//using Microsoft.AspNetCore.Mvc;
-//using Microsoft.EntityFrameworkCore;
-//using CalChatAPI.Data;      // ✅ apna actual namespace use karo
-//using CalChatAPI.Models;    // ✅ apna actual namespace use karo
-
-//using Microsoft.AspNetCore.SignalR;
-//using CalChatAPI.Hubs;
-
-//public class AnnouncementController : ControllerBase
-//{
-//    private readonly ApplicationDbContext _context;
-//    private readonly IHubContext<ChatHub> _hub;
-
-//    public AnnouncementController(ApplicationDbContext context, IHubContext<ChatHub> hub)
-//    {
-//        _context = context;
-//        _hub = hub;
-//    }
-
-//    // ✅ POST: Create Announcement
-//    [HttpPost("create")]
-//        public async Task<IActionResult> CreateAnnouncement([FromBody] Announcement model)
-//        {
-//            if (model == null || string.IsNullOrEmpty(model.Title) || string.IsNullOrEmpty(model.Content))
-//            {
-//                return BadRequest("Title and Content are required.");
-//            }
-
-//            // 🔥 FORCE FIX (ignore incoming values)
-//            model.Id = 0;
-//            model.Status = "Published";
-//            model.CreatedAt = DateTime.UtcNow; 
-
-//            try
-//            {
-//            _context.Announcements.Add(model);
-//            await _context.SaveChangesAsync();
-
-
-//            // 🔥 GET ALL EMPLOYEES (NOT HR)
-//            var employees = await _context.Users
-//                .Where(u => u.Id != User.FindFirstValue(ClaimTypes.NameIdentifier)) // HR skip
-//                .ToListAsync();
-
-//            // 🔥 CREATE NOTIFICATIONS
-//            var notifications = employees.Select(user => new Notification
-//            {
-//                FromUserId = User.FindFirstValue(ClaimTypes.NameIdentifier),
-//                ToUserId = user.Id,
-//                FromUserName = User.Identity?.Name ?? "HR",
-//                Type = "announcement",
-//                Content = $"📢 {model.Title} - {model.Content}",
-//                Status = "info",
-//                IsRead = false,
-//                CreatedAt = DateTime.UtcNow
-//            }).ToList();
-
-//            _context.Notifications.AddRange(notifications);
-//            await _context.SaveChangesAsync();
-
-
-//            // 🔥 SIGNALR PUSH (REAL-TIME)
-//            foreach (var user in employees)
-//            {
-//                await _hub.Clients.User(user.Id).SendAsync("ReceiveNotification", new
-//                {
-//                    type = "announcement",
-//                    title = model.Title,
-//                    content = model.Content,
-//                    createdAt = DateTime.UtcNow
-//                });
-//            }
-
-//            return Ok(model);
-//        }
-//            //catch (Exception ex)
-//            //{
-//            //    return StatusCode(500, ex.InnerException?.Message ?? ex.Message);
-//            //}
-//            catch (Exception ex)
-//            {
-//                return StatusCode(500, ex.ToString()); // FULL ERROR SHOW karega
-//            }
-//        }
-
-//        // ✅ GET: All Announcements
-//        [HttpGet]
-//        public async Task<IActionResult> GetAnnouncements()
-//        {
-//            try
-//            {
-//                var data = await _context.Announcements
-//                    .OrderByDescending(a => a.CreatedAt)
-//                    .ToListAsync();
-
-//            return Ok(data);
-//            }
-//            catch (Exception ex)
-//            {
-//                return StatusCode(500, $"Error fetching data: {ex.Message}");
-//            }
-//        }
-
-//        // ✅ DELETE (optional but useful)
-//        [HttpDelete("{id}")]
-//        public async Task<IActionResult> DeleteAnnouncement(int id)
-//        {
-//            var announcement = await _context.Announcements.FindAsync(id);
-
-//            if (announcement == null)
-//                return NotFound("Announcement not found");
-
-//            _context.Announcements.Remove(announcement);
-//            await _context.SaveChangesAsync();
-
-//            return Ok("Deleted successfully");
-//        }
-//    }
-//}
 
 
 
@@ -175,7 +56,10 @@ namespace CalChatAPI.Controllers
         ur => ur.RoleId,
         r => r.Id,
         (ur, r) => new { ur.UserId, r.Name })
-    .Where(x => x.Name == "employee")
+   .Where(x =>
+    x.Name.ToLower() == "employee" ||
+    x.Name.ToLower() == "professional"
+)
     .Select(x => x.UserId)
     .ToListAsync();
 
@@ -226,37 +110,47 @@ namespace CalChatAPI.Controllers
         }
 
         // ✅ GET ALL
+        //[HttpGet]
+        //[Authorize(Roles = "employee,professional,hr")]
+        //public async Task<IActionResult> GetAnnouncements()
+        //{
+        //    foreach (var claim in User.Claims)
+        //    {
+        //        Console.WriteLine($"CLAIM: {claim.Type} = {claim.Value}");
+        //    }
+
+        //    var role = User.Claims
+        //        .Where(c => c.Type == ClaimTypes.Role
+        //            || c.Type == "role"
+        //            || c.Type.Contains("role"))
+        //        .Select(c => c.Value)
+        //        .FirstOrDefault()?.ToLower();
+
+        //    Console.WriteLine("ROLE FROM TOKEN: " + role);
+
+        //    if (string.IsNullOrEmpty(role))
+        //    {
+        //        return Forbid(); // 🔥 root cause check
+        //    }
+
+        //    if (role != "employee" && role != "professional" && role != "hr")
+        //    {
+        //        return Forbid();
+        //    }
+
+        //    var data = await _context.Announcements
+        //        .OrderByDescending(a => a.CreatedAt)
+        //        .ToListAsync();
+
+        //    return Ok(data);
+        //}
         [HttpGet]
+        // [Authorize] ❌ remove this
         public async Task<IActionResult> GetAnnouncements()
         {
-            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-
-            // 🔥 GET USER ROLES
-            var roles = await _context.UserRoles
-                .Where(ur => ur.UserId == userId)
-                .Join(_context.Roles,
-                    ur => ur.RoleId,
-                    r => r.Id,
-                    (ur, r) => r.Name)
-                .ToListAsync();
-
-            // 🚫 BLOCK NON-EMPLOYEES
-            if (!roles.Any(r =>
-     r.ToLower() == "employee" ||
-     r.ToLower() == "hr" 
- ))
-            {
-                return Forbid();
-            }
-
-
-            var data = await _context.Announcements
-                .OrderByDescending(a => a.CreatedAt)
-                .ToListAsync();
-
+            var data = await _context.Announcements.ToListAsync();
             return Ok(data);
         }
-
         // ✅ DELETE
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteAnnouncement(int id)
