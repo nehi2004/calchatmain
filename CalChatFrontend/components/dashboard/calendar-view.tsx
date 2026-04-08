@@ -1513,6 +1513,39 @@ export function CalendarView() {
         await fetchEvents()
     }
 
+    // ✅ CREATE LOCAL NOTIFICATION (IMPORTANT)
+
+    const userId = localStorage.getItem("userId")
+
+    const eventDateTime = new Date(`${newEvent.date}T${newEvent.time || "09:00"}`)
+
+    // reminder time calculate
+    const triggerTime = new Date(
+        eventDateTime.getTime() - (newEvent.reminder * 60000)
+    )
+
+    const newNotification = {
+        id: crypto.randomUUID(),
+        userId: userId,
+        text: newEvent.title,
+        eventDate: eventDateTime.toISOString(),
+        triggerTime: triggerTime.toISOString(), // ✅ MUST BE ISO STRING
+        triggered: false,
+        isRead: false,
+        createdAt: new Date().toISOString()
+    }
+
+    // save to localStorage
+    const existing = JSON.parse(localStorage.getItem("globalNotifications") || "[]")
+
+    localStorage.setItem(
+        "globalNotifications",
+        JSON.stringify([newNotification, ...existing])
+    )
+
+    // 🔔 notify dashboard instantly
+    window.dispatchEvent(new Event("new-notification"))
+
     function handleEdit(event: CalendarEvent) {
 
         setNewEvent({
