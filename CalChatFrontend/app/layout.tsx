@@ -48,6 +48,8 @@ import React from "react"
 import type { Metadata, Viewport } from "next"
 import { Inter, Space_Grotesk } from "next/font/google"
 import { ThemeProvider } from "@/components/theme-provider"
+import { Toaster } from "@/components/ui/toaster"
+
 
 
 import "./globals.css"
@@ -91,12 +93,13 @@ export default function RootLayout({
                 className="font-sans antialiased"
             >
                 <ThemeProvider
-                    attribute="class"
-                    defaultTheme="system"
-                    enableSystem
-                    disableTransitionOnChange
-                >
+                attribute="class"
+                defaultTheme="system"
+                enableSystem
+                disableTransitionOnChange
+            >
                     {children}
+                    <Toaster /> {/* ✅ ADD THIS */}
                 </ThemeProvider>
             </body>
         </html>
