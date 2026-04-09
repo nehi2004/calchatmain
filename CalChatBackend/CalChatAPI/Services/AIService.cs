@@ -1322,8 +1322,8 @@ namespace CalChatAPI.Services
             {
                 return new { reply = "❌ API key missing" };
             }
+            var client = new OpenAIChat.ChatClient("gpt-3.5-turbo", apiKey);
 
-            var client = new OpenAIChat.ChatClient("gpt-4o-mini", apiKey);
 
             // 🔥 GET LAST 10 MESSAGES
             var history = await _context.AIChatHistories
@@ -1381,7 +1381,9 @@ Otherwise return:
             // 🔥 CALL OPENAI
             var response = await client.CompleteChatAsync(messages);
 
-            var text = response.Value.Content[0].Text;
+            var text = response?.Value?.Content?.FirstOrDefault()?.Text
+                       ?? "⚠️ AI returned empty response";
+
 
             return ParseResponse(text);
         }
