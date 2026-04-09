@@ -1296,16 +1296,108 @@
 //        }
 //    }
 //}
+using OpenAIChat = OpenAI.Chat;
+using CalChatAPI.Data;
+using CalChatAPI.Models;
+using Microsoft.EntityFrameworkCore;
+
 namespace CalChatAPI.Services
 {
     public class AIService
     {
+        private readonly IConfiguration _config;
+        private readonly ApplicationDbContext _context;
+
+        public AIService(IConfiguration config, ApplicationDbContext context)
+        {
+            _config = config;
+            _context = context;
+        }
+
         public async Task<object> ProcessMessage(string userId, string message)
         {
-            return new
+            var apiKey = Environment.GetEnvironmentVariable("OPENAI_API_KEY");
+
+            if (string.IsNullOrEmpty(apiKey))
             {
-                reply = "⚠️ AI upgrade in progress... please wait"
-            };
+                return new { reply = "❌ API key missing" };
+            }
+
+            var client = new OpenAIChat.ChatClient("gpt-4o-mini", apiKey);
+
+            // 🔥 GET LAST 10 MESSAGES
+            var history = await _context.AIChatHistories
+                .Where(x => x.UserId == userId)
+                .OrderByDescending(x => x.Timestamp)
+                .Take(10)
+                .ToListAsync();
+
+            // ✅ IMPORTANT: OpenAI wala ChatMessage use ho raha hai
+            var messages = new List<OpenAIChat.ChatMessage>();
+
+            // ✅ SYSTEM MESSAGE
+            messages.Add(OpenAIChat.ChatMessage.CreateSystemMessage(@"
+You are a smart AI assistant like ChatGPT.
+
+You can:
+- chat normally
+- schedule events
+- understand natural language
+
+If user wants to create event → return JSON:
+
+{
+  ""action"": ""confirm_event"",
+  ""eventData"": {
+    ""title"": """",
+    ""date"": """",
+    ""time"": """"
+  },
+  ""reply"": ""friendly message""
+}
+
+Otherwise return:
+{
+  ""reply"": ""normal answer""
+}
+"));
+
+            // ✅ HISTORY
+            foreach (var h in history.OrderBy(x => x.Timestamp))
+            {
+                if (h.Role == "user")
+                {
+                    messages.Add(OpenAIChat.ChatMessage.CreateUserMessage(h.Message));
+                }
+                else
+                {
+                    messages.Add(OpenAIChat.ChatMessage.CreateAssistantMessage(h.Message));
+                }
+            }
+
+            // ✅ CURRENT USER MESSAGE
+            messages.Add(OpenAIChat.ChatMessage.CreateUserMessage(message));
+
+            // 🔥 CALL OPENAI
+            var response = await client.CompleteChatAsync(messages);
+
+            var text = response.Value.Content[0].Text;
+
+            return ParseResponse(text);
+        }
+
+        private object ParseResponse(string text)
+        {
+            try
+            {
+                return System.Text.Json.JsonSerializer.Deserialize<object>(text);
+            }
+            catch
+            {
+                return new { reply = text };
+            }
         }
     }
 }
+
+
