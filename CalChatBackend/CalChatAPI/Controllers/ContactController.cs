@@ -75,8 +75,90 @@ namespace YourProject.Controllers
 
                 var subject = $"New Contact from {request.Name}";
                 var plainTextContent = $"Name: {request.Name}\nEmail: {request.Email}\nMessage: {request.Message}";
-                var htmlContent = $"<strong>Name:</strong> {request.Name}<br/><strong>Email:</strong> {request.Email}<br/><strong>Message:</strong> {request.Message}";
+                var htmlContent = $@"
+<!DOCTYPE html>
+<html>
+<head>
+  <style>
+    body {{
+      font-family: Arial, sans-serif;
+      background-color: #f4f4f4;
+      margin: 0;
+      padding: 0;
+    }}
+    .container {{
+      max-width: 600px;
+      margin: 30px auto;
+      background: #ffffff;
+      border-radius: 10px;
+      overflow: hidden;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+    }}
+    .header {{
+      background: linear-gradient(90deg, #2563eb, #4f46e5);
+      color: white;
+      padding: 20px;
+      text-align: center;
+    }}
+    .header h1 {{
+      margin: 0;
+      font-size: 22px;
+    }}
+    .content {{
+      padding: 25px;
+      color: #333;
+    }}
+    .label {{
+      font-weight: bold;
+      color: #555;
+      margin-top: 10px;
+    }}
+    .value {{
+      background: #f9fafb;
+      padding: 10px;
+      border-radius: 6px;
+      margin-top: 5px;
+      word-break: break-word;
+    }}
+    .footer {{
+      text-align: center;
+      padding: 15px;
+      font-size: 12px;
+      color: #888;
+      background: #f1f5f9;
+    }}
+  </style>
+</head>
+<body>
 
+  <div class='container'>
+
+    <div class='header'>
+      <h1>📩 New Contact Message</h1>
+    </div>
+
+    <div class='content'>
+      
+      <div class='label'>👤 Name</div>
+      <div class='value'>{request.Name}</div>
+
+      <div class='label'>📧 Email</div>
+      <div class='value'>{request.Email}</div>
+
+      <div class='label'>💬 Message</div>
+      <div class='value'>{request.Message}</div>
+
+    </div>
+
+    <div class='footer'>
+      Sent from CalChat+ Contact Form 🚀
+    </div>
+
+  </div>
+
+</body>
+</html>
+";
                 var msg = MailHelper.CreateSingleEmail(from, to, subject, plainTextContent, htmlContent);
 
                 var response = await client.SendEmailAsync(msg);
