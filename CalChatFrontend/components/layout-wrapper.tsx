@@ -11,7 +11,9 @@ export default function LayoutWrapper({
 }) {
     const pathname = usePathname()
 
-    const isLandingPage = pathname === "/"
+    const landingRoutes = ["/", "/about", "/contact", "/privacy", "/terms"]
+
+    const isLandingPage = landingRoutes.includes(pathname)
 
     return (
         <>
