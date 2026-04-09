@@ -66,8 +66,9 @@ namespace YourProject.Controllers
 
             try
             {
-                var apiKey = _config["SendGrid__ApiKey"];
+                var apiKey = _config["SendGrid:ApiKey"];
                 var client = new SendGridClient(apiKey);
+                Console.WriteLine("API KEY: " + apiKey);
 
                 var from = new EmailAddress("nehipatel2004@gmail.com", "CalChat");
                 var to = new EmailAddress("calchat26@gmail.com");
