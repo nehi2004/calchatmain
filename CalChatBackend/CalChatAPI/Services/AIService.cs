@@ -1403,8 +1403,6 @@
 //        }
 //    }
 //}
-
-
 using CalChatAPI.Data;
 using CalChatAPI.Models;
 using Microsoft.EntityFrameworkCore;
@@ -1432,7 +1430,7 @@ namespace CalChatAPI.Services
                 return new { reply = "❌ OpenRouter API key missing" };
             }
 
-            // 🔥 GET HISTORY
+            // 🔥 GET LAST 10 MESSAGES
             var history = await _context.AIChatHistories
                 .Where(x => x.UserId == userId)
                 .OrderByDescending(x => x.Timestamp)
@@ -1441,7 +1439,7 @@ namespace CalChatAPI.Services
 
             var messages = new List<object>();
 
-            // ✅ SYSTEM
+            // ✅ SYSTEM PROMPT
             messages.Add(new
             {
                 role = "system",
@@ -1474,25 +1472,27 @@ Otherwise:
                 });
             }
 
-            // ✅ CURRENT
+            // ✅ CURRENT MESSAGE
             messages.Add(new
             {
                 role = "user",
                 content = message
             });
 
-            // 🔥 HTTP CALL
+            // 🔥 HTTP CLIENT
             var client = new HttpClient();
 
             client.DefaultRequestHeaders.Authorization =
                 new AuthenticationHeaderValue("Bearer", apiKey);
 
-            client.DefaultRequestHeaders.Add("HTTP-Referer", "https://your-app.vercel.app");
+            // ✅ REQUIRED HEADERS (IMPORTANT)
+            client.DefaultRequestHeaders.Add("HTTP-Referer", "https://calchatmain-le3p.vercel.app");
             client.DefaultRequestHeaders.Add("X-Title", "CalChat AI");
 
+            // ✅ BEST FREE MODEL (AUTO)
             var requestBody = new
             {
-                model = "mistralai/mistral-7b-instruct:free",
+                model = "openrouter/auto",
                 messages = messages
             };
 
@@ -1505,6 +1505,7 @@ Otherwise:
 
             var responseString = await response.Content.ReadAsStringAsync();
 
+            // ❌ ERROR HANDLE
             if (!response.IsSuccessStatusCode)
             {
                 return new
@@ -1514,6 +1515,7 @@ Otherwise:
                 };
             }
 
+            // ✅ PARSE RESPONSE
             var result = JsonDocument.Parse(responseString);
 
             var reply = result
@@ -1539,3 +1541,4 @@ Otherwise:
         }
     }
 }
+
