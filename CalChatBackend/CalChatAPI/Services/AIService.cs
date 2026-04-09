@@ -1403,6 +1403,7 @@
 //        }
 //    }
 //}
+
 using CalChatAPI.Data;
 using CalChatAPI.Models;
 using Microsoft.EntityFrameworkCore;
@@ -1430,7 +1431,7 @@ namespace CalChatAPI.Services
                 return new { reply = "❌ OpenRouter API key missing" };
             }
 
-            // 🔥 GET LAST 10 MESSAGES
+            // 🔥 GET LAST 10 MESSAGES (MEMORY)
             var history = await _context.AIChatHistories
                 .Where(x => x.UserId == userId)
                 .OrderByDescending(x => x.Timestamp)
@@ -1439,13 +1440,19 @@ namespace CalChatAPI.Services
 
             var messages = new List<object>();
 
-            // ✅ SYSTEM PROMPT
+            // ✅ FIXED SYSTEM PROMPT (VERY IMPORTANT)
             messages.Add(new
             {
                 role = "system",
-                content = @"You are a smart AI assistant like ChatGPT.
+                content = @"
+You are a smart AI assistant like ChatGPT.
 
-If user wants to create event → return JSON:
+Rules:
+- If user is just chatting → respond normally
+- If user clearly asks to schedule/create event → then return JSON
+- DO NOT create event for greetings like 'hi', 'hello', 'how are you'
+
+If event requested → return ONLY:
 {
   ""action"": ""confirm_event"",
   ""eventData"": {
@@ -1456,13 +1463,14 @@ If user wants to create event → return JSON:
   ""reply"": ""friendly message""
 }
 
-Otherwise:
+Otherwise → return:
 {
-  ""reply"": ""normal answer""
-}"
+  ""reply"": ""normal human response""
+}
+"
             });
 
-            // ✅ HISTORY
+            // ✅ CHAT HISTORY
             foreach (var h in history.OrderBy(x => x.Timestamp))
             {
                 messages.Add(new
@@ -1485,15 +1493,15 @@ Otherwise:
             client.DefaultRequestHeaders.Authorization =
                 new AuthenticationHeaderValue("Bearer", apiKey);
 
-            // ✅ REQUIRED HEADERS (IMPORTANT)
             client.DefaultRequestHeaders.Add("HTTP-Referer", "https://calchatmain-le3p.vercel.app");
             client.DefaultRequestHeaders.Add("X-Title", "CalChat AI");
 
-            // ✅ BEST FREE MODEL (AUTO)
+            // ✅ FINAL REQUEST (WITH TEMPERATURE FIX)
             var requestBody = new
             {
                 model = "openrouter/auto",
-                messages = messages
+                messages = messages,
+                temperature = 0.3   // 🔥 stability fix
             };
 
             var json = JsonSerializer.Serialize(requestBody);
@@ -1541,4 +1549,3 @@ Otherwise:
         }
     }
 }
-
