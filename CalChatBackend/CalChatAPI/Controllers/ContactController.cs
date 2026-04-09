@@ -69,7 +69,7 @@ namespace YourProject.Controllers
                 var apiKey = _config["SendGrid__ApiKey"];
                 var client = new SendGridClient(apiKey);
 
-                var from = new EmailAddress(_config["SENDGRID_VERIFIED_EMAIL"], "CalChat");
+                var from = new EmailAddress("nehipatel2004@gmail.com", "CalChat");
                 var to = new EmailAddress("calchat26@gmail.com");
 
                 var subject = $"New Contact from {request.Name}";
@@ -79,7 +79,6 @@ namespace YourProject.Controllers
                 var msg = MailHelper.CreateSingleEmail(from, to, subject, plainTextContent, htmlContent);
 
                 var response = await client.SendEmailAsync(msg);
-
                 return Ok(new { success = true });
             }
             catch (Exception ex)
