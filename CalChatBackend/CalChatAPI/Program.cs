@@ -229,8 +229,6 @@ using CalChatAPI.Services;
 
 
 var builder = WebApplication.CreateBuilder(args);
-var apiKey = Environment.GetEnvironmentVariable("OPENAI_API_KEY");
-
 
 builder.Configuration.AddEnvironmentVariables(); // ✅ MUST
 //////////////////////////////////////////////////
@@ -310,7 +308,6 @@ builder.Services.AddSingleton<IUserIdProvider, NameIdentifierUserIdProvider>();
 
 builder.Services.AddScoped<AIService>();
 builder.Services.AddScoped<IEmailService, EmailService>();
-
 
 // ✅ ADD THIS BELOW
 builder.Services.Configure<EmailSettings>(

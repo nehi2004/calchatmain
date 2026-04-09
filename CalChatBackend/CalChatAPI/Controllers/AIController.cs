@@ -23,90 +23,16 @@ namespace CalChatAPI.Controllers
         }
 
         // SEND MESSAGE TO AI
-        //[HttpPost("chat")]
-        //public async Task<IActionResult> Chat([FromBody] ChatRequest request)
-        //{
-        //    var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "";
-
-
-        //    if (string.IsNullOrWhiteSpace(request.Message))
-        //        return BadRequest("Message required");
-
-        //    // SAVE USER MESSAGE
-        //    var userChat = new AIChatHistory
-        //    {
-        //        UserId = userId,
-        //        Role = "user",
-        //        Message = request.Message,
-        //        Timestamp = DateTime.UtcNow
-        //    };
-
-        //    _context.AIChatHistories.Add(userChat);
-
-        //    try
-        //    {
-        //        var result = await _aiService.ProcessMessage(userId, request.Message);
-        //        return Ok(result);
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        return StatusCode(500, new
-        //        {
-        //            error = ex.Message,
-        //            stack = ex.StackTrace
-        //        });
-        //    }
-
-
-        //    var replyText = result.GetType()
-        //        .GetProperty("reply")?
-        //        .GetValue(result)?
-        //        .ToString();
-
-        //    // SAVE AI REPLY
-        //    // SAVE AI REPLY (WITH DUPLICATE CHECK)
-
-        //    var aiChat = new AIChatHistory
-        //    {
-        //        UserId = userId,
-        //        Role = "assistant",
-        //        Message = replyText,
-        //        Timestamp = DateTime.UtcNow
-        //    };
-
-        //    // 🔥 CHECK DUPLICATE
-        //    bool exists = await _context.AIChatHistories
-        //        .AnyAsync(x => x.UserId == userId
-        //            && x.Message == replyText
-        //            && x.Role == "assistant"
-        //            && x.Timestamp > DateTime.UtcNow.AddSeconds(-2));
-
-        //    // ✅ SAVE ONLY IF NOT EXISTS
-        //    if (!exists)
-        //    {
-        //        _context.AIChatHistories.Add(aiChat);
-        //    }
-
-
-
-        //    await _context.SaveChangesAsync();
-
-        //    return Ok(result);
-        //}
-
-        //// LOAD CHAT HISTORY
-        ///
-
-
         [HttpPost("chat")]
         public async Task<IActionResult> Chat([FromBody] ChatRequest request)
         {
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "";
 
+
             if (string.IsNullOrWhiteSpace(request.Message))
                 return BadRequest("Message required");
 
-            // ✅ SAVE USER MESSAGE
+            // SAVE USER MESSAGE
             var userChat = new AIChatHistory
             {
                 UserId = userId,
@@ -117,28 +43,17 @@ namespace CalChatAPI.Controllers
 
             _context.AIChatHistories.Add(userChat);
 
-            object result;
+            // PROCESS AI
+            var result = await _aiService.ProcessMessage(userId, request.Message);
 
-            try
-            {
-                result = await _aiService.ProcessMessage(userId, request.Message);
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, new
-                {
-                    error = ex.Message,
-                    stack = ex.StackTrace
-                });
-            }
-
-            // ✅ EXTRACT REPLY
-            var replyText = result?.GetType()
+            var replyText = result.GetType()
                 .GetProperty("reply")?
                 .GetValue(result)?
-                .ToString() ?? "⚠️ Empty reply";
+                .ToString();
 
-            // ✅ SAVE AI REPLY
+            // SAVE AI REPLY
+            // SAVE AI REPLY (WITH DUPLICATE CHECK)
+
             var aiChat = new AIChatHistory
             {
                 UserId = userId,
@@ -147,26 +62,27 @@ namespace CalChatAPI.Controllers
                 Timestamp = DateTime.UtcNow
             };
 
-            // 🔥 DUPLICATE CHECK
+            // 🔥 CHECK DUPLICATE
             bool exists = await _context.AIChatHistories
                 .AnyAsync(x => x.UserId == userId
                     && x.Message == replyText
                     && x.Role == "assistant"
                     && x.Timestamp > DateTime.UtcNow.AddSeconds(-2));
 
+            // ✅ SAVE ONLY IF NOT EXISTS
             if (!exists)
             {
                 _context.AIChatHistories.Add(aiChat);
             }
+
+            _context.AIChatHistories.Add(aiChat);
 
             await _context.SaveChangesAsync();
 
             return Ok(result);
         }
 
-
-
-
+        // LOAD CHAT HISTORY
         [HttpGet("history")]
         public async Task<IActionResult> GetHistory()
         {

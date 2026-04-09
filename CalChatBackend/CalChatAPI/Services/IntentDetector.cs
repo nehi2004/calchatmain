@@ -74,143 +74,143 @@
 //}
 
 
-//namespace CalChatAPI.Services
-//{
-//    public static class IntentDetector
-//    {
-//        public static AIIntent Detect(string message)
-//        {
-//            message = message.ToLower().Trim();
+namespace CalChatAPI.Services
+{
+    public static class IntentDetector
+    {
+        public static AIIntent Detect(string message)
+        {
+            message = message.ToLower().Trim();
 
-//            // =====================
-//            // CHECK SCHEDULE
-//            // =====================
+            // =====================
+            // CHECK SCHEDULE
+            // =====================
 
-//            if (message.Contains("show my schedule") ||
-//                message.Contains("show schedule") ||
-//                message.Contains("what's my schedule") ||
-//                message.Contains("my calendar") ||
-//                message.Contains("today plan") ||
-//                message.Contains("what do i have") ||
-//                message.Contains("show events") ||
-//                message.Contains("check calendar") ||
-//                message.Contains("Remind me about my task") ||
-//                message.Contains("view schedule"))
-//            {
-//                return AIIntent.CHECK_SCHEDULE;
-//            }
-//            // =====================
-//            // RESCHEDULE EVENT
-//            // =====================
+            if (message.Contains("show my schedule") ||
+                message.Contains("show schedule") ||
+                message.Contains("what's my schedule") ||
+                message.Contains("my calendar") ||
+                message.Contains("today plan") ||
+                message.Contains("what do i have") ||
+                message.Contains("show events") ||
+                message.Contains("check calendar") ||
+                message.Contains("Remind me about my task") ||
+                message.Contains("view schedule"))
+            {
+                return AIIntent.CHECK_SCHEDULE;
+            }
+            // =====================
+            // RESCHEDULE EVENT
+            // =====================
 
-//            //if (message.Contains("reschedule") ||
-//            //    message.Contains("move ") ||
-//            //    message.Contains("change time") ||
-//            //    message.Contains("postpone") ||
-//            //    message.Contains("shift"))
-//            //{
-//            //    return AIIntent.RESCHEDULE_EVENT;
-//            //}
+            //if (message.Contains("reschedule") ||
+            //    message.Contains("move ") ||
+            //    message.Contains("change time") ||
+            //    message.Contains("postpone") ||
+            //    message.Contains("shift"))
+            //{
+            //    return AIIntent.RESCHEDULE_EVENT;
+            //}
 
-           
 
-//            // =====================
-//            // FREE TIME
-//            // =====================
 
-//            if (message.Contains("free time") ||
-//                message.Contains("when am i free") ||
-//                message.Contains("available time") ||
-//                message.Contains("availability") ||
-//                message.Contains("any free slot") ||
-//                message.Contains("am i free"))
-//            {
-//                return AIIntent.FREE_TIME;
-//            }
+            // =====================
+            // FREE TIME
+            // =====================
 
-//            // =====================
-//            // CREATE EVENT
-//            // =====================
+            if (message.Contains("free time") ||
+                message.Contains("when am i free") ||
+                message.Contains("available time") ||
+                message.Contains("availability") ||
+                message.Contains("any free slot") ||
+                message.Contains("am i free"))
+            {
+                return AIIntent.FREE_TIME;
+            }
 
-//            if (
-//                // avoid reschedule confusion
-//                (message.Contains("schedule ") && !message.Contains("reschedule")) ||
+            // =====================
+            // CREATE EVENT
+            // =====================
 
-//                message.Contains("create") ||
-//                message.Contains("add event") ||
-//                message.Contains("plan") ||
-//                message.Contains("set meeting") ||
+            if (
+                // avoid reschedule confusion
+                (message.Contains("schedule ") && !message.Contains("reschedule")) ||
 
-//                // professional
-//                message.Contains("meeting") ||
-//                message.Contains("client meeting") ||
-//                message.Contains("office meeting") ||
+                message.Contains("create") ||
+                message.Contains("add event") ||
+                message.Contains("plan") ||
+                message.Contains("set meeting") ||
 
-//                // student
-//                message.Contains("class") ||
-//                message.Contains("lecture") ||
-//                message.Contains("study") ||
-//                message.Contains("exam") ||
+                // professional
+                message.Contains("meeting") ||
+                message.Contains("client meeting") ||
+                message.Contains("office meeting") ||
 
-//                // health
-//                message.Contains("gym") ||
-//                message.Contains("workout") ||
-//                message.Contains("doctor") ||
-//                message.Contains("appointment") ||
+                // student
+                message.Contains("class") ||
+                message.Contains("lecture") ||
+                message.Contains("study") ||
+                message.Contains("exam") ||
 
-//                // daily life
-//                message.Contains("breakfast") ||
-//                message.Contains("lunch") ||
-//                message.Contains("dinner") ||
+                // health
+                message.Contains("gym") ||
+                message.Contains("workout") ||
+                message.Contains("doctor") ||
+                message.Contains("appointment") ||
 
-//                // travel
-//                message.Contains("train") ||
-//                message.Contains("flight") ||
-//                message.Contains("travel")
-//            )
-//            {
-//                return AIIntent.CREATE_EVENT;
-//            }
+                // daily life
+                message.Contains("breakfast") ||
+                message.Contains("lunch") ||
+                message.Contains("dinner") ||
 
-//            // =====================
-//            // DELETE EVENT
-//            // =====================
+                // travel
+                message.Contains("train") ||
+                message.Contains("flight") ||
+                message.Contains("travel")
+            )
+            {
+                return AIIntent.CREATE_EVENT;
+            }
 
-//            if (message.Contains("delete") ||
-//                message.Contains("remove") ||
-//                message.Contains("cancel event") ||
-//                message.Contains("cancel meeting"))
-//            {
-//                return AIIntent.DELETE_EVENT;
-//            }
+            // =====================
+            // DELETE EVENT
+            // =====================
 
-//            // =====================
-//            // GREETING
-//            // =====================
+            if (message.Contains("delete") ||
+                message.Contains("remove") ||
+                message.Contains("cancel event") ||
+                message.Contains("cancel meeting"))
+            {
+                return AIIntent.DELETE_EVENT;
+            }
 
-//            if (message.Contains("hello") ||
-//                message.Contains("hi") ||
-//                message.Contains("hey") ||
-//                message.Contains("good morning") ||
-//                message.Contains("good afternoon") ||
-//                message.Contains("good evening"))
-//            {
-//                return AIIntent.GREETING;
-//            }
+            // =====================
+            // GREETING
+            // =====================
 
-//            // =====================
-//            // HELP
-//            // =====================
+            if (message.Contains("hello") ||
+                message.Contains("hi") ||
+                message.Contains("hey") ||
+                message.Contains("good morning") ||
+                message.Contains("good afternoon") ||
+                message.Contains("good evening"))
+            {
+                return AIIntent.GREETING;
+            }
 
-//            if (message.Contains("help") ||
-//                message.Contains("what can you do") ||
-//                message.Contains("commands") ||
-//                message.Contains("features"))
-//            {
-//                return AIIntent.HELP;
-//            }
+            // =====================
+            // HELP
+            // =====================
 
-//            return AIIntent.CHAT;
-//        }
-//    }
-//}
+            if (message.Contains("help") ||
+                message.Contains("what can you do") ||
+                message.Contains("commands") ||
+                message.Contains("features"))
+            {
+                return AIIntent.HELP;
+            }
+
+            return AIIntent.CHAT;
+        }
+    }
+}
