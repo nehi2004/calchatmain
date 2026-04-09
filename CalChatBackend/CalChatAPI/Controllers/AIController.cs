@@ -75,7 +75,7 @@ namespace CalChatAPI.Controllers
                 _context.AIChatHistories.Add(aiChat);
             }
 
-            _context.AIChatHistories.Add(aiChat);
+        
 
             await _context.SaveChangesAsync();
 
