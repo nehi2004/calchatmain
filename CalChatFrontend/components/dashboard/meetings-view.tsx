@@ -34,6 +34,7 @@ export function MeetingsView() {
     const [startTime, setStartTime] = useState("")
     const [endTime, setEndTime] = useState("")
     const [meetingLink, setMeetingLink] = useState("")
+    const [selectedDate, setSelectedDate] = useState("")
     const getParticipantCount = (m: any) => {
         if (m.participants) return m.participants.length
         if (m.participantIds) return m.participantIds.length
@@ -41,7 +42,22 @@ export function MeetingsView() {
         return 0
     }
 
+    const isSameDate = (date1: string, selected: string) => {
+        if (!selected) return true
 
+        const d1 = new Date(date1)
+        const d2 = new Date(selected)
+
+        return d1.toDateString() === d2.toDateString()
+    }
+
+    const filteredUpcoming = upcomingMeetings.filter(m =>
+        isSameDate(m.startTime, selectedDate)
+    )
+
+    const filteredPast = pastMeetings.filter(m =>
+        isSameDate(m.startTime, selectedDate)
+    )
     useEffect(() => {
         const role = localStorage.getItem("role") || ""
         setUserRole(role)
@@ -55,6 +71,12 @@ export function MeetingsView() {
 
     }, [])
 
+    const selectedDateCount = selectedDate
+        ? upcomingMeetings.filter(m =>
+            isSameDate(m.startTime, selectedDate)
+        ).length
+        : 0
+
     const fetchMeetings = async () => {
         const token = localStorage.getItem("token")
 
@@ -64,10 +86,27 @@ export function MeetingsView() {
 
         const data = await res.json()
         console.log("MEETINGS DATA 👉", data)
-        const now = new Date()
-
-        setUpcomingMeetings(data.filter((m: any) => new Date(m.startTime) > now))
-        setPastMeetings(data.filter((m: any) => new Date(m.endTime) < now))
+        console.log({
+            title,
+            startTime,
+            endTime,
+            selectedUsers
+        })
+        const now = new Date(Date.now() - 60000) // 1 min buffer
+        setUpcomingMeetings(
+            data
+                .filter((m: any) => new Date(m.startTime) > now)
+                .sort((a: any, b: any) =>
+                    new Date(a.startTime).getTime() - new Date(b.startTime).getTime()
+                )
+        )
+        setPastMeetings(
+            data
+                .filter((m: any) => new Date(m.endTime) < now)
+                .sort((a: any, b: any) =>
+                    new Date(b.endTime).getTime() - new Date(a.endTime).getTime()
+                )
+        )
         setLoading(false)
     }
 
@@ -153,6 +192,21 @@ export function MeetingsView() {
                 )}
             </div>
 
+            <div className="flex items-center gap-3">
+                <Input
+                    type="date"
+                    value={selectedDate}
+                    onChange={(e) => setSelectedDate(e.target.value)}
+                    className="w-[200px]"
+                />
+
+                {selectedDate && (
+                    <Button variant="outline" onClick={() => setSelectedDate("")}>
+                        Clear
+                    </Button>
+                )}
+            </div>
+
             {/* STATS */}
             <div className="grid sm:grid-cols-3 gap-4">
                 {[
@@ -167,6 +221,40 @@ export function MeetingsView() {
                 ))}
             </div>
 
+            {/*{selectedDate && (*/}
+            {/*    <div className="p-3 rounded-lg bg-blue-500/10 border text-sm">*/}
+            {/*        📅 {selectedDate} → {selectedDateCount} meetings*/}
+            {/*    </div>*/}
+            {/*)}*/}
+            {selectedDate && (
+                <div className="flex items-center justify-between p-4 rounded-xl border bg-gradient-to-r from-blue-500/10 to-indigo-500/10 shadow-sm">
+
+                    <div className="flex items-center gap-3">
+                        <div className="p-2 rounded-lg bg-blue-500 text-white">
+                            📅
+                        </div>
+
+                        <div>
+                            <p className="text-xs text-muted-foreground">
+                                Selected Date
+                            </p>
+                            <p className="text-sm font-semibold">
+                                {new Date(selectedDate).toDateString()}
+                            </p>
+                        </div>
+                    </div>
+
+                    <div className="text-right">
+                        <p className="text-xs text-muted-foreground">
+                            Meetings
+                        </p>
+                        <p className="text-xl font-bold text-blue-600">
+                            {selectedDateCount}
+                        </p>
+                    </div>
+
+                </div>
+            )}
             {/* TABS */}
             <Tabs defaultValue="upcoming">
 
@@ -178,13 +266,13 @@ export function MeetingsView() {
                 {/* UPCOMING */}
                 <TabsContent value="upcoming" className="mt-4 space-y-4">
 
-                    {upcomingMeetings.length === 0 && (
+                    {filteredUpcoming.length === 0 && (
                         <div className="text-center text-muted-foreground py-10">
                             No upcoming meetings 🚀
                         </div>
                     )}
 
-                    {upcomingMeetings.map((m) => (
+                    {filteredUpcoming.map((m) => (
                         <div
                             key={m.id}
                             className="p-4 rounded-xl border hover:shadow-lg transition flex justify-between items-center"
@@ -224,13 +312,13 @@ export function MeetingsView() {
                 {/* PAST */}
                 <TabsContent value="past" className="mt-4 space-y-4">
 
-                    {pastMeetings.length === 0 && (
+                    {filteredPast.length === 0 && (
                         <div className="text-center text-muted-foreground py-10">
                             No past meetings
                         </div>
                     )}
 
-                    {pastMeetings.map((m) => (
+                    {filteredPast.map((m) => (
                         <div key={m.id} className="p-4 rounded-xl border opacity-70">
 
                             <div className="flex items-center gap-2">
@@ -267,84 +355,227 @@ export function MeetingsView() {
                     </div>
 
                     {/* BODY */}
-                    <div className="p-4 space-y-4">
+                    {/*<div className="p-4 space-y-4">*/}
+
+                    {/*    */}{/* TITLE */}
+                    {/*    <div className="space-y-1">*/}
+                    {/*        <Label className="text-xs">Meeting Title</Label>*/}
+                    {/*        <Input*/}
+                    {/*            placeholder="Sprint Planning"*/}
+                    {/*            value={title}*/}
+                    {/*            onChange={(e) => setTitle(e.target.value)}*/}
+                    {/*            className="h-9 text-sm bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-lg"*/}
+                    {/*        />*/}
+                    {/*    </div>*/}
+
+                    {/*    */}{/* TIME */}
+                    {/*    <div className="grid grid-cols-2 gap-2">*/}
+                    {/*        <div className="space-y-1">*/}
+                    {/*            <Label className="text-xs">Start</Label>*/}
+                    {/*            <Input*/}
+                    {/*                type="datetime-local"*/}
+                    {/*                value={startTime}*/}
+                    {/*                onChange={(e) => setStartTime(e.target.value)}*/}
+                    {/*                className="h-9 text-xs bg-gray-50 dark:bg-white/5"*/}
+                    {/*            />*/}
+                    {/*        </div>*/}
+
+                    {/*        <div className="space-y-1">*/}
+                    {/*            <Label className="text-xs">End</Label>*/}
+                    {/*            <Input*/}
+                    {/*                type="datetime-local"*/}
+                    {/*                value={endTime}*/}
+                    {/*                onChange={(e) => setEndTime(e.target.value)}*/}
+                    {/*                className="h-9 text-xs bg-gray-50 dark:bg-white/5"*/}
+                    {/*            />*/}
+                    {/*        </div>*/}
+                    {/*    </div>*/}
+
+                    {/*    */}{/* LINK */}
+                    {/*    <div className="space-y-1">*/}
+                    {/*        <Label className="text-xs">Meeting Link</Label>*/}
+                    {/*        <Input*/}
+                    {/*            placeholder="meet.google.com/..."*/}
+                    {/*            value={meetingLink}*/}
+                    {/*            onChange={(e) => setMeetingLink(e.target.value)}*/}
+                    {/*            className="h-9 text-sm bg-gray-50 dark:bg-white/5"*/}
+                    {/*        />*/}
+                    {/*    </div>*/}
+
+                    {/*    */}{/* PARTICIPANTS */}
+                    {/*    <div className="space-y-2">*/}
+                    {/*        <Label className="text-xs">Participants</Label>*/}
+
+                    {/*        */}{/* CHIPS */}
+                    {/*        <div className="flex flex-wrap gap-1">*/}
+                    {/*            {selectedUsers.map(id => {*/}
+                    {/*                const user = users.find(u => u.id === id)*/}
+                    {/*                if (!user) return null*/}
+
+                    {/*                return (*/}
+                    {/*                    <div*/}
+                    {/*                        key={id}*/}
+                    {/*                        className="flex items-center gap-1 px-2 py-1 bg-blue-500/20 border border-blue-500/40 rounded-full text-[10px]"*/}
+                    {/*                    >*/}
+                    {/*                        {user.fullName}*/}
+                    {/*                        <button*/}
+                    {/*                            onClick={() =>*/}
+                    {/*                                setSelectedUsers(prev => prev.filter(uid => uid !== id))*/}
+                    {/*                            }*/}
+                    {/*                            className="text-red-400"*/}
+                    {/*                        >*/}
+                    {/*                            ✕*/}
+                    {/*                        </button>*/}
+                    {/*                    </div>*/}
+                    {/*                )*/}
+                    {/*            })}*/}
+                    {/*        </div>*/}
+
+                    {/*        */}{/* USER LIST (SMALL HEIGHT) */}
+                    {/*        <div className="max-h-32 overflow-y-auto rounded-lg border border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-white/5 p-1 space-y-1">*/}
+
+                    {/*            {users.map(u => {*/}
+                    {/*                const isSelected = selectedUsers.includes(u.id)*/}
+
+                    {/*                return (*/}
+                    {/*                    <label*/}
+                    {/*                        key={u.id}*/}
+                    {/*                        className={`flex items-center justify-between px-2 py-1 rounded-md cursor-pointer text-xs*/}
+                    {/*            ${isSelected*/}
+                    {/*                                ? "bg-blue-500/20"*/}
+                    {/*                                : "hover:bg-gray-200 dark:hover:bg-white/10"*/}
+                    {/*                            }`}*/}
+                    {/*                    >*/}
+                    {/*                        <div className="flex items-center gap-2">*/}
+                    {/*                            <input*/}
+                    {/*                                type="checkbox"*/}
+                    {/*                                checked={isSelected}*/}
+                    {/*                                onChange={(e) => {*/}
+                    {/*                                    if (e.target.checked) {*/}
+                    {/*                                        setSelectedUsers(prev => [...prev, u.id])*/}
+                    {/*                                    } else {*/}
+                    {/*                                        setSelectedUsers(prev => prev.filter(id => id !== u.id))*/}
+                    {/*                                    }*/}
+                    {/*                                }}*/}
+                    {/*                                className="accent-blue-500"*/}
+                    {/*                            />*/}
+                    {/*                            {u.fullName}*/}
+                    {/*                        </div>*/}
+
+                    {/*                        <div className="w-6 h-6 flex items-center justify-center rounded-full bg-blue-500 text-[10px] text-white">*/}
+                    {/*                            {u.fullName.charAt(0)}*/}
+                    {/*                        </div>*/}
+                    {/*                    </label>*/}
+                    {/*                )*/}
+                    {/*            })}*/}
+                    {/*        </div>*/}
+                    {/*    </div>*/}
+
+                    {/*    */}{/* BUTTON */}
+                    {/*    <Button*/}
+                    {/*        onClick={createMeeting}*/}
+                    {/*        className="w-full h-10 text-sm rounded-lg bg-gradient-to-r from-blue-500 to-indigo-500"*/}
+                    {/*    >*/}
+                    {/*        Create Meeting*/}
+                    {/*    </Button>*/}
+
+                    {/*</div>*/}
+
+                    <div className="p-5 space-y-5">
 
                         {/* TITLE */}
-                        <div className="space-y-1">
-                            <Label className="text-xs">Meeting Title</Label>
+                        <div className="space-y-2">
+                            <Label className="text-xs font-medium">Meeting Title</Label>
                             <Input
-                                placeholder="Sprint Planning"
+                                placeholder="Enter meeting title..."
                                 value={title}
                                 onChange={(e) => setTitle(e.target.value)}
-                                className="h-9 text-sm bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-lg"
+                                className="h-10 text-sm rounded-lg bg-gray-50 dark:bg-white/5 focus:ring-2 focus:ring-blue-500"
                             />
                         </div>
 
-                        {/* TIME */}
-                        <div className="grid grid-cols-2 gap-2">
-                            <div className="space-y-1">
-                                <Label className="text-xs">Start</Label>
-                                <Input
-                                    type="datetime-local"
-                                    value={startTime}
-                                    onChange={(e) => setStartTime(e.target.value)}
-                                    className="h-9 text-xs bg-gray-50 dark:bg-white/5"
-                                />
+                        <div className="grid grid-cols-2 gap-4">
+
+                            {/* START */}
+                            <div className="space-y-2">
+                                <Label className="text-xs font-medium">Start Time</Label>
+
+                                <div className="relative">
+                                    <input
+                                        type="datetime-local"
+                                        value={startTime}
+                                        onChange={(e) => setStartTime(e.target.value)}
+                                        className="w-full h-10 px-3 text-sm rounded-lg border 
+                bg-white dark:bg-white/5 
+                focus:ring-2 focus:ring-blue-500 
+                outline-none"
+                                    />
+                                </div>
                             </div>
 
-                            <div className="space-y-1">
-                                <Label className="text-xs">End</Label>
-                                <Input
-                                    type="datetime-local"
-                                    value={endTime}
-                                    onChange={(e) => setEndTime(e.target.value)}
-                                    className="h-9 text-xs bg-gray-50 dark:bg-white/5"
-                                />
+                            {/* END */}
+                            <div className="space-y-2">
+                                <Label className="text-xs font-medium">End Time</Label>
+
+                                <div className="relative">
+                                    <input
+                                        type="datetime-local"
+                                        value={endTime}
+                                        onChange={(e) => setEndTime(e.target.value)}
+                                        className="w-full h-10 px-3 text-sm rounded-lg border 
+                bg-white dark:bg-white/5 
+                focus:ring-2 focus:ring-blue-500 
+                outline-none"
+                                    />
+                                </div>
                             </div>
+
                         </div>
 
                         {/* LINK */}
-                        <div className="space-y-1">
-                            <Label className="text-xs">Meeting Link</Label>
+                        <div className="space-y-2">
+                            <Label className="text-xs font-medium">Meeting Link</Label>
                             <Input
-                                placeholder="meet.google.com/..."
+                                placeholder="https://meet.google.com/..."
                                 value={meetingLink}
                                 onChange={(e) => setMeetingLink(e.target.value)}
-                                className="h-9 text-sm bg-gray-50 dark:bg-white/5"
+                                className="h-10 text-sm rounded-lg bg-gray-50 dark:bg-white/5 focus:ring-2 focus:ring-blue-500"
                             />
                         </div>
 
                         {/* PARTICIPANTS */}
-                        <div className="space-y-2">
-                            <Label className="text-xs">Participants</Label>
+                        <div className="space-y-3">
+                            <Label className="text-xs font-medium">Participants</Label>
 
-                            {/* CHIPS */}
-                            <div className="flex flex-wrap gap-1">
-                                {selectedUsers.map(id => {
-                                    const user = users.find(u => u.id === id)
-                                    if (!user) return null
+                            {/* SELECTED USERS */}
+                            {selectedUsers.length > 0 && (
+                                <div className="flex flex-wrap gap-2">
+                                    {selectedUsers.map(id => {
+                                        const user = users.find(u => u.id === id)
+                                        if (!user) return null
 
-                                    return (
-                                        <div
-                                            key={id}
-                                            className="flex items-center gap-1 px-2 py-1 bg-blue-500/20 border border-blue-500/40 rounded-full text-[10px]"
-                                        >
-                                            {user.fullName}
-                                            <button
-                                                onClick={() =>
-                                                    setSelectedUsers(prev => prev.filter(uid => uid !== id))
-                                                }
-                                                className="text-red-400"
+                                        return (
+                                            <div
+                                                key={id}
+                                                className="flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/10 border border-blue-500/30 text-xs"
                                             >
-                                                ✕
-                                            </button>
-                                        </div>
-                                    )
-                                })}
-                            </div>
+                                                {user.fullName}
+                                                <button
+                                                    onClick={() =>
+                                                        setSelectedUsers(prev => prev.filter(uid => uid !== id))
+                                                    }
+                                                    className="text-red-400 hover:text-red-600"
+                                                >
+                                                    ✕
+                                                </button>
+                                            </div>
+                                        )
+                                    })}
+                                </div>
+                            )}
 
-                            {/* USER LIST (SMALL HEIGHT) */}
-                            <div className="max-h-32 overflow-y-auto rounded-lg border border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-white/5 p-1 space-y-1">
+                            {/* USER LIST */}
+                            <div className="max-h-40 overflow-y-auto rounded-lg border bg-gray-50 dark:bg-white/5 p-2 space-y-1">
 
                                 {users.map(u => {
                                     const isSelected = selectedUsers.includes(u.id)
@@ -352,8 +583,8 @@ export function MeetingsView() {
                                     return (
                                         <label
                                             key={u.id}
-                                            className={`flex items-center justify-between px-2 py-1 rounded-md cursor-pointer text-xs
-                                ${isSelected
+                                            className={`flex items-center justify-between px-3 py-2 rounded-lg cursor-pointer text-sm transition
+                        ${isSelected
                                                     ? "bg-blue-500/20"
                                                     : "hover:bg-gray-200 dark:hover:bg-white/10"
                                                 }`}
@@ -374,7 +605,7 @@ export function MeetingsView() {
                                                 {u.fullName}
                                             </div>
 
-                                            <div className="w-6 h-6 flex items-center justify-center rounded-full bg-blue-500 text-[10px] text-white">
+                                            <div className="w-7 h-7 flex items-center justify-center rounded-full bg-blue-500 text-xs text-white">
                                                 {u.fullName.charAt(0)}
                                             </div>
                                         </label>
@@ -386,9 +617,9 @@ export function MeetingsView() {
                         {/* BUTTON */}
                         <Button
                             onClick={createMeeting}
-                            className="w-full h-10 text-sm rounded-lg bg-gradient-to-r from-blue-500 to-indigo-500"
+                            className="w-full h-11 text-sm rounded-xl bg-gradient-to-r from-blue-500 to-indigo-500 hover:opacity-90 transition"
                         >
-                            Create Meeting
+                            Create Meeting 🚀
                         </Button>
 
                     </div>

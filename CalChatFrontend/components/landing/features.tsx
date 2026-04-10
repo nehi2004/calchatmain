@@ -74,37 +74,37 @@ const features = [
     {
         icon: Calendar,
         title: "Smart Calendar Management",
-        description: "Organize your schedule with intelligent reminders and seamless integrations.",
+        description: "Organize your schedule with intelligent event management, reminders, and seamless integrations.",
         color: "from-blue-500 to-indigo-500",
     },
     {
         icon: MessageSquare,
         title: "AI Chat Assistant",
-        description: "Get instant, context-aware help from our AI assistant.",
+        description: "Get instant, context-aware help from our AI assistant to boost your productivity.",
         color: "from-purple-500 to-pink-500",
     },
     {
         icon: CheckCircle2,
         title: "Task & Focus Management",
-        description: "Stay on track with smart task prioritization and focus mode.",
+        description: "Stay on track with prioritized tasks, focus mode, and deadline tracking.",
         color: "from-green-500 to-emerald-500",
     },
     {
         icon: LayoutDashboard,
         title: "Role Based Dashboards",
-        description: "Personalized dashboards for students, professionals, and users.",
+        description: "Personalized dashboards tailored for students, professionals, and personal use.",
         color: "from-orange-500 to-red-500",
     },
     {
         icon: BarChart3,
         title: "Productivity Analytics",
-        description: "Track progress with insightful charts and reports.",
+        description: "Track your performance with insightful charts and detailed progress reports.",
         color: "from-cyan-500 to-blue-500",
     },
     {
         icon: Users,
         title: "Team Collaboration",
-        description: "Collaborate with group chats and shared calendars.",
+        description: "Work together seamlessly with group chats, shared calendars, and team management.", 
         color: "from-indigo-500 to-purple-500",
     },
 ]

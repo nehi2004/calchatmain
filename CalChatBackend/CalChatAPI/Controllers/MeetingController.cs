@@ -32,9 +32,9 @@ public class MeetingController : ControllerBase
     {
         var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 
-        // ✅ Convert to UTC
-        dto.StartTime = dto.StartTime.ToUniversalTime();
-        dto.EndTime = dto.EndTime.ToUniversalTime();
+        //// ✅ Convert to UTC
+        //dto.StartTime = dto.StartTime.ToUniversalTime();
+        //dto.EndTime = dto.EndTime.ToUniversalTime();
 
         if (dto.StartTime >= dto.EndTime)
             return BadRequest("Start time must be before end time");

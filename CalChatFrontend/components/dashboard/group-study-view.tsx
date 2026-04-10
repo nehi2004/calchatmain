@@ -1,5 +1,6 @@
 
 
+
 //"use client"
 
 //import { useEffect, useRef, useState } from "react"
@@ -35,6 +36,7 @@
 //    fileUrl?: string
 //    time: string
 //    status?: "sent" | "delivered" | "read"
+//    isCall?: boolean
 //}
 
 //interface Notification {
@@ -108,8 +110,8 @@
 //    const [groupName, setGroupName] = useState("")
 //    const [selectedStudents, setSelectedStudents] = useState<string[]>([])
 
-//    const [callType, setCallType] = useState<"voice" | "video" | null>(null)
-//    const [outgoingCallType, setOutgoingCallType] = useState<"voice" | "video" | null>(null)
+//    const [callType, setCallType] = useState<"voice" | null>(null)
+//    const [outgoingCallType, setOutgoingCallType] = useState<"voice" | null>(null)
 
 //    const [incomingCall, setIncomingCall] = useState<{
 //        fromUserId: string
@@ -133,6 +135,11 @@
 //    const connectionRef = useRef<signalR.HubConnection | null>(null)
 //    const [isMuted, setIsMuted] = useState(false)
 
+//    const peerRef = useRef<RTCPeerConnection | null>(null)
+//    const remoteAudioRef = useRef<HTMLAudioElement>(null)
+
+//    const [callUserId, setCallUserId] = useState<string | null>(null)
+
 
 //    useEffect(() => {
 
@@ -151,7 +158,9 @@
 //        if (!activeChat) return
 
 //        fetch(`https://steadfast-warmth-production-64c8.up.railway.app/api/chat/mute/${activeChat}`, {
+//            method: "POST",
 //            headers: {
+//                "Content-Type": "application/json",
 //                UserId: currentUserId
 //            }
 //        })
@@ -401,51 +410,68 @@
 //    }, [activeChat])
 
 
+//    const createPeer = () => {
+
+//        const pc = new RTCPeerConnection({
+//            iceServers: [
+//                { urls: "stun:stun.l.google.com:19302" }
+//            ]
+//        })
+
+//        pc.ontrack = (event) => {
+//            if (remoteAudioRef.current) {
+//                remoteAudioRef.current.srcObject = event.streams[0]
+//            }
+//        }
+
+//        pc.onicecandidate = (event) => {
+//            if (event.candidate) {
+//                if (event.candidate && callUserId) {
+//                    connectionRef.current?.invoke(
+//                        "SendIceCandidate",
+//                        JSON.stringify(event.candidate),
+//                        callUserId
+//                    )
+//                }
+//            }
+//        }
+
+//        peerRef.current = pc
+//    }
 
 //    /* ---------------- CALL ---------------- */
-//    const startCall = async (type: "voice" | "video") => {
+//    const startCall = async () => {
 
 //        if (!activeChat) return
 
 //        const chat = chats.find(c => c.id === activeChat)
+//        if (!chat || chat.type === "group") return
 
-//        if (!chat) return
-
-//        //const otherUserId = chat.name   // email id
-//        if (chat.type === "group") {
-//            alert("Group call not supported yet")
-//            return
-//        }
-
-//        if (!chat.members || chat.members.length !== 2) {
-//            console.error("Invalid members array", chat.members)
-//            return
-//        }
-
-//        const otherUserId = chat.members.find(
+//        const otherUserId = chat.members?.find(
 //            m => String(m) !== String(currentUserId)
 //        )
 
-//        if (!otherUserId) {
-//            console.error("Other user not found")
-//            return
-//        }
+//        if (!otherUserId) return
 
-//        setCallType(type)
-//        console.log("Calling user:", otherUserId)
+//        setCallUserId(otherUserId)
 
-//        setCallType(type)
-//        setOutgoingCallType(type)
+//        console.log("📞 Calling:", otherUserId)
 
-//        connectionRef.current?.invoke(
-//            "CallUser",
-//            String(otherUserId),
-//            localStorage.getItem("name") || "Student",
-//            type
-//        )
+//        createPeer()
 
+//        const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+
+//        stream.getTracks().forEach(track => {
+//            peerRef.current?.addTrack(track, stream)
+//        })
+
+//        const offer = await peerRef.current!.createOffer()
+//        await peerRef.current!.setLocalDescription(offer)
+
+//        connectionRef.current?.invoke("SendOffer", JSON.stringify(offer), otherUserId)
+
+//        setCallType("voice")
 //    }
-
 
 
 //    const endCall = () => {
@@ -728,6 +754,28 @@
 //                console.error("❌ SignalR Connection Error:", err)
 //            })
 //            .catch(err => console.log(err))
+
+
+//        connection.on("ReceiveOffer", ({ offer, fromUserId }) => {
+
+//            console.log("📥 Offer stored")
+
+//            // ❗ STORE OFFER ONLY (DO NOT ACCEPT YET)
+//            peerRef.current = { offer, fromUserId } as any
+
+//        })
+
+//        connection.on("ReceiveAnswer", async ({ answer }) => {
+//            console.log("📥 Answer received")
+//            await peerRef.current?.setRemoteDescription(new RTCSessionDescription(answer))
+//        })
+
+
+//        connection.on("ReceiveIceCandidate", async (candidate) => {
+//            await peerRef.current?.addIceCandidate(new RTCIceCandidate(candidate))
+//        })
+
+
 //        connection.on("ReceiveMessage", (msg: any) => {
 
 //            if (!msg) return
@@ -743,45 +791,43 @@
 //                        id: msg.id,
 //                        senderId: msg.senderId,
 //                        senderName: msg.senderName,
-//                        message: msg.message || msg.Text, // 🔥 FIX BOTH CASE
+//                        message: msg.message,
 //                        fileUrl: msg.fileUrl,
 //                        time: msg.time,
-//                        status: msg.status
+//                        status: msg.status,
+//                        isCall: msg.isCall || false   // 👈 ADD THIS
 //                    }
 //                ]
 //            })
 //        })
 
-//            // ✅ NO DUPLICATE + REALTIME UPDATE
+//        // ✅ NO DUPLICATE + REALTIME UPDATE
 
 
-//        connection.on("IncomingCall", (fromUserId, fromUserName, callType) => {
+//        connection.on("IncomingCall", (data) => {
 
-//            if (String(fromUserId) === String(currentUserId)) return
+//            if (!data) return
 
-//            console.log("IncomingCall received:", fromUserName)
+//            if (String(data.fromUserId) === String(currentUserId)) return
+
+//            console.log("📞 Incoming Call:", data)
 
 //            setIncomingCall({
-//                fromUserId,
-//                fromUserName,
-//                callType
+//                fromUserId: data.fromUserId,
+//                fromUserName: data.fromUserName,
+//                callType: "voice"
 //            })
 
 //        })
 
 
-
-//        connection.on("CallAccepted", async (toUserId) => {
-
-//            if (String(toUserId) !== String(currentUserId)) return
+//        connection.on("CallAccepted", async () => {
 
 //            console.log("Call accepted")
 
 //            const stream = await navigator.mediaDevices.getUserMedia({
-//                video: outgoingCallType === "video",
 //                audio: true
 //            })
-
 //            localStream.current = stream
 
 //            if (videoRef.current)
@@ -849,28 +895,37 @@
 
 //    const acceptCall = async () => {
 
-//        if (!incomingCall) return
+//        if (!incomingCall || !peerRef.current) return
 
-//        console.log("Accepting call")
+//        console.log("✅ Accepting call")
 
-//        const stream = await navigator.mediaDevices.getUserMedia({
-//            video: incomingCall.callType === "video",
-//            audio: true
+//        const { offer, fromUserId } = peerRef.current as any
+
+//        createPeer()
+
+//        const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+
+//        stream.getTracks().forEach(track => {
+//            peerRef.current?.addTrack(track, stream)
 //        })
 
-//        localStream.current = stream
+//        const parsedOffer = JSON.parse(offer)
 
-//        if (videoRef.current)
-//            videoRef.current.srcObject = stream
-
-//        connectionRef.current?.invoke(
-//            "AcceptCall",
-//            incomingCall.fromUserId
+//        await peerRef.current!.setRemoteDescription(
+//            new RTCSessionDescription(parsedOffer)
 //        )
 
-//        setCallType(incomingCall.callType)
-//        setIncomingCall(null)
+//        const answer = await peerRef.current!.createAnswer()
+//        await peerRef.current!.setLocalDescription(answer)
 
+//        connectionRef.current?.invoke(
+//            "SendAnswer",
+//            JSON.stringify(answer),
+//            fromUserId
+//        )
+
+//        setCallType("voice")
+//        setIncomingCall(null)
 //    }
 
 
@@ -888,7 +943,59 @@
 
 //    }
 
+//    // ✅ CLEAR CHAT
+//    const clearChat = async () => {
+//        if (!activeChat) return
 
+//        try {
+//            await fetch(
+//                `https://steadfast-warmth-production-64c8.up.railway.app/api/messages/clear/${activeChat}`,
+//                {
+//                    method: "DELETE",
+//                    headers: {
+//                        Authorization: `Bearer ${localStorage.getItem("token")}`,
+//                        UserId: currentUserId
+//                    }
+//                }
+//            )
+
+//            setMessages([])
+//            alert("Chat cleared")
+
+//        } catch {
+//            alert("Clear chat failed")
+//        }
+//    }
+
+
+//    // ✅ MUTE / UNMUTE CHAT
+//    const toggleMuteChat = async () => {
+//        if (!activeChat) return
+
+//        try {
+//            const res = await fetch(
+//                `https://steadfast-warmth-production-64c8.up.railway.app/api/chat/mute/${activeChat}`,
+//                {
+//                    method: "POST",
+//                    headers: {
+//                        "Content-Type": "application/json",
+//                        UserId: currentUserId
+//                    }
+//                }
+//            )
+
+//            const data = await res.json()
+
+//            setIsMuted(data.isMuted)
+
+//            window.dispatchEvent(new Event("chat-updated"))
+
+//            alert(data.isMuted ? "Chat muted 🔕" : "Chat unmuted 🔔")
+
+//        } catch {
+//            alert("Mute failed")
+//        }
+//    }
 
 
 
@@ -1242,13 +1349,11 @@
 
 
 
-//                        <Button size="icon" variant="outline" onClick={() => startCall("voice")}>
+//                        <Button size="icon" variant="outline" onClick={startCall}>
 //                            <Phone className="h-4 w-4" />
 //                        </Button>
 
-//                        <Button size="icon" variant="outline" onClick={() => startCall("video")}>
-//                            <Video className="h-4 w-4" />
-//                        </Button>
+
 
 //                    </div>
 
@@ -1345,38 +1450,17 @@
 
 //                            <div className="flex flex-col items-center justify-center py-10">
 
-//                                {callType === "video" ? (
+//                                <div className="flex flex-col items-center">
 
-//                                    <video
-//                                        ref={videoRef}
-//                                        autoPlay
-//                                        muted
-//                                        className="rounded-lg w-[90%]"
-//                                    />
-
-//                                ) : (
-
-//                                    <div className="flex flex-col items-center">
-
-//                                        {/* USER AVATAR */}
-
-//                                        <div className="w-28 h-28 rounded-full bg-gradient-to-br from-gray-600 to-gray-800 flex items-center justify-center text-4xl font-bold uppercase shadow-lg">
-
-//                                            {activeChatName
-//                                                ? activeChatName.charAt(0)
-//                                                : "U"}
-
-//                                        </div>
-
-//                                        {/* CALL STATUS */}
-
-//                                        <p className="mt-4 text-sm opacity-70">
-//                                            Calling...
-//                                        </p>
-
+//                                    <div className="w-28 h-28 rounded-full bg-gradient-to-br from-gray-600 to-gray-800 flex items-center justify-center text-4xl font-bold uppercase shadow-lg">
+//                                        {activeChatName ? activeChatName.charAt(0) : "U"}
 //                                    </div>
 
-//                                )}
+//                                    <p className="mt-4 text-sm opacity-70">
+//                                        Calling...
+//                                    </p>
+
+//                                </div>
 
 //                            </div>
 
@@ -1389,9 +1473,7 @@
 //                                    <Phone className="h-5 w-5" />
 //                                </button>
 
-//                                <button className="bg-gray-700 p-3 rounded-full">
-//                                    <Video className="h-5 w-5" />
-//                                </button>
+
 
 
 
@@ -1417,458 +1499,6 @@
 //                )}
 
 
-//                {/* PROFILE MODAL */}
-
-//                {/*{showProfile && (*/}
-
-//                {/*    <div*/}
-//                {/*        className="fixed inset-0 bg-black/40 flex items-center justify-center z-50"*/}
-//                {/*        onClick={() => setShowProfile(false)}*/}
-//                {/*    >*/}
-
-//                {/*        <div*/}
-//                {/*            className="bg-white rounded-xl w-[360px] max-h-[90vh] overflow-y-auto"*/}
-//                {/*            onClick={(e) => e.stopPropagation()}*/}
-//                {/*        >*/}
-
-//                {/*            */}{/* HEADER */}
-
-//                {/*            <div className="flex justify-between items-center border-b p-4">*/}
-
-//                {/*                <h2 className="font-semibold text-lg">*/}
-
-//                {/*                    {activeTab === "group" ? "Group Profile" : "Profile"}*/}
-
-//                {/*                </h2>*/}
-
-//                {/*                <button*/}
-//                {/*                    onClick={() => setShowProfile(false)}*/}
-//                {/*                    className="text-xl"*/}
-//                {/*                >*/}
-//                {/*                    ✕*/}
-//                {/*                </button>*/}
-
-//                {/*            </div>*/}
-
-
-//                {/*            */}{/* AVATAR */}
-
-//                {/*            <div className="text-center p-6">*/}
-
-//                {/*                <div className={`w-20 h-20 mx-auto rounded-full flex items-center justify-center text-white text-2xl font-bold ${getAvatarColor(profileName)}`}>*/}
-
-//                {/*                    {profileName.charAt(0).toUpperCase()}*/}
-
-//                {/*                </div>*/}
-
-//                {/*                <h2 className="mt-4 font-semibold text-lg">*/}
-
-//                {/*                    {profileName}*/}
-
-//                {/*                </h2>*/}
-
-//                {/*                {activeTab === "group" && (*/}
-
-//                {/*                    <p className="text-sm text-muted-foreground">*/}
-//                {/*                        Group • {groupMembers.length} Members*/}
-//                {/*                    </p>*/}
-
-//                {/*                )}*/}
-
-//                {/*            </div>*/}
-
-
-//                {/*            */}{/* PERSONAL PROFILE */}
-
-//                {/*            {activeTab === "personal" && (*/}
-
-//                {/*                <div className="px-6 pb-6 space-y-4">*/}
-
-//                {/*                    */}{/* ACTION BUTTONS */}
-
-//                {/*                    <div className="flex justify-around text-sm">*/}
-
-//                {/*                        <span*/}
-//                {/*                            onClick={() => startCall("voice")}*/}
-//                {/*                            className="flex items-center gap-1 text-green-500 cursor-pointer"*/}
-//                {/*                        >*/}
-//                {/*                            <Phone className="h-4 w-4" /> Voice*/}
-//                {/*                        </span>*/}
-
-//                {/*                        <span*/}
-//                {/*                            onClick={() => startCall("video")}*/}
-//                {/*                            className="flex items-center gap-1 text-blue-500 cursor-pointer"*/}
-//                {/*                        >*/}
-//                {/*                            <Video className="h-4 w-4" /> Video*/}
-//                {/*                        </span>*/}
-
-//                {/*                        <span*/}
-//                {/*                            className="flex items-center gap-1 text-purple-500 cursor-pointer"*/}
-//                {/*                            onClick={async () => {*/}
-
-//                {/*                                if (!activeChat) return*/}
-
-//                {/*                                try {*/}
-
-//                {/*                                    if (!activeChat) return*/}
-
-//                {/*                                    const res = await fetch(*/}
-//                {/*                                        `https://steadfast-warmth-production-64c8.up.railway.app/api/messages/export/${activeChat}`,*/}
-//                {/*                                        {*/}
-//                {/*                                            headers: {*/}
-//                {/*                                                Authorization: `Bearer ${localStorage.getItem("token")}`*/}
-//                {/*                                            }*/}
-//                {/*                                        }*/}
-//                {/*                                    )*/}
-
-//                {/*                                    if (!res.ok) throw new Error()*/}
-
-//                {/*                                    const blob = await res.blob()*/}
-
-//                {/*                                    const url = window.URL.createObjectURL(blob)*/}
-
-//                {/*                                    const a = document.createElement("a")*/}
-//                {/*                                    a.href = url*/}
-//                {/*                                    a.download = `chat-${activeChat}.txt`*/}
-//                {/*                                    a.click()*/}
-
-//                {/*                                    window.URL.revokeObjectURL(url)*/}
-
-//                {/*                                } catch {*/}
-//                {/*                                    alert("Export failed")*/}
-//                {/*                                }*/}
-
-//                {/*                            }}*/}
-//                {/*                        >*/}
-//                {/*                            📤 Export*/}
-//                {/*                        </span>*/}
-
-//                {/*                        <span*/}
-//                {/*                            onClick={() => {*/}
-//                {/*                                alert(`User ID: ${profileId}\nName: ${profileName}`)*/}
-//                {/*                            }}*/}
-//                {/*                            className="flex items-center gap-1 text-gray-500 cursor-pointer"*/}
-//                {/*                        >*/}
-//                {/*                            <User className="h-4 w-4" /> Info*/}
-//                {/*                        </span>*/}
-
-//                {/*                    </div>*/}
-
-
-//                {/*                    */}{/* STUDENT INFO */}
-
-//                {/*                    <div className="bg-gray-100 rounded-lg p-3 text-sm">*/}
-
-//                {/*                        <p className="text-gray-500 text-xs">*/}
-//                {/*                            Student ID*/}
-//                {/*                        </p>*/}
-
-//                {/*                        <p className="font-medium break-all">*/}
-//                {/*                            {profileId}*/}
-//                {/*                        </p>*/}
-
-//                {/*                    </div>*/}
-
-
-//                {/*                    */}{/* OPTIONS */}
-
-//                {/*                    <div className="bg-gray-100 rounded-lg divide-y text-sm">*/}
-
-//                {/*                        <button*/}
-//                {/*                            className="w-full p-3 text-left"*/}
-//                {/*                            onClick={async () => {*/}
-
-//                {/*                                if (!activeChat) return*/}
-
-//                {/*                                await fetch(`https://steadfast-warmth-production-64c8.up.railway.app/api/messages/clear/${activeChat}`, {*/}
-//                {/*                                    method: "DELETE",*/}
-//                {/*                                    headers: {*/}
-//                {/*                                        Authorization: `Bearer ${localStorage.getItem("token")}`*/}
-//                {/*                                    }*/}
-//                {/*                                })*/}
-
-//                {/*                                setMessages([])*/}
-//                {/*                            }}*/}
-
-//                {/*                        >*/}
-//                {/*                            🧹 Clear Chat*/}
-//                {/*                        </button>*/}
-//                {/*                        <button*/}
-//                {/*                            className="w-full p-3 text-left"*/}
-//                {/*                            onClick={async () => {*/}
-
-//                {/*                                if (!activeChat) return*/}
-
-//                {/*                                try {*/}
-
-//                {/*                                    const res = await fetch(*/}
-//                {/*                                        `https://steadfast-warmth-production-64c8.up.railway.app/api/chat/mute/${activeChat}`,*/}
-//                {/*                                        {*/}
-//                {/*                                            method: "POST",*/}
-//                {/*                                            headers: {*/}
-//                {/*                                                "Content-Type": "application/json",*/}
-//                {/*                                                UserId: currentUserId*/}
-//                {/*                                            }*/}
-//                {/*                                        }*/}
-//                {/*                                    )*/}
-
-//                {/*                                    const data = await res.json()*/}
-
-//                {/*                                    setIsMuted(data.isMuted)*/}
-//                {/*                                    window.dispatchEvent(new Event("chat-updated"))  // ✅ ADD THIS*/}
-
-//                {/*                                    alert(data.isMuted ? "Chat muted 🔕" : "Chat unmuted 🔔")*/}
-
-//                {/*                                } catch {*/}
-//                {/*                                    alert("Mute failed")*/}
-//                {/*                                }*/}
-
-//                {/*                            }}*/}
-//                {/*                        >*/}
-//                {/*                            {isMuted ? "🔔 Unmute Chat" : "🔕 Mute Chat"}*/}
-//                {/*                        </button>*/}
-
-//                {/*                        <button*/}
-//                {/*                            className={cn(*/}
-//                {/*                                "w-full p-3 text-left flex items-center gap-2",*/}
-//                {/*                                isBlocked ? "text-green-600" : "text-red-500"*/}
-//                {/*                            )}*/}
-//                {/*                            onClick={toggleBlockUser}*/}
-//                {/*                        >*/}
-
-//                {/*                            {blockLoading*/}
-//                {/*                                ? "Please wait a moment..."*/}
-//                {/*                                : isBlocked*/}
-//                {/*                                    ? "🔓 Unblock User"*/}
-//                {/*                                    : "🚫 Block User"*/}
-//                {/*                            }*/}
-
-//                {/*                        </button>*/}
-
-//                {/*                    </div>*/}
-
-//                {/*                </div>*/}
-
-//                {/*            )}*/}
-
-
-//                {/*            */}{/* GROUP PROFILE */}
-
-//                {/*            {activeTab === "group" && (*/}
-
-//                {/*                <div className="px-6 pb-6 space-y-4">*/}
-
-//                {/*                    */}{/* ACTION BUTTONS */}
-
-//                {/*                    <div className="flex justify-around text-sm">*/}
-
-//                {/*                        <span*/}
-//                {/*                            onClick={() => startCall("voice")}*/}
-//                {/*                            className="flex items-center gap-1 text-green-500 cursor-pointer"*/}
-//                {/*                        >*/}
-//                {/*                            <Phone className="h-4 w-4" /> Voice*/}
-//                {/*                        </span>*/}
-
-//                {/*                        <span*/}
-//                {/*                            onClick={() => startCall("video")}*/}
-//                {/*                            className="flex items-center gap-1 text-blue-500 cursor-pointer"*/}
-//                {/*                        >*/}
-//                {/*                            <Video className="h-4 w-4" /> Video*/}
-//                {/*                        </span>*/}
-//                {/*                        <span*/}
-//                {/*                            onClick={() => {*/}
-//                {/*                                setShowProfile(false)*/}
-//                {/*                                setSelectedStudents([])*/}
-//                {/*                                setShowCreateGroup(true)*/}
-//                {/*                            }}*/}
-//                {/*                            className="flex items-center gap-1 text-purple-500 cursor-pointer"*/}
-//                {/*                        >*/}
-//                {/*                            <Plus className="h-4 w-4" /> Add*/}
-//                {/*                        </span>*/}
-
-//                {/*                        <span*/}
-//                {/*                            onClick={() => {*/}
-//                {/*                                alert(`Group: ${profileName}\nMembers: ${groupMembers.length}`)*/}
-//                {/*                            }}*/}
-//                {/*                            className="flex items-center gap-1 text-gray-500 cursor-pointer"*/}
-//                {/*                        >*/}
-//                {/*                            <User className="h-4 w-4" /> Info*/}
-//                {/*                        </span>*/}
-
-//                {/*                    </div>*/}
-
-//                {/*                    <Input*/}
-//                {/*                        placeholder="Search messages..."*/}
-//                {/*                        onChange={(e) => {*/}
-
-//                {/*                            const text = e.target.value.toLowerCase()*/}
-
-//                {/*                            setMessages(prev =>*/}
-//                {/*                                prev.filter(m =>*/}
-//                {/*                                    m.message.toLowerCase().includes(text)*/}
-//                {/*                                )*/}
-//                {/*                            )*/}
-
-//                {/*                        }}*/}
-//                {/*                    />*/}
-
-
-//                {/*                    */}{/* DESCRIPTION */}
-
-//                {/*                    <div className="bg-gray-100 rounded-lg p-3 text-sm">*/}
-
-//                {/*                        <p className="text-gray-500 text-xs">*/}
-//                {/*                            Group Description*/}
-//                {/*                        </p>*/}
-
-//                {/*                        <p>*/}
-//                {/*                            {groupDescription || "Add group description"}*/}
-//                {/*                        </p>*/}
-
-//                {/*                        <p className="text-xs text-gray-400 mt-1">*/}
-
-//                {/*                            Created by {profileId}*/}
-
-//                {/*                        </p>*/}
-
-//                {/*                    </div>*/}
-
-
-//                {/*                    <div className="text-sm cursor-pointer">*/}
-//                {/*                        🔔 Mute Notifications*/}
-//                {/*                    </div>*/}
-
-
-
-
-//                {/*                    */}{/* MEMBERS */}
-
-//                {/*                    <div className="bg-gray-100 rounded-lg p-3">*/}
-
-//                {/*                        <p className="font-semibold mb-2">*/}
-
-//                {/*                            Members ({groupMembers.length})*/}
-
-//                {/*                        </p>*/}
-
-//                {/*                        {groupMembers.map(member => (*/}
-
-//                {/*                            <div*/}
-//                {/*                                key={member.id}*/}
-//                {/*                                className="flex justify-between text-sm py-1"*/}
-//                {/*                            >*/}
-
-//                {/*                                <span>{member.name}</span>*/}
-
-//                {/*                                {member.id === groupAdminId && (*/}
-
-//                {/*                                    <span className="bg-green-500 text-white text-xs px-2 py-0.5 rounded">*/}
-
-//                {/*                                        Admin*/}
-
-//                {/*                                    </span>*/}
-
-//                {/*                                )}*/}
-
-//                {/*                            </div>*/}
-
-//                {/*                        ))}*/}
-
-//                {/*                    </div>*/}
-
-
-//                {/*                    <div*/}
-//                {/*                        className="text-purple-600 text-sm cursor-pointer"*/}
-//                {/*                        onClick={() => setShowCreateGroup(true)}*/}
-//                {/*                    >*/}
-//                {/*                        + Add Members*/}
-//                {/*                    </div>*/}
-
-
-//                {/*                    <div className="bg-gray-100 rounded-lg divide-y text-sm">*/}
-
-//                {/*                        <button*/}
-//                {/*                            className="w-full p-3 text-left"*/}
-//                {/*                            onClick={async () => {*/}
-
-//                {/*                                if (!activeChat) return*/}
-
-//                {/*                                await fetch(`https://steadfast-warmth-production-64c8.up.railway.app/api/messages/clear/${activeChat}`, {*/}
-//                {/*                                    method: "DELETE",*/}
-//                {/*                                    headers: {*/}
-//                {/*                                        UserId: currentUserId*/}
-//                {/*                                    }*/}
-//                {/*                                })*/}
-
-//                {/*                                setMessages([])*/}
-//                {/*                            }}*/}
-//                {/*                        >*/}
-//                {/*                            🧹 Clear Chat*/}
-//                {/*                        </button>*/}
-
-//                {/*                        <button*/}
-//                {/*                            className="w-full p-3 text-left"*/}
-//                {/*                            onClick={async () => {*/}
-
-//                {/*                                if (!activeChat) return*/}
-
-//                {/*                                await fetch(`https://steadfast-warmth-production-64c8.up.railway.app/api/chat/mute/${activeChat}`, {*/}
-//                {/*                                    method: "POST",*/}
-//                {/*                                    headers: {*/}
-//                {/*                                        UserId: currentUserId*/}
-//                {/*                                    }*/}
-//                {/*                                })*/}
-//                {/*                                window.dispatchEvent(new Event("chat-updated"))*/}
-
-//                {/*                                alert("Chat muted")*/}
-//                {/*                            }}*/}
-//                {/*                        >*/}
-//                {/*                            🔔 Mute / Unmute*/}
-//                {/*                        </button>*/}
-
-//                {/*                        <button*/}
-//                {/*                            className="w-full p-3 text-left text-red-500"*/}
-//                {/*                            onClick={async () => {*/}
-
-//                {/*                                if (!activeChat) return*/}
-//                {/*                                await fetch(`https://steadfast-warmth-production-64c8.up.railway.app/api/groups/exit/${activeChat}`, {*/}
-//                {/*                                    method: "POST",*/}
-//                {/*                                    headers: {*/}
-//                {/*                                        "Content-Type": "application/json",*/}
-//                {/*                                        "UserId": currentUserId, // ✅ IMPORTANT FIX*/}
-//                {/*                                        Authorization: `Bearer ${localStorage.getItem("token")}`*/}
-//                {/*                                    }*/}
-//                {/*                                })*/}
-
-
-//                {/*                                alert("Exited group")*/}
-
-//                {/*                                setActiveChat(null)*/}
-//                {/*                                setMessages([])*/}
-
-//                {/*                                // 🔥 ADD THIS*/}
-//                {/*                                const updatedChats = await safeFetch<Chat[]>(*/}
-//                {/*                                    `https://steadfast-warmth-production-64c8.up.railway.app/api/chat/group/${currentUserId}`*/}
-//                {/*                                )*/}
-//                {/*                                setChats(updatedChats)*/}
-//                {/*                            }}*/}
-//                {/*                        >*/}
-//                {/*                            🚪 Exit Group*/}
-//                {/*                        </button>*/}
-
-
-
-//                {/*                    </div>*/}
-
-//                {/*                </div>*/}
-
-//                {/*            )}*/}
-
-//                {/*        </div>*/}
-
-//                {/*    </div>*/}
-
-//                {/*)}*/}
 //                {/* PROFILE MODAL */}
 
 //                {showProfile && (
@@ -1930,21 +1560,57 @@
 
 //                                    <div className="flex justify-around text-sm">
 
-//                                        <span onClick={() => startCall("voice")}
+//                                        <span onClick={startCall}
 //                                            className="flex items-center gap-1 text-green-500 cursor-pointer">
 //                                            <Phone className="h-4 w-4" /> Voice
 //                                        </span>
 
-//                                        <span onClick={() => startCall("video")}
-//                                            className="flex items-center gap-1 text-blue-500 cursor-pointer">
-//                                            <Video className="h-4 w-4" /> Video
-//                                        </span>
 
-//                                        <span className="flex items-center gap-1 text-purple-500 cursor-pointer">
+//                                        <span
+//                                            className="flex items-center gap-1 text-purple-500 cursor-pointer"
+//                                            onClick={async () => {
+
+//                                                if (!activeChat) return
+
+//                                                try {
+
+//                                                    const res = await fetch(
+//                                                        `https://steadfast-warmth-production-64c8.up.railway.app/api/messages/export/${activeChat}`,
+//                                                        {
+//                                                            headers: {
+//                                                                Authorization: `Bearer ${localStorage.getItem("token")}`
+//                                                            }
+//                                                        }
+//                                                    )
+
+//                                                    if (!res.ok) throw new Error()
+
+//                                                    const blob = await res.blob()
+
+//                                                    const url = window.URL.createObjectURL(blob)
+
+//                                                    const a = document.createElement("a")
+//                                                    a.href = url
+//                                                    a.download = `chat-${activeChat}.txt`
+//                                                    a.click()
+
+//                                                    window.URL.revokeObjectURL(url)
+
+//                                                } catch {
+//                                                    alert("Export failed")
+//                                                }
+
+//                                            }}
+//                                        >
 //                                            📤 Export
 //                                        </span>
 
-//                                        <span className="flex items-center gap-1 text-gray-500 dark:text-gray-400 cursor-pointer">
+//                                        <span
+//                                            onClick={() => {
+//                                                alert(`User Info\n\nName: ${profileName}\nID: ${profileId}`)
+//                                            }}
+//                                            className="flex items-center gap-1 text-gray-500 dark:text-gray-400 cursor-pointer"
+//                                        >
 //                                            <User className="h-4 w-4" /> Info
 //                                        </span>
 
@@ -1966,15 +1632,16 @@
 
 //                                    <div className="bg-gray-100 dark:bg-gray-800 rounded-lg divide-y divide-gray-200 dark:divide-gray-700 text-sm">
 
-//                                        <button className="w-full p-3 text-left">
+//                                        <button onClick={clearChat} className="w-full p-3 text-left">
 //                                            🧹 Clear Chat
 //                                        </button>
 
-//                                        <button className="w-full p-3 text-left">
+//                                        <button onClick={toggleMuteChat} className="w-full p-3 text-left">
 //                                            {isMuted ? "🔔 Unmute Chat" : "🔕 Mute Chat"}
 //                                        </button>
 
 //                                        <button
+//                                            onClick={toggleBlockUser}
 //                                            className={cn(
 //                                                "w-full p-3 text-left flex items-center gap-2",
 //                                                isBlocked
@@ -2004,15 +1671,25 @@
 //                                            <Phone className="h-4 w-4" /> Voice
 //                                        </span>
 
-//                                        <span className="flex items-center gap-1 text-blue-500 cursor-pointer">
-//                                            <Video className="h-4 w-4" /> Video
-//                                        </span>
 
-//                                        <span className="flex items-center gap-1 text-purple-500 cursor-pointer">
+
+//                                        <span
+//                                            onClick={() => {
+//                                                setShowProfile(false)
+//                                                setSelectedStudents([])
+//                                                setShowCreateGroup(true)
+//                                            }}
+//                                            className="flex items-center gap-1 text-purple-500 cursor-pointer"
+//                                        >
 //                                            <Plus className="h-4 w-4" /> Add
 //                                        </span>
 
-//                                        <span className="flex items-center gap-1 text-gray-500 dark:text-gray-400 cursor-pointer">
+//                                        <span
+//                                            onClick={() => {
+//                                                alert(`Group Info\n\nName: ${profileName}\nMembers: ${groupMembers.length}`)
+//                                            }}
+//                                            className="flex items-center gap-1 text-gray-500 dark:text-gray-400 cursor-pointer"
+//                                        >
 //                                            <User className="h-4 w-4" /> Info
 //                                        </span>
 
@@ -2068,15 +1745,51 @@
 
 //                                    <div className="bg-gray-100 dark:bg-gray-800 rounded-lg divide-y divide-gray-200 dark:divide-gray-700 text-sm">
 
-//                                        <button className="w-full p-3 text-left">
+//                                        <button onClick={clearChat} className="w-full p-3 text-left">
 //                                            🧹 Clear Chat
 //                                        </button>
 
-//                                        <button className="w-full p-3 text-left">
+//                                        <button onClick={toggleMuteChat} className="w-full p-3 text-left">
 //                                            🔔 Mute / Unmute
 //                                        </button>
 
-//                                        <button className="w-full p-3 text-left text-red-500 dark:text-red-400">
+//                                        <button
+//                                            className="w-full p-3 text-left text-red-500 dark:text-red-400"
+//                                            onClick={async () => {
+
+//                                                if (!activeChat) return
+
+//                                                try {
+
+//                                                    await fetch(
+//                                                        `https://steadfast-warmth-production-64c8.up.railway.app/api/groups/exit/${activeChat}`,
+//                                                        {
+//                                                            method: "POST",
+//                                                            headers: {
+//                                                                "Content-Type": "application/json",
+//                                                                UserId: currentUserId,
+//                                                                Authorization: `Bearer ${localStorage.getItem("token")}`
+//                                                            }
+//                                                        }
+//                                                    )
+
+//                                                    alert("Exited group")
+
+//                                                    setActiveChat(null)
+//                                                    setMessages([])
+
+//                                                    const updatedChats = await safeFetch<Chat[]>(
+//                                                        `https://steadfast-warmth-production-64c8.up.railway.app/api/chat/group/${currentUserId}`
+//                                                    )
+
+//                                                    setChats(updatedChats)
+
+//                                                } catch {
+//                                                    alert("Exit failed")
+//                                                }
+
+//                                            }}
+//                                        >
 //                                            🚪 Exit Group
 //                                        </button>
 
@@ -2127,7 +1840,13 @@
 //                                    )
 //                                }
 
-//                                <p>{msg.message}</p>
+//                                {msg.isCall ? (
+//                                    <p className="text-center text-green-500 text-sm font-semibold">
+//                                        {msg.message}
+//                                    </p>
+//                                ) : (
+//                                    <p>{msg.message}</p>
+//                                )}
 
 //                                {msg.fileUrl && (
 
@@ -2294,11 +2013,14 @@
 //                            <Send className="h-4 w-4" />
 //                        </Button>
 
+//                        <audio ref={remoteAudioRef} autoPlay />
+
 //                    </div>
 
 //                </div>
 
 //            </div>
+
 
 //        </div>
 
@@ -2762,11 +2484,13 @@ export function GroupStudyView() {
 
         setCallUserId(otherUserId)
 
-        console.log("📞 Calling:", otherUserId)
+        connectionRef.current?.invoke("CallUser", otherUserId)
 
         createPeer()
 
         const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+
+        localStream.current = stream   // ✅ FIX
 
         stream.getTracks().forEach(track => {
             peerRef.current?.addTrack(track, stream)
@@ -2775,12 +2499,14 @@ export function GroupStudyView() {
         const offer = await peerRef.current!.createOffer()
         await peerRef.current!.setLocalDescription(offer)
 
-        connectionRef.current?.invoke("SendOffer", JSON.stringify(offer), otherUserId)
+        connectionRef.current?.invoke(
+            "SendOffer",
+            JSON.stringify(offer),
+            otherUserId
+        )
 
         setCallType("voice")
     }
-
-
     const endCall = () => {
 
         console.log("Ending call")
@@ -3063,23 +2789,54 @@ export function GroupStudyView() {
             .catch(err => console.log(err))
 
 
-        connection.on("ReceiveOffer", ({ offer, fromUserId }) => {
+        connection.on("ReceiveOffer", async (data) => {
+            console.log("📩 Offer received")
 
-            console.log("📥 Offer stored")
+            createPeer()
 
-            // ❗ STORE OFFER ONLY (DO NOT ACCEPT YET)
-            peerRef.current = { offer, fromUserId } as any
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
 
+            localStream.current = stream
+
+            stream.getTracks().forEach(track => {
+                peerRef.current?.addTrack(track, stream)
+            })
+
+            await peerRef.current?.setRemoteDescription(
+                new RTCSessionDescription(JSON.parse(data.offer))
+            )
+
+            const answer = await peerRef.current!.createAnswer()
+            await peerRef.current!.setLocalDescription(answer)
+
+            setCallUserId(data.fromUserId)
+
+            connection.invoke(
+                "SendAnswer",
+                JSON.stringify(answer),
+                data.fromUserId
+            )
+
+            setCallType("voice")
         })
 
-        connection.on("ReceiveAnswer", async ({ answer }) => {
-            console.log("📥 Answer received")
-            await peerRef.current?.setRemoteDescription(new RTCSessionDescription(answer))
+        connection.on("ReceiveAnswer", async (data) => {
+            console.log("✅ Answer received")
+
+            await peerRef.current?.setRemoteDescription(
+                new RTCSessionDescription(JSON.parse(data.answer))
+            )
         })
 
 
-        connection.on("ReceiveIceCandidate", async (candidate) => {
-            await peerRef.current?.addIceCandidate(new RTCIceCandidate(candidate))
+        connection.on("ReceiveIceCandidate", async (data) => {
+            console.log("🧊 ICE received")
+
+            if (data.candidate) {
+                await peerRef.current?.addIceCandidate(
+                    new RTCIceCandidate(JSON.parse(data.candidate))
+                )
+            }
         })
 
 
@@ -3088,6 +2845,16 @@ export function GroupStudyView() {
             if (!msg) return
 
             setMessages(prev => {
+
+                // ✅ ONLY ADD MESSAGE IF CURRENT CHAT MATCHES
+                if (!activeChat) return prev
+
+                const isRelevant =
+                    String(msg.senderId) === String(currentUserId) ||
+                    String(msg.senderId) === String(activeChat) ||
+                    msg.isCall // allow call messages
+
+                if (!isRelevant) return prev
 
                 const exists = prev.some(m => m.id === msg.id)
                 if (exists) return prev
@@ -3102,7 +2869,7 @@ export function GroupStudyView() {
                         fileUrl: msg.fileUrl,
                         time: msg.time,
                         status: msg.status,
-                        isCall: msg.isCall || false   // 👈 ADD THIS
+                        isCall: msg.isCall || false
                     }
                 ]
             })
@@ -3112,34 +2879,13 @@ export function GroupStudyView() {
 
 
         connection.on("IncomingCall", (data) => {
-
-            if (!data) return
-
-            if (String(data.fromUserId) === String(currentUserId)) return
-
             console.log("📞 Incoming Call:", data)
-
-            setIncomingCall({
-                fromUserId: data.fromUserId,
-                fromUserName: data.fromUserName,
-                callType: "voice"
-            })
-
+            setIncomingCall(data)
         })
 
 
-        connection.on("CallAccepted", async () => {
-
-            console.log("Call accepted")
-
-            const stream = await navigator.mediaDevices.getUserMedia({
-                audio: true
-            })
-            localStream.current = stream
-
-            if (videoRef.current)
-                videoRef.current.srcObject = stream
-
+        connection.on("CallAccepted", () => {
+            console.log("📞 Call accepted")
         })
 
 
@@ -3199,12 +2945,17 @@ export function GroupStudyView() {
 
     if (!mounted) return null
 
-
     const acceptCall = async () => {
 
         if (!incomingCall || !peerRef.current) return
 
         console.log("✅ Accepting call")
+
+        // 🔥 ADD THIS (VERY IMPORTANT)
+        await connectionRef.current?.invoke(
+            "AcceptCall",
+            incomingCall.fromUserId
+        )
 
         const { offer, fromUserId } = peerRef.current as any
 
@@ -3234,7 +2985,6 @@ export function GroupStudyView() {
         setCallType("voice")
         setIncomingCall(null)
     }
-
 
     const rejectCall = () => {
 
@@ -4333,6 +4083,13 @@ export function GroupStudyView() {
 
     )
 }
+
+
+
+
+
+
+
 
 
 

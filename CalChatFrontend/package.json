@@ -71,6 +71,7 @@
     "recharts": "^2.15.4",
     "simple-peer": "^9.11.1",
     "sonner": "^1.7.1",
+    "sweetalert2": "^11.26.24",
     "tailwind-merge": "^2.5.5",
     "tailwindcss-animate": "^1.0.7",
     "uuid": "^13.0.0",

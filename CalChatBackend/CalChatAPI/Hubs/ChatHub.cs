@@ -1,190 +1,3 @@
-//using Microsoft.AspNetCore.Authorization;
-//using Microsoft.AspNetCore.SignalR;
-//using System.Security.Claims;
-
-//namespace CalChatAPI.Hubs
-//{
-//    [Authorize]
-//    public class ChatHub : Hub
-//    {
-
-//        // ===============================
-//        // USER CONNECTION
-//        // ===============================
-
-//        public async Task JoinChat(string chatId)
-//        {
-//            if (string.IsNullOrEmpty(chatId))
-//                return;
-
-//            await Groups.AddToGroupAsync(Context.ConnectionId, chatId);
-//        }
-
-//        public override async Task OnConnectedAsync()
-//        {
-//            var userId = Context.User?.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-
-//            if (!string.IsNullOrEmpty(userId))
-//            {
-//                // map connection to userId group
-//                await Groups.AddToGroupAsync(Context.ConnectionId, userId);
-
-//                Console.WriteLine($"User connected: {userId}");
-//            }
-
-//            await base.OnConnectedAsync();
-//        }
-
-//        public override async Task OnDisconnectedAsync(Exception? exception)
-//        {
-//            var userId = Context.User?.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-
-//            if (!string.IsNullOrEmpty(userId))
-//            {
-//                Console.WriteLine($"User disconnected: {userId}");
-//            }
-
-//            await base.OnDisconnectedAsync(exception);
-//        }
-
-
-//        // ===============================
-//        // PRIVATE CHAT
-//        // ===============================
-
-//        public async Task JoinConversation(string conversationId)
-//        {
-//            if (string.IsNullOrEmpty(conversationId))
-//                return;
-
-//            await Groups.AddToGroupAsync(Context.ConnectionId, conversationId);
-//        }
-
-//        public async Task SendMessage(string conversationId, string senderId, string senderName, string message)
-//        {
-//            var msg = new
-//            {
-//                id = Guid.NewGuid().ToString(),
-//                conversationId,
-//                senderId,
-//                senderName,
-//                message,
-//                time = DateTime.UtcNow,
-//                status = "sent"
-//            };
-
-//            await Clients.Group(conversationId).SendAsync("ReceiveMessage", msg);
-//        }
-
-//        public async Task MessageRead(string conversationId)
-//        {
-//            await Clients.Group(conversationId).SendAsync("MessageRead");
-//        }
-
-
-//        // ===============================
-//        // MESSAGE REACTIONS
-//        // ===============================
-
-//        public async Task SendReaction(string conversationId, string messageId, string emoji)
-//        {
-//            var userId = Context.User?.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-
-//            await Clients.Group(conversationId).SendAsync("ReceiveReaction", new
-//            {
-//                messageId,
-//                emoji,
-//                userId
-//            });
-//        }
-
-
-//        // ===============================
-//        // GROUP CHAT
-//        // ===============================
-
-//        public async Task JoinGroup(string groupId)
-//        {
-//            if (string.IsNullOrEmpty(groupId))
-//                return;
-
-//            await Groups.AddToGroupAsync(Context.ConnectionId, groupId);
-//        }
-
-//        public async Task SendGroupMessage(string groupId, string senderId, string senderName, string message)
-//        {
-//            var msg = new
-//            {
-//                id = Guid.NewGuid().ToString(),
-//                groupId,
-//                senderId,
-//                senderName,
-//                message,
-//                time = DateTime.UtcNow,
-//                status = "sent"
-//            };
-
-//            await Clients.Group(groupId).SendAsync("ReceiveGroupMessage", msg);
-//        }
-
-
-//        // ===============================
-//        // VOICE / VIDEO CALL SIGNALING
-//        // ===============================
-
-//        public async Task CallUser(string toUserId, string fromUserName, string callType)
-//        {
-//            var fromUserId = Context.User?.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-
-//            Console.WriteLine($"Calling {toUserId} from {fromUserName}");
-
-//            await Clients.Group(toUserId).SendAsync(
-//                "IncomingCall",
-//                fromUserId,
-//                fromUserName,
-//                callType
-//            );
-//        }
-
-//        public async Task AcceptCall(string toUserId)
-//        {
-//            await Clients.Group(toUserId).SendAsync("CallAccepted", toUserId);
-//        }
-
-//        public async Task RejectCall(string toUserId)
-//        {
-//            await Clients.Group(toUserId).SendAsync("CallRejected", toUserId);
-//        }
-
-//        public async Task SendIceCandidate(string toUserId, object candidate)
-//        {
-//            await Clients.Group(toUserId).SendAsync("ReceiveIceCandidate", candidate);
-//        }
-
-//        // ===============================
-//        // END CALL
-//        // ===============================
-
-//        public async Task EndCall(string targetUserId)
-//        {
-//            var callerId = Context.User?.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-
-//            if (string.IsNullOrEmpty(callerId))
-//                return;
-
-//            Console.WriteLine($"Call ended between {callerId} and {targetUserId}");
-
-//            // notify other user
-//            await Clients.Group(targetUserId)
-//                .SendAsync("CallEnded", callerId);
-
-//            // notify caller
-//            await Clients.Group(callerId)
-//                .SendAsync("CallEnded", targetUserId);
-//        }
-//    }
-//}
-
 
 //using Microsoft.AspNetCore.Authorization;
 //using Microsoft.AspNetCore.SignalR;
@@ -219,6 +32,7 @@
 //            }
 
 //            await base.OnConnectedAsync();
+//            Console.WriteLine($"🟢 Joined Group: {userId}");
 //        }
 
 //        public override async Task OnDisconnectedAsync(Exception? exception)
@@ -326,41 +140,86 @@
 //        // CALLING SYSTEM
 //        // ===============================
 
-//        public async Task CallUser(string toUserId, string callType)
+//        public async Task CallUser(string toUserId)
 //        {
-//            var fromUserId = Context.UserIdentifier;
+//            var fromUserId = Context.User?.FindFirst(ClaimTypes.NameIdentifier)?.Value;
 //            var fromUserName = Context.User?.Identity?.Name ?? "User";
 
+//            if (string.IsNullOrEmpty(fromUserId) || string.IsNullOrEmpty(toUserId))
+//                return;
+
+//            // 🔥 ADD THIS (SAVE CALL MESSAGE)
+//            await Clients.User(toUserId).SendAsync("ReceiveMessage", new
+//            {
+//                id = Guid.NewGuid(),
+//                senderId = fromUserId,
+//                senderName = fromUserName,
+//                message = "📞 Voice Call",
+//                time = DateTime.UtcNow,
+//                status = "sent",
+//                isCall = true   // 👈 IMPORTANT FLAG
+//            });
+
+//            // EXISTING LOGIC
 //            await Clients.User(toUserId).SendAsync("IncomingCall", new
 //            {
 //                fromUserId,
 //                fromUserName,
-//                callType
+//                callType = "voice"
 //            });
 //        }
 
+
+
 //        public async Task AcceptCall(string toUserId)
 //        {
-//            await Clients.User(toUserId).SendAsync("CallAccepted");
+//            await Clients.Group(toUserId).SendAsync("CallAccepted");
 //        }
 
 //        public async Task RejectCall(string toUserId)
 //        {
-//            await Clients.User(toUserId).SendAsync("CallRejected");
+//            await Clients.Group(toUserId).SendAsync("CallRejected");
 //        }
 
 //        public async Task EndCall(string targetUserId)
 //        {
-//            var callerId = Context.UserIdentifier;
+//            var callerId = Context.User?.FindFirst(ClaimTypes.NameIdentifier)?.Value;
 
-//            if (string.IsNullOrEmpty(callerId))
-//                return;
+//            if (string.IsNullOrEmpty(callerId)) return;
 
-//            await Clients.User(targetUserId).SendAsync("CallEnded", callerId);
-//            await Clients.User(callerId).SendAsync("CallEnded", targetUserId);
+//            // 🔥 ADD CALL END MESSAGE
+//            await Clients.User(targetUserId).SendAsync("ReceiveMessage", new
+//            {
+//                id = Guid.NewGuid(),
+//                senderId = callerId,
+//                senderName = "User",
+//                message = "📞 Call Ended",
+//                time = DateTime.UtcNow,
+//                status = "read",
+//                isCall = true
+//            });
+
+//            await Clients.Group(targetUserId).SendAsync("CallEnded");
+//            await Clients.Group(callerId).SendAsync("CallEnded");
+//        }
+
+
+//        public async Task SendAnswer(string answer, string toUserId)
+//        {
+//            await Clients.User(toUserId).SendAsync("ReceiveAnswer", new
+//            {
+//                answer
+//            });
+//        }
+
+//        public async Task SendIceCandidate(string candidate, string toUserId)
+//        {
+//            await Clients.User(toUserId).SendAsync("ReceiveIceCandidate", candidate);
 //        }
 //    }
 //}
+
+
 
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;
@@ -512,7 +371,7 @@ namespace CalChatAPI.Hubs
                 return;
 
             // 🔥 ADD THIS (SAVE CALL MESSAGE)
-            await Clients.User(toUserId).SendAsync("ReceiveMessage", new
+            var callMessage = new
             {
                 id = Guid.NewGuid(),
                 senderId = fromUserId,
@@ -520,8 +379,15 @@ namespace CalChatAPI.Hubs
                 message = "📞 Voice Call",
                 time = DateTime.UtcNow,
                 status = "sent",
-                isCall = true   // 👈 IMPORTANT FLAG
-            });
+                isCall = true,
+                chatId = toUserId + "_" + fromUserId // 🔥 ADD THIS
+            };
+
+            // ✅ SEND TO RECEIVER
+            await Clients.User(toUserId).SendAsync("ReceiveMessage", callMessage);
+
+            // ✅ SEND TO CALLER (🔥 FIX)
+            await Clients.User(fromUserId).SendAsync("ReceiveMessage", callMessage);
 
             // EXISTING LOGIC
             await Clients.User(toUserId).SendAsync("IncomingCall", new
@@ -532,17 +398,44 @@ namespace CalChatAPI.Hubs
             });
         }
 
+        // ===============================
+        // 🔥 SEND OFFER (MISSING METHOD)
+        // ===============================
+        public async Task SendOffer(string offer, string toUserId)
+        {
+            var fromUserId = Context.User?.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+            if (string.IsNullOrEmpty(fromUserId)) return;
+
+            await Clients.User(toUserId).SendAsync("ReceiveOffer", new
+            {
+                offer,
+                fromUserId
+            });
+        }
+
 
 
         public async Task AcceptCall(string toUserId)
         {
-            await Clients.Group(toUserId).SendAsync("CallAccepted");
+            var fromUserId = Context.User?.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+            await Clients.User(toUserId).SendAsync("CallAccepted", new
+            {
+                fromUserId
+            });
         }
+
+
+
 
         public async Task RejectCall(string toUserId)
         {
-            await Clients.Group(toUserId).SendAsync("CallRejected");
+            await Clients.User(toUserId).SendAsync("CallRejected", toUserId);
         }
+
+
+
 
         public async Task EndCall(string targetUserId)
         {
@@ -551,7 +444,7 @@ namespace CalChatAPI.Hubs
             if (string.IsNullOrEmpty(callerId)) return;
 
             // 🔥 ADD CALL END MESSAGE
-            await Clients.User(targetUserId).SendAsync("ReceiveMessage", new
+            var endMessage = new
             {
                 id = Guid.NewGuid(),
                 senderId = callerId,
@@ -559,8 +452,15 @@ namespace CalChatAPI.Hubs
                 message = "📞 Call Ended",
                 time = DateTime.UtcNow,
                 status = "read",
-                isCall = true
-            });
+                isCall = true,
+                chatId = targetUserId + "_" + callerId // 🔥 ADD THIS
+            };
+
+            // ✅ RECEIVER
+            await Clients.User(targetUserId).SendAsync("ReceiveMessage", endMessage);
+
+            // ✅ CALLER (🔥 FIX)
+            await Clients.User(callerId).SendAsync("ReceiveMessage", endMessage);
 
             await Clients.Group(targetUserId).SendAsync("CallEnded");
             await Clients.Group(callerId).SendAsync("CallEnded");
@@ -569,15 +469,26 @@ namespace CalChatAPI.Hubs
 
         public async Task SendAnswer(string answer, string toUserId)
         {
+            var fromUserId = Context.User?.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
             await Clients.User(toUserId).SendAsync("ReceiveAnswer", new
             {
-                answer
+                answer,
+                fromUserId
             });
         }
 
+
+
         public async Task SendIceCandidate(string candidate, string toUserId)
         {
-            await Clients.User(toUserId).SendAsync("ReceiveIceCandidate", candidate);
+            var fromUserId = Context.User?.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+            await Clients.User(toUserId).SendAsync("ReceiveIceCandidate", new
+            {
+                candidate,
+                fromUserId
+            });
         }
     }
 }

@@ -120,6 +120,9 @@
 import { useState } from "react"
 import { motion } from "framer-motion"
 import { Mail, User, MessageSquare } from "lucide-react"
+import { useEffect } from "react"
+
+
 
 const fadeUp = {
     hidden: { opacity: 0, y: 40 },
@@ -130,6 +133,9 @@ const fadeUp = {
     }),
 }
 
+
+
+
 export default function ContactPage() {
     // ✅ STATE
     const [form, setForm] = useState({
@@ -139,12 +145,28 @@ export default function ContactPage() {
     })
 
     const [loading, setLoading] = useState(false)
+    const [popup, setPopup] = useState<{
+        type: "success" | "error" | null
+        message: string
+    }>({
+        type: null,
+        message: "",
+    })
 
     // ✅ HANDLE CHANGE
     const handleChange = (e: any) => {
         setForm({ ...form, [e.target.name]: e.target.value })
     }
 
+    useEffect(() => {
+        if (popup.type) {
+            const timer = setTimeout(() => {
+                setPopup({ type: null, message: "" })
+            }, 3000)
+
+            return () => clearTimeout(timer)
+        }
+    }, [popup])
     // ✅ HANDLE SUBMIT (CONNECTED TO YOUR .NET BACKEND)
     const handleSubmit = async (e: any) => {
         e.preventDefault()
@@ -163,20 +185,25 @@ export default function ContactPage() {
             )
 
             const data = await res.json()
-
             if (data.success) {
-                alert("Message sent successfully ✅")
+                setPopup({
+                    type: "success",
+                    message: "Message sent successfully 🚀",
+                })
 
-                // reset form
                 setForm({
                     name: "",
                     email: "",
                     message: "",
                 })
             } else {
-                alert("Failed to send ❌")
+                setPopup({
+                    type: "error",
+                    message: "Failed to send message",
+                })
             }
-        } catch (error) {
+        }
+        catch (error) {
             console.error(error)
             alert("Server error ❌")
         }
@@ -185,7 +212,34 @@ export default function ContactPage() {
     }
 
     return (
+
         <div className="relative bg-background overflow-hidden px-6 py-20">
+
+            {/* 🔥 POPUP */}
+            {popup.type && (
+                <motion.div
+                    initial={{ opacity: 0, y: -40, scale: 0.9 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0 }}
+                    className="fixed top-6 left-1/2 -translate-x-1/2 z-50"
+                >
+                    <div
+                        className={`px-6 py-4 rounded-xl shadow-xl backdrop-blur-xl border flex items-center gap-3
+            ${popup.type === "success"
+                                ? "bg-green-500/10 border-green-500/30 text-green-600"
+                                : "bg-red-500/10 border-red-500/30 text-red-600"
+                            }`}
+                    >
+                        {/* ICON */}
+                        <div className="text-lg">
+                            {popup.type === "success" ? "✅" : "❌"}
+                        </div>
+
+                        {/* MESSAGE */}
+                        <p className="text-sm font-medium">{popup.message}</p>
+                    </div>
+                </motion.div>
+            )}
             {/* 🔥 BACKGROUND */}
             <div className="absolute inset-0 -z-10">
                 <div className="absolute top-[-100px] left-1/2 -translate-x-1/2 w-[700px] h-[700px] bg-blue-500/10 blur-[160px] rounded-full" />
