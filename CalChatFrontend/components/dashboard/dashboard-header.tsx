@@ -529,10 +529,15 @@ export function DashboardHeader({ onMenuClick, title }: DashboardHeaderProps) {
 
     const unreadCalendarCount = calendarNotifs.filter(n => !n.isRead).length
 
+    //const totalCount =
+    //    unreadChatCount +
+    //    unreadMeetingCount +
+    //    unreadCalendarCount
+
     const totalCount =
-        unreadChatCount +
-        unreadMeetingCount +
-        unreadCalendarCount
+        showNotifications
+            ? 0
+            : unreadChatCount + unreadMeetingCount + unreadCalendarCount
 
     /* ================= UI ================= */
     if (!mounted) return null
@@ -555,6 +560,61 @@ export function DashboardHeader({ onMenuClick, title }: DashboardHeaderProps) {
                     {/* 🔔 NOTIFICATIONS */}
                     <div className="relative">
 
+                        {/*<Button*/}
+                        {/*    variant="ghost"*/}
+                        {/*    size="icon"*/}
+                        {/*    onClick={async () => {*/}
+
+                        {/*        const opening = !showNotifications*/}
+                        {/*        setShowNotifications(opening)*/}
+
+                        {/*        if (opening) {*/}
+                        {/*            try {*/}
+                        {/*                await fetch(*/}
+                        {/*                    `https://steadfast-warmth-production-64c8.up.railway.app/api/notifications/mark-read/${currentUserId}`,*/}
+                        {/*                    { method: "PUT" }*/}
+                        {/*                )*/}
+
+                        {/*                // ✅ calendar notifications read mark*/}
+                        {/*                const updated = calendarNotifs.map(n => ({ ...n, isRead: true }))*/}
+                        {/*                setCalendarNotifs(updated)*/}
+                        {/*                localStorage.setItem("globalNotifications", JSON.stringify(updated))*/}
+
+                        {/*                //// ✅ SAVE ALL IDs AS READ (PERSIST)*/}
+                        {/*                //const allIds = chatNotifs.map(n => n.id)*/}
+                        {/*                //saveReadIds(allIds)*/}
+
+                        {/*                const existing = getReadIds()*/}
+                        {/*                const newIds = chatNotifs.map(n => n.id)*/}
+
+                        {/*                const merged = Array.from(new Set([...existing, ...newIds]))*/}
+                        {/*                saveReadIds(merged)*/}
+
+                        {/*                // ✅ UI update*/}
+                        {/*                setChatNotifs(prev =>*/}
+                        {/*                    prev.map(n => ({ ...n, isRead: true }))*/}
+                        {/*                )*/}
+
+                        {/*                setMeetingNotifs(prev =>*/}
+                        {/*                    prev.map(m => ({ ...m, isRead: true }))*/}
+                        {/*                )*/}
+
+                        {/*            } catch (err) {*/}
+                        {/*                console.error("Mark read error:", err)*/}
+                        {/*            }*/}
+                        {/*        }*/}
+                        {/*    }}*/}
+                        {/*>*/}
+                        {/*    <Bell className="h-4 w-4" />*/}
+
+                        {/*    {totalCount > 0 && (*/}
+                        {/*        <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs px-1 rounded-full">*/}
+                        {/*            {totalCount}*/}
+                        {/*        </span>*/}
+                        {/*    )}*/}
+                        {/*</Button>*/}
+
+
                         <Button
                             variant="ghost"
                             size="icon"
@@ -565,34 +625,34 @@ export function DashboardHeader({ onMenuClick, title }: DashboardHeaderProps) {
 
                                 if (opening) {
                                     try {
+                                        // ✅ BACKEND MARK READ
                                         await fetch(
                                             `https://steadfast-warmth-production-64c8.up.railway.app/api/notifications/mark-read/${currentUserId}`,
                                             { method: "PUT" }
                                         )
 
-                                        // ✅ calendar notifications read mark
-                                        const updated = calendarNotifs.map(n => ({ ...n, isRead: true }))
-                                        setCalendarNotifs(updated)
-                                        localStorage.setItem("globalNotifications", JSON.stringify(updated))
-
-                                        //// ✅ SAVE ALL IDs AS READ (PERSIST)
-                                        //const allIds = chatNotifs.map(n => n.id)
-                                        //saveReadIds(allIds)
-
-                                        const existing = getReadIds()
-                                        const newIds = chatNotifs.map(n => n.id)
-
-                                        const merged = Array.from(new Set([...existing, ...newIds]))
-                                        saveReadIds(merged)
-
-                                        // ✅ UI update
+                                        // ✅ CHAT NOTIFS READ
                                         setChatNotifs(prev =>
                                             prev.map(n => ({ ...n, isRead: true }))
                                         )
 
+                                        // ✅ MEETING NOTIFS READ
                                         setMeetingNotifs(prev =>
                                             prev.map(m => ({ ...m, isRead: true }))
                                         )
+
+                                        // ✅ CALENDAR NOTIFS READ
+                                        const updatedCalendar = calendarNotifs.map(n => ({
+                                            ...n,
+                                            isRead: true
+                                        }))
+
+                                        setCalendarNotifs(updatedCalendar)
+                                        localStorage.setItem("globalNotifications", JSON.stringify(updatedCalendar))
+
+                                        // ✅ RESET LOCAL STORAGE IDS (IMPORTANT FIX)
+                                        const userId = localStorage.getItem("userId")
+                                        localStorage.setItem(`readNotifications_${userId}`, JSON.stringify([]))
 
                                     } catch (err) {
                                         console.error("Mark read error:", err)
@@ -602,6 +662,7 @@ export function DashboardHeader({ onMenuClick, title }: DashboardHeaderProps) {
                         >
                             <Bell className="h-4 w-4" />
 
+                            {/* ✅ SHOW ONLY WHEN UNREAD EXISTS */}
                             {totalCount > 0 && (
                                 <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs px-1 rounded-full">
                                     {totalCount}
@@ -636,7 +697,13 @@ flex flex-col max-h-[80vh]">
 
                                         let allNotifs = [
                                             ...calendarNotifs.filter(n => n.triggered),
-                                            ...chatNotifs
+                                            ...chatNotifs,
+                                            ...meetingNotifs.map(m => ({
+                                                ...m,
+                                                type: "meeting", // 🔥 IMPORTANT
+                                                content: `📅 Meeting: ${m.title}`,
+                                                createdAt: m.createdAt || m.startTime
+                                            }))
                                         ].sort((a: any, b: any) => {
                                             const dateA = new Date(a.createdAt || 0).getTime()
                                             const dateB = new Date(b.createdAt || 0).getTime()
@@ -724,12 +791,26 @@ flex flex-col max-h-[80vh]">
                                                                 </p>
 
                                                                 {/* ✅ JOIN BUTTON (ONLY FOR MEETING) */}
-                                                                {n.type === "meeting" && n.meetingLink && (
+                                                                {/*{n.type === "meeting" && n.meetingLink && (*/}
+                                                                {/*    <button*/}
+                                                                {/*        onClick={() => window.open(n.meetingLink, "_blank")}*/}
+                                                                {/*        className="mt-2 text-xs bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded-md"*/}
+                                                                {/*    >*/}
+                                                                {/*        Join*/}
+                                                                {/*    </button>*/}
+
+
+                                                                {/*)}*/}
+
+                                                                {(n.type === "meeting" || n.meetingLink) && n.meetingLink && (
                                                                     <button
-                                                                        onClick={() => window.open(n.meetingLink, "_blank")}
+                                                                        onClick={(e) => {
+                                                                            e.stopPropagation() // 🔥 prevent parent click
+                                                                            window.open(n.meetingLink, "_blank")
+                                                                        }}
                                                                         className="mt-2 text-xs bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded-md"
                                                                     >
-                                                                        Join
+                                                                        Join Meeting
                                                                     </button>
                                                                 )}
                                                             </div>
