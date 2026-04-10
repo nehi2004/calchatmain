@@ -445,7 +445,7 @@ export function DashboardHeader({ onMenuClick, title }: DashboardHeaderProps) {
 
     const saveReadIds = (ids: number[]) => {
         const userId = localStorage.getItem("userId")
-        localStorage.setItem(`readNotifications_${userId}`, JSON.stringify(ids))
+        //localStorage.setItem(`readNotifications_${userId}`, JSON.stringify(ids))
     }
 
     /* ================= REQUEST HANDLER ================= */
@@ -533,11 +533,15 @@ export function DashboardHeader({ onMenuClick, title }: DashboardHeaderProps) {
     //    unreadChatCount +
     //    unreadMeetingCount +
     //    unreadCalendarCount
-
     const totalCount =
-        showNotifications
-            ? 0
-            : unreadChatCount + unreadMeetingCount + unreadCalendarCount
+        unreadChatCount +
+        unreadMeetingCount +
+        unreadCalendarCount
+
+    //const totalCount =
+    //    showNotifications
+    //        ? 0
+    //        : unreadChatCount + unreadMeetingCount + unreadCalendarCount
 
     /* ================= UI ================= */
     if (!mounted) return null
@@ -631,17 +635,21 @@ export function DashboardHeader({ onMenuClick, title }: DashboardHeaderProps) {
                                             { method: "PUT" }
                                         )
 
-                                        // ✅ CHAT NOTIFS READ
+                                        // ✅ CHAT READ
                                         setChatNotifs(prev =>
                                             prev.map(n => ({ ...n, isRead: true }))
                                         )
 
-                                        // ✅ MEETING NOTIFS READ
+                                        // ✅ MEETING READ
                                         setMeetingNotifs(prev =>
                                             prev.map(m => ({ ...m, isRead: true }))
                                         )
 
-                                        // ✅ CALENDAR NOTIFS READ
+
+                                        // ✅ MEETING IDS SAVE KARO (FIX)
+                                        const meetingIds = meetingNotifs.map(m => m.id)
+                                        saveMeetingReadIds(meetingIds)
+                                        // ✅ CALENDAR READ
                                         const updatedCalendar = calendarNotifs.map(n => ({
                                             ...n,
                                             isRead: true
@@ -650,9 +658,9 @@ export function DashboardHeader({ onMenuClick, title }: DashboardHeaderProps) {
                                         setCalendarNotifs(updatedCalendar)
                                         localStorage.setItem("globalNotifications", JSON.stringify(updatedCalendar))
 
-                                        // ✅ RESET LOCAL STORAGE IDS (IMPORTANT FIX)
-                                        const userId = localStorage.getItem("userId")
-                                        localStorage.setItem(`readNotifications_${userId}`, JSON.stringify([]))
+                                        // ✅ IMPORTANT FIX 🔥 (DO NOT EMPTY ARRAY)
+                                        const allIds = chatNotifs.map(n => n.id)
+                                        saveReadIds(allIds)
 
                                     } catch (err) {
                                         console.error("Mark read error:", err)
