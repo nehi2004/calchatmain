@@ -1,4 +1,5 @@
 
+
 "use client"
 
 import { useEffect, useRef, useState } from "react"
@@ -110,6 +111,7 @@ export function GroupStudyView() {
 
     const [callType, setCallType] = useState<"voice" | null>(null)
     const [outgoingCallType, setOutgoingCallType] = useState<"voice" | null>(null)
+    const [isAccepting, setIsAccepting] = useState(false)
 
     const [incomingCall, setIncomingCall] = useState<{
         fromUserId: string
@@ -132,26 +134,41 @@ export function GroupStudyView() {
     const bottomRef = useRef<HTMLDivElement>(null)
     const connectionRef = useRef<signalR.HubConnection | null>(null)
     const [isMuted, setIsMuted] = useState(false)
+    const [isCameraOn, setIsCameraOn] = useState(true)
 
     const peerRef = useRef<RTCPeerConnection | null>(null)
     const remoteAudioRef = useRef<HTMLAudioElement>(null)
+    const ringtoneRef = useRef<HTMLAudioElement | null>(null)
+
+
 
     const [callUserId, setCallUserId] = useState<string | null>(null)
+
+    const [isCalling, setIsCalling] = useState(false)
 
 
     useEffect(() => {
 
-        if (!activeChat) return
+        const joinChat = async () => {
 
-        if (connectionRef.current) {
+            if (!activeChat || !connectionRef.current) return
 
-            connectionRef.current
-                ?.invoke("JoinChat", String(activeChat))
-                .catch(err => console.error("JoinChat Error:", err))
+            if (connectionRef.current.state !== signalR.HubConnectionState.Connected) {
+                console.log("⏳ Waiting for connection...")
+                return
+            }
 
+            try {
+                await connectionRef.current.invoke("JoinChat", String(activeChat))
+            } catch (err) {
+                console.error("JoinChat Error:", err)
+            }
         }
 
+        joinChat()
+
     }, [activeChat])
+
     useEffect(() => {
         if (!activeChat) return
 
@@ -397,7 +414,18 @@ export function GroupStudyView() {
 
             const msgs = await res.json()
 
-            setMessages(msgs)
+            setMessages(
+                msgs.map((m: any) => ({
+                    id: m.id,
+                    senderId: m.senderId,
+                    senderName: m.senderName,
+                    message: m.message || m.text || m.Text || "",
+                    fileUrl: m.fileUrl,
+                    time: m.time,
+                    isCall: m.isCall || false,
+                    status: m.status || "read"
+                }))
+            )
 
         }
 
@@ -423,24 +451,52 @@ export function GroupStudyView() {
         }
 
         pc.onicecandidate = (event) => {
-            if (event.candidate) {
-                if (event.candidate && callUserId) {
-                    connectionRef.current?.invoke(
-                        "SendIceCandidate",
-                        JSON.stringify(event.candidate),
-                        callUserId
-                    )
-                }
+            if (event.candidate && callUserId) {
+                connectionRef.current?.invoke(
+                    "SendIceCandidate",
+                    JSON.stringify(event.candidate),
+                    callUserId
+                )
             }
         }
 
         peerRef.current = pc
     }
 
+
+    // ✅ MIC TOGGLE
+    const toggleMute = () => {
+        if (!localStream.current) return
+
+        localStream.current.getAudioTracks().forEach(track => {
+            track.enabled = !track.enabled
+        })
+
+        setIsMuted(prev => !prev)
+    }
+
+    // ✅ CAMERA TOGGLE
+    const toggleCamera = () => {
+        if (!localStream.current) return
+
+        localStream.current.getVideoTracks().forEach(track => {
+            track.enabled = !track.enabled
+        })
+
+        setIsCameraOn(prev => !prev)
+    }
+
     /* ---------------- CALL ---------------- */
     const startCall = async () => {
 
-        if (!activeChat) return
+        if (!activeChat || !connectionRef.current) return
+
+        setIsCalling(true)
+
+        if (connectionRef.current.state !== signalR.HubConnectionState.Connected) {
+            console.log("❌ SignalR not connected yet")
+            return
+        }
 
         const chat = chats.find(c => c.id === activeChat)
         if (!chat || chat.type === "group") return
@@ -453,17 +509,26 @@ export function GroupStudyView() {
 
         setCallUserId(otherUserId)
 
-        connectionRef.current?.invoke(
+        await connectionRef.current.invoke(
             "CallUser",
             otherUserId,
-            String(activeChat) // ✅ SEND CHAT ID
+            String(activeChat)
         )
 
         createPeer()
 
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+        const stream = await navigator.mediaDevices.getUserMedia({
+            audio: true,
+            video: true
+        })
 
-        localStream.current = stream   // ✅ FIX
+        
+        localStream.current = stream
+
+        // 🔥 ADD THIS
+        if (videoRef.current) {
+            videoRef.current.srcObject = stream
+        }
 
         stream.getTracks().forEach(track => {
             peerRef.current?.addTrack(track, stream)
@@ -472,7 +537,7 @@ export function GroupStudyView() {
         const offer = await peerRef.current!.createOffer()
         await peerRef.current!.setLocalDescription(offer)
 
-        connectionRef.current?.invoke(
+        await connectionRef.current.invoke(
             "SendOffer",
             JSON.stringify(offer),
             otherUserId
@@ -480,6 +545,9 @@ export function GroupStudyView() {
 
         setCallType("voice")
     }
+
+
+
     const endCall = () => {
 
         console.log("Ending call")
@@ -491,7 +559,10 @@ export function GroupStudyView() {
         setCallType(null)
         setOutgoingCallType(null)
         setIncomingCall(null)
+
+        setIsCalling(false)   // ✅ ADD HERE
     }
+
     const handleEndCall = async () => {
 
         console.log("🔴 End Call button clicked")
@@ -512,7 +583,7 @@ export function GroupStudyView() {
                 await connectionRef.current.invoke(
                     "EndCall",
                     String(otherUserId),
-                    String(activeChat) // ✅ SEND CHAT ID
+                    String(activeChat)
                 )
 
             }
@@ -523,11 +594,17 @@ export function GroupStudyView() {
 
         }
 
-        // 🔥 IMPORTANT — CLEANUP AFTER SIGNAL
+        // 🔥 CLEANUP
         endCall()
+        setIsCalling(false)
 
+        // ✅ 🔥 FORCE REFRESH AFTER CALL (VERY IMPORTANT)
+        setTimeout(() => {
+            if (activeChat) {
+                markReadAndRefresh()
+            }
+        }, 500)
     }
-
     /* ---------------- CREATE GROUP ---------------- */
 
     const createGroup = async () => {
@@ -671,7 +748,19 @@ export function GroupStudyView() {
         })
 
         const msgs = await res.json()
-        setMessages(msgs)
+
+        setMessages(
+            msgs.map((m: any) => ({
+                id: m.id,
+                senderId: m.senderId,
+                senderName: m.senderName,
+                message: m.message || m.text || m.Text || "",
+                fileUrl: m.fileUrl,
+                time: m.time,
+                isCall: m.isCall || false,   // ✅ IMPORTANT
+                status: m.status || "read"
+            }))
+        )
     }
     const addMembersToGroup = async () => {
 
@@ -734,64 +823,65 @@ export function GroupStudyView() {
 
     }, [activeTab, currentUserId])
 
+    const pendingOfferRef = useRef<any>(null)
+
     useEffect(() => {
 
         setMounted(true)
 
+        if (connectionRef.current) return // ✅ PREVENT DUPLICATE
+
         const connection = new signalR.HubConnectionBuilder()
             .withUrl("https://steadfast-warmth-production-64c8.up.railway.app/chatHub", {
                 accessTokenFactory: () => localStorage.getItem("token") || "",
-                withCredentials: true, // ✅ ADD THIS
-                transport: signalR.HttpTransportType.WebSockets // 🔥 FORCE WEBSOCKET (IMPORTANT)
+                transport: signalR.HttpTransportType.WebSockets
             })
             .withAutomaticReconnect()
             .build()
 
         connection.start()
-            .then(async () => {
-
+            .then(() => {
                 console.log("✅ SignalR Connected")
-
-                if (activeChat) {
-                    await connection.invoke("JoinChat", String(activeChat))
-                }
-
             })
-            .catch(err => {
-                console.error("❌ SignalR Connection Error:", err)
-            })
-            .catch(err => console.log(err))
+            .catch(err => console.error("❌ Connection error:", err))
 
+        // ===============================
+        // ✅ 🔥 ADD ALL LISTENERS HERE
+        // ===============================
+        connection.on("IncomingCall", (data) => {
+            console.log("📞 Incoming Call:", data)
+
+            // ✅ ADD THESE HERE
+            console.log("Students:", students)
+            console.log("Incoming:", data)
+
+            let name = data.fromUserName
+
+            if (!name) {
+                const user = students.find(
+                    s => String(s.id) === String(data.fromUserId)
+                )
+                name = user?.name || "User"
+            }
+
+            setIncomingCall({
+                ...data,
+                fromUserName: name
+            })
+
+            if (ringtoneRef.current) {
+                ringtoneRef.current.currentTime = 0
+                ringtoneRef.current.play().catch(() => { })
+            }
+        })
 
         connection.on("ReceiveOffer", async (data) => {
-            console.log("📩 Offer received")
+            console.log("📩 Offer received (waiting for accept)")
 
-            createPeer()
-
-            const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
-
-            localStream.current = stream
-
-            stream.getTracks().forEach(track => {
-                peerRef.current?.addTrack(track, stream)
-            })
-
-            await peerRef.current?.setRemoteDescription(
-                new RTCSessionDescription(JSON.parse(data.offer))
-            )
-
-            const answer = await peerRef.current!.createAnswer()
-            await peerRef.current!.setLocalDescription(answer)
+            // 🔥 STORE OFFER ONLY (DO NOT START CALL)
+            pendingOfferRef.current = data
 
             setCallUserId(data.fromUserId)
-
-            connection.invoke(
-                "SendAnswer",
-                JSON.stringify(answer),
-                data.fromUserId
-            )
-
-            setCallType("voice")
         })
 
         connection.on("ReceiveAnswer", async (data) => {
@@ -803,6 +893,13 @@ export function GroupStudyView() {
         })
 
 
+        connection.on("CallAccepted", () => {
+            console.log("📞 Call accepted")
+
+            setOutgoingCallType(null)
+            setCallType("voice")
+        })
+
         connection.on("ReceiveIceCandidate", async (data) => {
             console.log("🧊 ICE received")
 
@@ -813,6 +910,24 @@ export function GroupStudyView() {
             }
         })
 
+        connection.on("CallEnded", () => {
+            console.log("Call ended by other user")
+
+            endCall()
+            setIncomingCall(null)
+            setOutgoingCallType(null)
+        })
+
+        connection.on("CallRejected", () => {
+
+            console.log("❌ Call rejected by user")
+
+            endCall()
+            setOutgoingCallType(null)
+            setCallType(null)
+            setIsCalling(false)
+        })
+
 
         connection.on("ReceiveMessage", (msg: any) => {
 
@@ -820,15 +935,8 @@ export function GroupStudyView() {
 
             setMessages(prev => {
 
-                // ✅ ONLY ADD MESSAGE IF CURRENT CHAT MATCHES
-                if (!activeChat) return prev
-
-                const isRelevant =
-                    String(msg.chatId) === String(activeChat)
-
-                if (!isRelevant) return prev
-
-                const exists = prev.some(m => m.id === msg.id)
+                // ✅ prevent duplicates
+                const exists = prev.some(m => String(m.id) === String(msg.id))
                 if (exists) return prev
 
                 return [
@@ -840,63 +948,14 @@ export function GroupStudyView() {
                         message: msg.message,
                         fileUrl: msg.fileUrl,
                         time: msg.time,
-                        status: msg.status,
-                        isCall: msg.isCall || false
+                        isCall: msg.isCall || false,
+                        status: "read"
                     }
                 ]
             })
         })
 
-        // ✅ NO DUPLICATE + REALTIME UPDATE
-
-
-        connection.on("IncomingCall", (data) => {
-            console.log("📞 Incoming Call:", data)
-            setIncomingCall(data)
-        })
-
-
-        connection.on("CallAccepted", () => {
-            console.log("📞 Call accepted")
-        })
-
-
-
-        connection.on("CallRejected", (toUserId) => {
-
-            if (String(toUserId) !== String(currentUserId)) return
-
-            console.log("Call rejected by other user")
-
-            setOutgoingCallType(null)
-            setCallType(null)
-
-        })
-
-
-
-
-
-        connection.on("CallEnded", () => {
-
-            console.log("Call ended by other user")
-
-            endCall()
-
-            setIncomingCall(null)
-            setOutgoingCallType(null)
-        })
-
-        connection.on("UserTyping", (userId: string) => {
-
-            setTypingUser(userId)
-
-            setTimeout(() => setTypingUser(null), 2000)
-
-        })
-
         connection.on("MessageRead", () => {
-
             setMessages(prev =>
                 prev.map(m =>
                     m.senderId === currentUserId
@@ -904,72 +963,111 @@ export function GroupStudyView() {
                         : m
                 )
             )
-
-            // ✅ ADD THIS
-            window.dispatchEvent(new Event("chat-updated"))
         })
 
         connectionRef.current = connection
 
     }, [])
 
-
-
     if (!mounted) return null
 
     const acceptCall = async () => {
 
-        if (!incomingCall || !peerRef.current) return
+        if (isAccepting) return
+        setIsAccepting(true)
 
-        console.log("✅ Accepting call")
+        if (ringtoneRef.current) {
+            ringtoneRef.current.pause()
+            ringtoneRef.current.currentTime = 0
+        }
 
-        // 🔥 ADD THIS (VERY IMPORTANT)
-        await connectionRef.current?.invoke(
-            "AcceptCall",
-            incomingCall.fromUserId
-        )
+        try {
 
-        const { offer, fromUserId } = peerRef.current as any
+            if (!incomingCall || !connectionRef.current) return
 
-        createPeer()
+            console.log("✅ Accepting call")
 
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+            const fromUserId = incomingCall.fromUserId
+            setCallUserId(fromUserId)
 
-        stream.getTracks().forEach(track => {
-            peerRef.current?.addTrack(track, stream)
-        })
+            const data = pendingOfferRef.current
+            if (!data) return
 
-        const parsedOffer = JSON.parse(offer)
+            // 🔥 SHOW UI FIRST (IMPORTANT)
+            setCallType("voice")
 
-        await peerRef.current!.setRemoteDescription(
-            new RTCSessionDescription(parsedOffer)
-        )
+            // cleanup
+            localStream.current?.getTracks().forEach(track => track.stop())
+            localStream.current = null
 
-        const answer = await peerRef.current!.createAnswer()
-        await peerRef.current!.setLocalDescription(answer)
+            createPeer()
 
-        connectionRef.current?.invoke(
-            "SendAnswer",
-            JSON.stringify(answer),
-            fromUserId
-        )
+            let stream: MediaStream
 
-        setCallType("voice")
-        setIncomingCall(null)
+            try {
+                stream = await navigator.mediaDevices.getUserMedia({
+                    audio: true,
+                    video: true   // 🔥 CHANGE THIS
+                })
+            } catch {
+                stream = await navigator.mediaDevices.getUserMedia({
+                    audio: true
+                })
+            }
+
+            localStream.current = stream
+
+            if (videoRef.current) {
+                videoRef.current.srcObject = stream
+            }
+
+            stream.getTracks().forEach(track => {
+                peerRef.current?.addTrack(track, stream)
+            })
+
+            console.log("🎥 Video Tracks:", stream.getVideoTracks())
+
+            await peerRef.current?.setRemoteDescription(
+                new RTCSessionDescription(JSON.parse(data.offer))
+            )
+
+            const answer = await peerRef.current!.createAnswer()
+            await peerRef.current!.setLocalDescription(answer)
+
+            await connectionRef.current.invoke(
+                "SendAnswer",
+                JSON.stringify(answer),
+                fromUserId
+            )
+
+            setIncomingCall(null)
+
+        } catch (err) {
+            console.error("❌ getUserMedia error:", err)
+            alert("Mic permission required")
+        }
+
+        setIsAccepting(false)
     }
 
-    const rejectCall = () => {
 
-        if (!incomingCall) return
+    const rejectCall = async () => {
 
-        connectionRef.current?.invoke(
+        // 🔕 STOP RINGTONE
+        if (ringtoneRef.current) {
+            ringtoneRef.current.pause()
+            ringtoneRef.current.currentTime = 0
+        }
+
+        if (!incomingCall || !connectionRef.current) return
+
+        await connectionRef.current.invoke(
             "RejectCall",
             incomingCall.fromUserId
         )
 
         setIncomingCall(null)
         setCallType(null)
-
     }
 
     // ✅ CLEAR CHAT
@@ -1378,8 +1476,13 @@ export function GroupStudyView() {
 
 
 
-                        <Button size="icon" variant="outline" onClick={startCall}>
-                            <Phone className="h-4 w-4" />
+                        <Button
+                            size="icon"
+                            variant="outline"
+                            onClick={startCall}
+                            disabled={isCalling}
+                        >
+                            {isCalling ? "..." : <Phone className="h-4 w-4" />}
                         </Button>
 
 
@@ -1390,44 +1493,52 @@ export function GroupStudyView() {
 
                 {/* INCOMING CALL POPUP */}
 
+                {/* WHATSAPP STYLE TOP INCOMING CALL */}
                 {incomingCall && (
+                    <div className="fixed top-4 left-1/2 -translate-x-1/2 z-[99999] w-[95%] max-w-md">
 
-                    <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-[99999]">
+                        <div className="bg-gray-900 text-white rounded-xl shadow-2xl p-4 flex items-center justify-between">
 
-                        <div className="bg-white w-[320px] rounded-xl p-6 text-center">
+                            {/* LEFT SIDE */}
+                            <div className="flex items-center gap-3">
 
-                            <h2 className="text-lg font-semibold">
-                                Incoming {incomingCall.callType} Call
-                            </h2>
-
-                            <div className="mt-4 flex flex-col items-center">
-
-                                <div className="w-20 h-20 rounded-full bg-gray-500 flex items-center justify-center text-2xl text-white font-bold">
-
-                                    {incomingCall.fromUserName.charAt(0)}
-
+                                {/* Avatar */}
+                                <div className="w-10 h-10 rounded-full bg-blue-500 flex items-center justify-center font-bold">
+                                    {incomingCall.fromUserName?.trim()
+                                        ? incomingCall.fromUserName.trim()[0].toUpperCase()
+                                        : "U"}
                                 </div>
 
-                                <p className="mt-2 font-medium">
-                                    {incomingCall.fromUserName}
-                                </p>
+                                {/* Name + Text */}
+                                <div>
+                                    <p className="font-semibold text-sm">
+                                        {incomingCall.fromUserName || "Unknown User"}
+                                    </p>
+                                    <p className="text-xs text-gray-300">
+                                        Incoming voice call
+                                    </p>
+                                </div>
 
                             </div>
 
-                            <div className="flex justify-center gap-6 mt-6">
+                            {/* RIGHT SIDE BUTTONS */}
+                            <div className="flex items-center gap-2">
 
+                                {/* Reject */}
                                 <button
                                     onClick={rejectCall}
-                                    className="bg-red-500 text-white p-3 rounded-full"
+                                    className="bg-red-500 px-3 py-1 rounded-full text-xs"
                                 >
-                                    <PhoneOff className="h-5 w-5" />
+                                    DECLINE
                                 </button>
 
+                                {/* Accept */}
                                 <button
                                     onClick={acceptCall}
-                                    className="bg-green-500 text-white p-3 rounded-full"
+                                    disabled={isAccepting}
+                                    className="bg-green-500 px-3 py-1 rounded-full text-xs"
                                 >
-                                    <Phone className="h-5 w-5" />
+                                    {isAccepting ? "..." : "ANSWER"}
                                 </button>
 
                             </div>
@@ -1435,96 +1546,83 @@ export function GroupStudyView() {
                         </div>
 
                     </div>
-
                 )}
 
 
                 {/* WHATSAPP STYLE CALL MODAL */}
-
                 {callType && (
+                    <div className="fixed inset-0 z-[99999] flex items-center justify-center bg-black/60 backdrop-blur-sm">
 
-                    <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-[99999]">
-
-                        <div className="bg-black text-white w-[420px] rounded-xl shadow-xl flex flex-col">
+                        {/* CALL BOX */}
+                        <div className="w-[380px] h-[520px] bg-[#0b141a] rounded-2xl shadow-2xl flex flex-col overflow-hidden">
 
                             {/* TOP BAR */}
+                            <div className="flex justify-between items-center p-4 text-gray-300 text-sm border-b border-gray-700">
+                                <span>{activeChatName}</span>
+                                <span>End-to-end encrypted</span>
+                            </div>
 
-                            <div className="flex items-center justify-between p-4 border-b border-gray-700">
+                            {/* CENTER */}
+                            <div className="flex-1 relative flex items-center justify-center">
 
-                                <button
-                                    onClick={(e) => {
-                                        e.stopPropagation()
-                                        handleEndCall()
-                                    }}
-                                    className="bg-red-500 p-3 rounded-full"
-                                >
-                                    ←
-                                </button>
+                                {isCameraOn ? (
+                                    <video
+                                        ref={videoRef}
+                                        autoPlay
+                                        playsInline
+                                        muted
+                                        className="absolute inset-0 w-full h-full object-cover"
+                                    />
+                                ) : (
+                                    <div className="w-32 h-32 rounded-full bg-gray-500 flex items-center justify-center text-4xl text-white">
+                                        {activeChatName?.charAt(0) || "U"}
+                                    </div>
+                                )}
 
-                                <div className="text-center flex-1">
-                                    <p className="text-xs opacity-70">
-                                        End-to-end encrypted
-                                    </p>
-                                    <h2 className="font-semibold">
+                                <div className="absolute bottom-6 text-center w-full">
+                                    <h2 className="text-white text-lg font-semibold">
                                         {activeChatName}
                                     </h2>
-                                </div>
 
-                                <div></div>
-
-                            </div>
-
-
-                            {/* CENTER PROFILE / VIDEO */}
-
-                            <div className="flex flex-col items-center justify-center py-10">
-
-                                <div className="flex flex-col items-center">
-
-                                    <div className="w-28 h-28 rounded-full bg-gradient-to-br from-gray-600 to-gray-800 flex items-center justify-center text-4xl font-bold uppercase shadow-lg">
-                                        {activeChatName ? activeChatName.charAt(0) : "U"}
-                                    </div>
-
-                                    <p className="mt-4 text-sm opacity-70">
-                                        Calling...
+                                    <p className="text-gray-300 text-sm">
+                                        {peerRef.current ? "Connected" : "Calling..."}
                                     </p>
-
                                 </div>
 
                             </div>
 
+                            {/* ✅ CONTROLS INSIDE */}
+                            <div className="flex justify-between items-center px-6 pb-6">
 
-                            {/* BOTTOM CONTROLS */}
+                                <div className="flex gap-3">
 
-                            <div className="flex justify-center gap-6 pb-6">
+                                    <button
+                                        onClick={toggleCamera}
+                                        className={`p-3 rounded-full ${!isCameraOn ? "bg-red-500" : "bg-gray-800"}`}
+                                    >
+                                        {!isCameraOn ? "🚫📷" : "📷"}
+                                    </button>
 
-                                <button className="bg-gray-700 p-3 rounded-full">
-                                    <Phone className="h-5 w-5" />
-                                </button>
+                                    <button
+                                        onClick={toggleMute}
+                                        className={`p-3 rounded-full ${isMuted ? "bg-red-500" : "bg-gray-800"}`}
+                                    >
+                                        {isMuted ? "🔇" : "🎤"}
+                                    </button>
 
-
-
-
-
-                                <button className="bg-gray-700 hover:bg-gray-600 p-3 rounded-full transition">
-                                    <Smile className="h-5 w-5" />
-                                </button>
+                                </div>
 
                                 <button
-                                    onClick={handleEndCall}   // ✅ SignalR + both users
-                                    className="bg-red-500 p-3 rounded-full"
+                                    onClick={handleEndCall}
+                                    className="bg-red-500 p-4 rounded-full"
                                 >
-                                    <PhoneOff className="h-5 w-5" />
+                                    <PhoneOff className="h-5 w-5 text-white" />
                                 </button>
-
-
 
                             </div>
 
                         </div>
-
                     </div>
-
                 )}
 
 
@@ -2042,7 +2140,8 @@ export function GroupStudyView() {
                             <Send className="h-4 w-4" />
                         </Button>
 
-                        <audio ref={remoteAudioRef} autoPlay />
+                        <audio ref={remoteAudioRef} autoPlay playsInline />
+                        <audio ref={ringtoneRef} src="/sounds/ringtone.mp3" loop />
 
                     </div>
 
@@ -2055,6 +2154,15 @@ export function GroupStudyView() {
 
     )
 }
+
+
+
+
+
+
+
+
+
 
 
 
