@@ -319,39 +319,99 @@ public class AccountController : ControllerBase
     }
     // ================= SEND EMAIL =================
 
+    //[HttpPost("send-email")]
+    //public async Task<IActionResult> SendEmail([FromBody] EmailDto dto)
+    //{
+    //    var email = _configuration["EmailSettings:Email"];
+    //    var password = _configuration["EmailSettings:Password"];
+    //    var host = _configuration["EmailSettings:Host"];
+    //    var portStr = _configuration["EmailSettings:Port"];
+
+    //    if (string.IsNullOrEmpty(email) ||
+    //        string.IsNullOrEmpty(password) ||
+    //        string.IsNullOrEmpty(host) ||
+    //        string.IsNullOrEmpty(portStr))
+    //    {
+    //        return BadRequest(new
+    //        {
+    //            message = "Email config missing"
+    //        });
+    //    }
+
+    //    var port = int.Parse(portStr);
+
+
+
+    //    return Ok(new
+    //    {
+    //        message = "Email sent"
+    //    });
+    //}
+
     [HttpPost("send-email")]
     public async Task<IActionResult> SendEmail([FromBody] EmailDto dto)
     {
-        var email = _configuration["EmailSettings:Email"];
-        var password = _configuration["EmailSettings:Password"];
-        var host = _configuration["EmailSettings:Host"];
-        var portStr = _configuration["EmailSettings:Port"];
-
-        if (string.IsNullOrEmpty(email) ||
-            string.IsNullOrEmpty(password) ||
-            string.IsNullOrEmpty(host) ||
-            string.IsNullOrEmpty(portStr))
+        try
         {
-            return BadRequest(new
+            var apiKey = Environment.GetEnvironmentVariable("SendGrid__ApiKey");
+
+            if (string.IsNullOrEmpty(apiKey))
+                return StatusCode(500, "SendGrid API key missing");
+
+            var client = new SendGridClient(apiKey);
+
+            var from = new EmailAddress("nehipatel2004@gmail.com", "CalChat+ Admin");
+            var to = new EmailAddress(dto.To);
+
+            var subject = dto.Subject ?? "Admin Message";
+
+            var htmlContent = $@"
+        <div style='font-family: Arial; padding:40px; background:#f4f6f8;'>
+            <div style='max-width:500px; margin:auto; background:white; padding:30px; border-radius:10px;'>
+
+                <h2>📩 Message from Admin</h2>
+
+                <p>{dto.Message}</p>
+
+                <hr style='margin:20px 0'/>
+
+                <p style='font-size:12px; color:#888;'>
+                    This email was sent by CalChat+ Admin Panel
+                </p>
+
+            </div>
+        </div>";
+
+            var msg = MailHelper.CreateSingleEmail(from, to, subject, "", htmlContent);
+
+            var response = await client.SendEmailAsync(msg);
+
+            if (!response.IsSuccessStatusCode)
             {
-                message = "Email config missing"
+                return StatusCode(500, new
+                {
+                    message = "Email failed",
+                    status = response.StatusCode
+                });
+            }
+
+            return Ok(new
+            {
+                message = "Email sent successfully"
             });
         }
-
-        var port = int.Parse(portStr);
-
-    
-
-        return Ok(new
+        catch (Exception ex)
         {
-            message = "Email sent"
-        });
+            return StatusCode(500, new
+            {
+                message = "Error sending email",
+                error = ex.Message
+            });
+        }
     }
 
 
-
-
-[AllowAnonymous]
+    [AllowAnonymous]
 [HttpPost("forgot-password")]
 public async Task<IActionResult> ForgotPassword([FromBody] ForgotDto dto)
 {
