@@ -365,23 +365,78 @@ public class AccountController : ControllerBase
 
             var subject = dto.Subject ?? "Admin Message";
 
+            //    var htmlContent = $@"
+            //<div style='font-family: Arial; padding:40px; background:#f4f6f8;'>
+            //    <div style='max-width:500px; margin:auto; background:white; padding:30px; border-radius:10px;'>
+
+            //        <h2>📩 Message from Admin</h2>
+
+            //        <p>{dto.Message}</p>
+
+            //        <hr style='margin:20px 0'/>
+
+            //        <p style='font-size:12px; color:#888;'>
+            //            This email was sent by CalChat+ Admin Panel
+            //        </p>
+
+            //    </div>
+            //</div>";
             var htmlContent = $@"
-        <div style='font-family: Arial; padding:40px; background:#f4f6f8;'>
-            <div style='max-width:500px; margin:auto; background:white; padding:30px; border-radius:10px;'>
+<div style='margin:0;padding:0;background:#f4f6f8;font-family:Segoe UI,Arial,sans-serif;'>
 
-                <h2>📩 Message from Admin</h2>
+  <table width='100%' cellpadding='0' cellspacing='0' style='padding:40px 0;'>
+    <tr>
+      <td align='center'>
 
-                <p>{dto.Message}</p>
+        <table width='500' cellpadding='0' cellspacing='0' style='background:#ffffff;border-radius:12px;overflow:hidden;box-shadow:0 10px 25px rgba(0,0,0,0.05);'>
 
-                <hr style='margin:20px 0'/>
+          <!-- HEADER -->
+          <tr>
+            <td style='background:linear-gradient(135deg,#6366f1,#4f46e5);padding:20px;text-align:center;color:white;'>
+              <h2 style='margin:0;font-size:20px;'>📩 CalChat+ Admin</h2>
+              <p style='margin:5px 0 0;font-size:12px;opacity:0.8;'>Official Notification</p>
+            </td>
+          </tr>
 
-                <p style='font-size:12px; color:#888;'>
-                    This email was sent by CalChat+ Admin Panel
-                </p>
+          <!-- BODY -->
+          <tr>
+            <td style='padding:30px;'>
 
-            </div>
-        </div>";
+              <h3 style='margin-top:0;color:#111827;'>Hello 👋</h3>
 
+              <p style='font-size:14px;color:#374151;line-height:1.6;'>
+                {dto.Message}
+              </p>
+
+              <!-- CTA BUTTON (optional) -->
+              <div style='text-align:center;margin:30px 0;'>
+                <a href='https://calchatmain-le3p.vercel.app'
+                   style='background:#6366f1;color:white;padding:12px 20px;border-radius:6px;text-decoration:none;font-size:14px;display:inline-block;'>
+                   Open CalChat+
+                </a>
+              </div>
+
+              <p style='font-size:12px;color:#6b7280;'>
+                If you have any questions, feel free to contact support.
+              </p>
+
+            </td>
+          </tr>
+
+          <!-- FOOTER -->
+          <tr>
+            <td style='background:#f9fafb;padding:15px;text-align:center;font-size:11px;color:#9ca3af;'>
+              © {DateTime.Now.Year} CalChat+ • All rights reserved
+            </td>
+          </tr>
+
+        </table>
+
+      </td>
+    </tr>
+  </table>
+
+</div>";
             var msg = MailHelper.CreateSingleEmail(from, to, subject, "", htmlContent);
 
             var response = await client.SendEmailAsync(msg);
