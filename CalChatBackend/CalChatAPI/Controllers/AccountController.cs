@@ -295,6 +295,28 @@ public class AccountController : ControllerBase
         return Ok("User deactivated");
     }
 
+
+    // ================= ACTIVATE =================
+    [HttpPut("users/{id}/activate")]
+    public async Task<IActionResult> ActivateUser(string id)
+    {
+        var user = await _userManager.FindByIdAsync(id);
+
+        if (user == null)
+            return NotFound("User not found");
+
+        if (user.IsActive)
+            return BadRequest("User is already active");
+
+        user.IsActive = true;
+
+        var result = await _userManager.UpdateAsync(user);
+
+        if (!result.Succeeded)
+            return BadRequest(result.Errors);
+
+        return Ok("User activated");
+    }
     // ================= SEND EMAIL =================
 
     [HttpPost("send-email")]
