@@ -117,7 +117,11 @@ public class AccountController : ControllerBase
                 return Unauthorized("Invalid credentials");
 
             if (!user.IsActive)
-                return Unauthorized("User is deactivated");
+                return Unauthorized(new
+                {
+                    message = "Your account has been deactivated",
+                    code = "USER_DEACTIVATED"
+                });
 
             Console.WriteLine("✅ User Found");
 
