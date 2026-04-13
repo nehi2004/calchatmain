@@ -1,10 +1,3 @@
-
-
-
-
-
-
-
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;
 using System.Security.Claims;
@@ -18,6 +11,8 @@ namespace CalChatAPI.Hubs
     public class ChatHub : Hub
     {
         private readonly ApplicationDbContext _context;
+
+        private static Dictionary<string, DateTime> activeCalls = new();
 
         public ChatHub(ApplicationDbContext context)
         {
@@ -69,21 +64,25 @@ namespace CalChatAPI.Hubs
             if (message == null) return;
 
             var chatId = message.GetType()
-                .GetProperty("chatId")?
+                .GetProperty("ChatId")?
                 .GetValue(message)?
                 .ToString();
 
             if (string.IsNullOrEmpty(chatId)) return;
+
+            var text =
+                message.GetType().GetProperty("Text")?.GetValue(message) ??
+                message.GetType().GetProperty("Message")?.GetValue(message);
 
             await Clients.Group(chatId).SendAsync("ReceiveMessage", new
             {
                 id = message.GetType().GetProperty("Id")?.GetValue(message),
                 senderId = message.GetType().GetProperty("SenderId")?.GetValue(message),
                 senderName = message.GetType().GetProperty("SenderName")?.GetValue(message),
-                message = message.GetType().GetProperty("Text")?.GetValue(message)
-                    ?? message.GetType().GetProperty("Message")?.GetValue(message),
+                message = text, // ✅ FIXED
                 fileUrl = message.GetType().GetProperty("FileUrl")?.GetValue(message),
                 time = message.GetType().GetProperty("Time")?.GetValue(message),
+                isCall = message.GetType().GetProperty("IsCall")?.GetValue(message) ?? false,
                 chatId = chatId
             });
         }
@@ -107,6 +106,9 @@ namespace CalChatAPI.Hubs
 
             if (string.IsNullOrEmpty(fromUserId) || string.IsNullOrEmpty(toUserId))
                 return;
+
+            // ✅ STORE CALL START TIME
+            activeCalls[chatId] = DateTime.UtcNow;
 
             var message = new Message
             {
@@ -140,7 +142,6 @@ namespace CalChatAPI.Hubs
                 callType = "voice"
             });
         }
-
         public async Task EndCall(string targetUserId, string chatId)
         {
             var callerId = Context.User?.FindFirst(ClaimTypes.NameIdentifier)?.Value;
@@ -148,12 +149,32 @@ namespace CalChatAPI.Hubs
 
             if (string.IsNullOrEmpty(callerId)) return;
 
+            // ✅ CALCULATE DURATION
+            string durationText = "0 sec";
+
+            if (activeCalls.ContainsKey(chatId))
+            {
+                var startTime = activeCalls[chatId];
+                var duration = DateTime.UtcNow - startTime;
+
+                activeCalls.Remove(chatId);
+
+                if (duration.TotalMinutes >= 1)
+                {
+                    durationText = $"{(int)duration.TotalMinutes} min {duration.Seconds} sec";
+                }
+                else
+                {
+                    durationText = $"{duration.Seconds} sec";
+                }
+            }
+
             var message = new Message
             {
                 ChatId = int.Parse(chatId),
                 SenderId = callerId,
                 SenderName = callerName,
-                Text = "📞 Call Ended",
+                Text = $"📞 Voice call • {durationText}", // ✅ FINAL TEXT
                 Time = DateTime.UtcNow,
                 IsCall = true,
                 Status = "read"

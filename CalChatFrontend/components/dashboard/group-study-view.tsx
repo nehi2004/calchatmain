@@ -522,7 +522,7 @@ export function GroupStudyView() {
             video: true
         })
 
-        
+
         localStream.current = stream
 
         // 🔥 ADD THIS
@@ -928,30 +928,28 @@ export function GroupStudyView() {
             setIsCalling(false)
         })
 
-
         connection.on("ReceiveMessage", (msg: any) => {
 
             if (!msg) return
 
+            const newMessage = {
+                id: msg.id,
+                senderId: msg.senderId,
+                senderName: msg.senderName,
+                message: msg.message || msg.text || msg.Text || "",
+                fileUrl: msg.fileUrl,
+                time: msg.time,
+                isCall: msg.isCall || false,
+                status: msg.status || "delivered"
+            }
+
             setMessages(prev => {
+                // جلوگیری از duplicate
+                if (prev.some(m => String(m.id) === String(newMessage.id))) {
+                    return prev
+                }
 
-                // ✅ prevent duplicates
-                const exists = prev.some(m => String(m.id) === String(msg.id))
-                if (exists) return prev
-
-                return [
-                    ...prev,
-                    {
-                        id: msg.id,
-                        senderId: msg.senderId,
-                        senderName: msg.senderName,
-                        message: msg.message,
-                        fileUrl: msg.fileUrl,
-                        time: msg.time,
-                        isCall: msg.isCall || false,
-                        status: "read"
-                    }
-                ]
+                return [...prev, newMessage]
             })
         })
 
@@ -995,6 +993,8 @@ export function GroupStudyView() {
 
             // 🔥 SHOW UI FIRST (IMPORTANT)
             setCallType("voice")
+
+            await connectionRef.current.invoke("AcceptCall", fromUserId)
 
             // cleanup
             localStream.current?.getTracks().forEach(track => track.stop())
@@ -1968,7 +1968,7 @@ export function GroupStudyView() {
                                 }
 
                                 {msg.isCall ? (
-                                    <p className="text-center text-green-500 text-sm font-semibold">
+                                    <p className="text-center text-gray-500 text-xs font-medium">
                                         {msg.message}
                                     </p>
                                 ) : (
@@ -2154,17 +2154,6 @@ export function GroupStudyView() {
 
     )
 }
-
-
-
-
-
-
-
-
-
-
-
 
 
 
