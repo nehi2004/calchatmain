@@ -408,6 +408,7 @@ export default function AdminUsersPage() {
                             <SelectItem value="student">Student</SelectItem>
                             <SelectItem value="personal">Personal</SelectItem>
                             <SelectItem value="hr">HR</SelectItem>
+                            <SelectItem value="professional">Professional</SelectItem>
                         </SelectContent>
                     </Select>
 
