@@ -10,14 +10,12 @@ namespace CalChatAPI.Services
     public class AIService
     {
         private readonly ApplicationDbContext _context;
-        private readonly HuggingFaceService _hfService;
+        private readonly GroqService _groqService;
 
-        //private static Dictionary<string, CalendarEvent> _rescheduleMemory = new();
-
-        public AIService(ApplicationDbContext context, HuggingFaceService hfService)
+        public AIService(ApplicationDbContext context, GroqService groqService)
         {
             _context = context;
-            _hfService = hfService;
+            _groqService = groqService;
         }
         public async Task<object> ProcessMessage(string userId, string message)
         {
@@ -132,14 +130,23 @@ namespace CalChatAPI.Services
 
                 case AIIntent.CHAT:
                     {
-                        var aiReply = await _hfService.GetChatResponse(message);
-
-                        return new
+                        try
                         {
-                            reply = aiReply
-                        };
-                    }
+                            var aiReply = await _groqService.GetChatResponse(message);
 
+                            return new
+                            {
+                                reply = aiReply
+                            };
+                        }
+                        catch (Exception ex)
+                        {
+                            return new
+                            {
+                                reply = "⚠️ AI service failed: " + ex.Message
+                            };
+                        }
+                    }
                 default:
                     return ResponseBuilder.Unknown();
             }

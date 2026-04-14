@@ -231,6 +231,7 @@ using CalChatAPI.Services;
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Configuration.AddEnvironmentVariables(); // ✅ MUST
+builder.Services.AddHttpClient<GroqService>();
 //////////////////////////////////////////////////
 // DATABASE
 //////////////////////////////////////////////////
