@@ -41,6 +41,8 @@ namespace CalChatAPI.Services
             var response = await _httpClient.SendAsync(request);
             var result = await response.Content.ReadAsStringAsync();
 
+            Console.WriteLine("🔥 HF CALLED with: " + message);
+
             dynamic json = JsonConvert.DeserializeObject(result);
 
             return json[0]["generated_text"].ToString();

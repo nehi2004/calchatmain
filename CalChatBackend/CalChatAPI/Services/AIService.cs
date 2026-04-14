@@ -131,21 +131,7 @@ namespace CalChatAPI.Services
                     return ResponseBuilder.Help();
 
                 case AIIntent.CHAT:
-                    {
-                        try
-                        {
-                            var aiReply = await _hfService.GetChatResponse(message);
-
-                            return new
-                            {
-                                reply = aiReply
-                            };
-                        }
-                        catch
-                        {
-                            return ResponseBuilder.SmallTalk(message);
-                        }
-                    }
+                    return ResponseBuilder.SmallTalk(message);
 
                 default:
                     return ResponseBuilder.Unknown();
