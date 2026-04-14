@@ -28,10 +28,9 @@ namespace CalChatAPI.Services
 
                 request.Headers.Authorization =
                     new AuthenticationHeaderValue("Bearer", _apiKey);
-
                 var payload = new
                 {
-                    inputs = $"You are CalChat AI. You are friendly and helpful.\nUser: {message}\nAssistant:"
+                    inputs = $"Answer like a helpful assistant: {message}"
                 };
 
                 request.Content = new StringContent(
@@ -42,43 +41,31 @@ namespace CalChatAPI.Services
 
                 var response = await _httpClient.SendAsync(request);
                 var result = await response.Content.ReadAsStringAsync();
-
                 Console.WriteLine("🔥 HF RAW RESPONSE: " + result);
 
-                // 🔥 SAFE PARSE
+                // check error
                 if (result.Contains("error"))
                 {
-                    return "⚠️ AI is currently busy, please try again in a moment.";
+                    return "⚠️ AI is busy right now. Try again.";
                 }
 
                 dynamic json = JsonConvert.DeserializeObject(result);
 
-                if (json is null || json[0] == null)
+                // safe check
+                if (json == null || json.Count == 0)
                 {
-                    return "⚠️ AI response failed. Try again.";
+                    return "⚠️ No response from AI.";
                 }
 
-                var text = json[0]?["generated_text"]?.ToString();
+                // flan-t5 returns "generated_text"
+                var text = json[0]["generated_text"]?.ToString();
 
                 if (string.IsNullOrEmpty(text))
                 {
-                    return "⚠️ AI didn't respond properly.";
+                    return "⚠️ Empty AI response.";
                 }
 
-                // 🔥 CLEAN RESPONSE (important)
-                if (text.Contains("Assistant:"))
-                {
-                    text = text.Split("Assistant:").Last().Trim();
-                }
-
-                return text;
-
-                if (string.IsNullOrEmpty(text))
-                {
-                    return "⚠️ No response generated.";
-                }
-
-                return text;
+                return text.Trim();
             }
             catch (Exception ex)
             {
