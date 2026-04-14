@@ -19,33 +19,59 @@ namespace CalChatAPI.Services
 
         public async Task<string> GetChatResponse(string message)
         {
-            var request = new HttpRequestMessage(
-                HttpMethod.Post,
-                "https://api-inference.huggingface.co/models/mistralai/Mistral-7B-Instruct-v0.2"
-            );
-
-            request.Headers.Authorization =
-                new AuthenticationHeaderValue("Bearer", _apiKey);
-
-            var payload = new
+            try
             {
-                inputs = $"You are CalChat AI. You are friendly and helpful.\nUser: {message}\nAssistant:"
-            };
+                var request = new HttpRequestMessage(
+                    HttpMethod.Post,
+                    "https://api-inference.huggingface.co/models/mistralai/Mistral-7B-Instruct-v0.2"
+                );
 
-            request.Content = new StringContent(
-                JsonConvert.SerializeObject(payload),
-                Encoding.UTF8,
-                "application/json"
-            );
+                request.Headers.Authorization =
+                    new AuthenticationHeaderValue("Bearer", _apiKey);
 
-            var response = await _httpClient.SendAsync(request);
-            var result = await response.Content.ReadAsStringAsync();
+                var payload = new
+                {
+                    inputs = $"You are CalChat AI. You are friendly and helpful.\nUser: {message}\nAssistant:"
+                };
 
-            Console.WriteLine("🔥 HF CALLED with: " + message);
+                request.Content = new StringContent(
+                    JsonConvert.SerializeObject(payload),
+                    Encoding.UTF8,
+                    "application/json"
+                );
 
-            dynamic json = JsonConvert.DeserializeObject(result);
+                var response = await _httpClient.SendAsync(request);
+                var result = await response.Content.ReadAsStringAsync();
 
-            return json[0]["generated_text"].ToString();
+                Console.WriteLine("🔥 HF RAW RESPONSE: " + result);
+
+                // 🔥 SAFE PARSE
+                if (result.Contains("error"))
+                {
+                    return "⚠️ AI is currently busy, please try again in a moment.";
+                }
+
+                dynamic json = JsonConvert.DeserializeObject(result);
+
+                if (json is null || json[0] == null)
+                {
+                    return "⚠️ AI response failed. Try again.";
+                }
+
+                var text = json[0]["generated_text"]?.ToString();
+
+                if (string.IsNullOrEmpty(text))
+                {
+                    return "⚠️ No response generated.";
+                }
+
+                return text;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("❌ HF ERROR: " + ex.Message);
+                return "⚠️ AI error occurred.";
+            }
         }
     }
 }
