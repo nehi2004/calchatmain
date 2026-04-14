@@ -195,7 +195,7 @@ namespace CalChatAPI.Services
                 message.Contains("good afternoon") ||
                 message.Contains("good evening"))
             {
-                return AIIntent.GREETING;
+                return AIIntent.CHAT;
             }
 
             // =====================
