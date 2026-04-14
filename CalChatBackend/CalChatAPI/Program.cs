@@ -307,6 +307,7 @@ builder.Services.AddSignalR();
 builder.Services.AddSingleton<IUserIdProvider, NameIdentifierUserIdProvider>();
 
 builder.Services.AddScoped<AIService>();
+builder.Services.AddScoped<HuggingFaceService>();
 builder.Services.AddScoped<IEmailService, EmailService>();
 
 // ✅ ADD THIS BELOW
@@ -342,6 +343,8 @@ builder.Services.AddCors(options =>
 //////////////////////////////////////////////////
 // SWAGGER
 //////////////////////////////////////////////////
+///
+
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
 {

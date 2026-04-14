@@ -69,27 +69,7 @@ export default function AdminUsersPage() {
         } finally {
             setLoading(false)
         }
-    }
-
-    //async function handleEdit(user: any) {
-    //    const newName = prompt("Enter new name", user.fullName)
-    //    if (!newName) return
-
-    //    const token = localStorage.getItem("token")
-
-    //    await fetch(`https://steadfast-warmth-production-64c8.up.railway.app/api/account/users/${user.id}`, {
-    //        method: "PUT",
-    //        headers: {
-    //            "Content-Type": "application/json",
-    //            Authorization: `Bearer ${token}`
-    //        },
-    //        body: JSON.stringify({ fullName: newName })
-    //    })
-
-    //    fetchUsers()
-    //}
-
-    async function handleEdit(user: any) {
+    }  async function handleEdit(user: any) {
 
         const { value: newName } = await Swal.fire({
             title: "Edit User Name",
@@ -140,76 +120,7 @@ export default function AdminUsersPage() {
             Swal.fire("Error", "Update failed", "error")
         }
     }
-    //async function handleDeactivate(userId: string) {
-    //    if (!confirm("Are you sure?")) return
-
-    //    const token = localStorage.getItem("token")
-
-    //    await fetch(`https://steadfast-warmth-production-64c8.up.railway.app/api/account/users/${userId}/deactivate`, {
-    //        method: "PUT",
-    //        headers: { Authorization: `Bearer ${token}` }
-    //    })
-
-    //    fetchUsers()
-    //}
-
-
-    //async function handleDeactivate(userId: string) {
-
-    //    const result = await Swal.fire({
-    //        title: "Are you sure?",
-    //        text: "This user will be deactivated!",
-    //        icon: "warning",
-    //        showCancelButton: true,
-    //        confirmButtonColor: "#ef4444",
-    //        cancelButtonColor: "#6b7280",
-    //        confirmButtonText: "Yes, deactivate!",
-    //        cancelButtonText: "Cancel"
-    //    })
-
-    //    if (!result.isConfirmed) return
-
-    //    const token = localStorage.getItem("token")
-
-    //    try {
-    //        Swal.fire({
-    //            title: "Processing...",
-    //            allowOutsideClick: false,
-    //            didOpen: () => Swal.showLoading()
-    //        })
-
-    //        const res = await fetch(
-    //            `https://steadfast-warmth-production-64c8.up.railway.app/api/account/users/${userId}/deactivate`,
-    //            {
-    //                method: "PUT",
-    //                headers: { Authorization: `Bearer ${token}` }
-    //            }
-    //        )
-
-    //        if (!res.ok) throw new Error("Failed")
-
-    //        Swal.fire({
-    //            title: "Deactivated!",
-    //            text: "User has been deactivated.",
-    //            icon: "success",
-    //            timer: 1500,
-    //            showConfirmButton: false
-    //        })
-
-    //        fetchUsers()
-
-    //    } catch (err) {
-    //        Swal.fire({
-    //            title: "Error!",
-    //            text: "Something went wrong.",
-    //            icon: "error"
-    //        })
-    //    }
-    //}
-
-
-
-    async function handleToggleStatus(user: any) {
+async function handleToggleStatus(user: any) {
 
         const isDeactivating = user.isActive
 
@@ -261,31 +172,7 @@ export default function AdminUsersPage() {
         } catch {
             Swal.fire("Error", "Action failed", "error")
         }
-    }
-
-
-    //async function handleEmail(user: any) {
-    //    const message = prompt("Enter message")
-    //    if (!message) return
-
-    //    const token = localStorage.getItem("token")
-
-    //    await fetch(`https://steadfast-warmth-production-64c8.up.railway.app/api/account/send-email`, {
-    //        method: "POST",
-    //        headers: {
-    //            "Content-Type": "application/json",
-    //            Authorization: `Bearer ${token}`
-    //        },
-    //        body: JSON.stringify({
-    //            to: user.email,
-    //            subject: "Admin Message",
-    //            message
-    //        })
-    //    })
-
-    //    alert("Email sent ✅")
-    //}
-    async function handleEmail(user: any) {
+    }  async function handleEmail(user: any) {
 
         const { value: message } = await Swal.fire({
             title: "Send Email",
