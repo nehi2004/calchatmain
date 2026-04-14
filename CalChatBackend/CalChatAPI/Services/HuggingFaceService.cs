@@ -22,9 +22,9 @@ namespace CalChatAPI.Services
             try
             {
                 var request = new HttpRequestMessage(
-                    HttpMethod.Post,
-                    "https://api-inference.huggingface.co/models/mistralai/Mistral-7B-Instruct-v0.2"
-                );
+     HttpMethod.Post,
+     "https://api-inference.huggingface.co/models/microsoft/DialoGPT-medium"
+ );
 
                 request.Headers.Authorization =
                     new AuthenticationHeaderValue("Bearer", _apiKey);
@@ -58,7 +58,20 @@ namespace CalChatAPI.Services
                     return "⚠️ AI response failed. Try again.";
                 }
 
-                var text = json[0]["generated_text"]?.ToString();
+                var text = json[0]?["generated_text"]?.ToString();
+
+                if (string.IsNullOrEmpty(text))
+                {
+                    return "⚠️ AI didn't respond properly.";
+                }
+
+                // 🔥 CLEAN RESPONSE (important)
+                if (text.Contains("Assistant:"))
+                {
+                    text = text.Split("Assistant:").Last().Trim();
+                }
+
+                return text;
 
                 if (string.IsNullOrEmpty(text))
                 {
