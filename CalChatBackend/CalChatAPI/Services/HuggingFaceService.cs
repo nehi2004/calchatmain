@@ -22,15 +22,16 @@ namespace CalChatAPI.Services
             try
             {
                 var request = new HttpRequestMessage(
-     HttpMethod.Post,
-     "https://api-inference.huggingface.co/models/microsoft/DialoGPT-medium"
- );
+                    HttpMethod.Post,
+                    "https://api-inference.huggingface.co/models/google/flan-t5-large"
+                );
 
                 request.Headers.Authorization =
                     new AuthenticationHeaderValue("Bearer", _apiKey);
+
                 var payload = new
                 {
-                    inputs = $"Answer like a helpful assistant: {message}"
+                    inputs = $"You are a helpful AI assistant. Answer briefly:\n{message}"
                 };
 
                 request.Content = new StringContent(
@@ -41,28 +42,26 @@ namespace CalChatAPI.Services
 
                 var response = await _httpClient.SendAsync(request);
                 var result = await response.Content.ReadAsStringAsync();
+
                 Console.WriteLine("🔥 HF RAW RESPONSE: " + result);
 
-                // check error
-                if (result.Contains("error"))
+                if (!response.IsSuccessStatusCode)
                 {
-                    return "⚠️ AI is busy right now. Try again.";
+                    return "⚠️ AI service failed.";
                 }
 
                 dynamic json = JsonConvert.DeserializeObject(result);
 
-                // safe check
-                if (json == null || json.Count == 0)
+                if (json == null || json[0] == null)
                 {
-                    return "⚠️ No response from AI.";
+                    return "⚠️ No AI response.";
                 }
 
-                // flan-t5 returns "generated_text"
                 var text = json[0]["generated_text"]?.ToString();
 
                 if (string.IsNullOrEmpty(text))
                 {
-                    return "⚠️ Empty AI response.";
+                    return "⚠️ Empty response.";
                 }
 
                 return text.Trim();

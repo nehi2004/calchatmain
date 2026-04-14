@@ -70,10 +70,7 @@ namespace CalChatAPI.Controllers
                     && x.Timestamp > DateTime.UtcNow.AddSeconds(-2));
 
             // ✅ SAVE ONLY IF NOT EXISTS
-            if (!exists)
-            {
-                _context.AIChatHistories.Add(aiChat);
-            }
+         
 
             _context.AIChatHistories.Add(aiChat);
 

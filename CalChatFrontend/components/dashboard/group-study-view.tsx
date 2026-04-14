@@ -129,12 +129,12 @@ export function GroupStudyView() {
     const [groupDescription, setGroupDescription] = useState("")
     const [groupAdminId, setGroupAdminId] = useState("")
 
-    const videoRef = useRef<HTMLVideoElement>(null)
+
     const localStream = useRef<MediaStream | null>(null)
     const bottomRef = useRef<HTMLDivElement>(null)
     const connectionRef = useRef<signalR.HubConnection | null>(null)
     const [isMuted, setIsMuted] = useState(false)
-    const [isCameraOn, setIsCameraOn] = useState(true)
+
 
     const peerRef = useRef<RTCPeerConnection | null>(null)
     const remoteAudioRef = useRef<HTMLAudioElement>(null)
@@ -468,26 +468,27 @@ export function GroupStudyView() {
     const toggleMute = () => {
         if (!localStream.current) return
 
-        localStream.current.getAudioTracks().forEach(track => {
-            track.enabled = !track.enabled
-        })
+        const audioTrack = localStream.current.getAudioTracks()[0]
 
-        setIsMuted(prev => !prev)
+        if (!audioTrack) return
+
+        if (audioTrack.enabled) {
+            audioTrack.enabled = false   // 🔴 mute
+            console.log("🔇 Mic OFF")
+        } else {
+            audioTrack.enabled = true    // 🟢 unmute
+            console.log("🎤 Mic ON")
+        }
+
+        setIsMuted(!audioTrack.enabled)
     }
 
-    // ✅ CAMERA TOGGLE
-    const toggleCamera = () => {
-        if (!localStream.current) return
-
-        localStream.current.getVideoTracks().forEach(track => {
-            track.enabled = !track.enabled
-        })
-
-        setIsCameraOn(prev => !prev)
-    }
 
     /* ---------------- CALL ---------------- */
     const startCall = async () => {
+
+        // 🔥 OPEN UI FOR CALLER
+        window.dispatchEvent(new Event("start-call"))
 
         if (!activeChat || !connectionRef.current) return
 
@@ -509,6 +510,9 @@ export function GroupStudyView() {
 
         setCallUserId(otherUserId)
 
+        // 🔥 STORE chatId BEFORE CALL (ADD THIS LINE)
+        localStorage.setItem("chatId", String(activeChat))
+
         await connectionRef.current.invoke(
             "CallUser",
             otherUserId,
@@ -518,21 +522,19 @@ export function GroupStudyView() {
         createPeer()
 
         const stream = await navigator.mediaDevices.getUserMedia({
-            audio: true,
-            video: true
+            audio: true
         })
 
+        console.log("🎤 Local Audio Tracks (startCall):", stream.getAudioTracks())
 
         localStream.current = stream
 
-        // 🔥 ADD THIS
-        if (videoRef.current) {
-            videoRef.current.srcObject = stream
-        }
 
-        stream.getTracks().forEach(track => {
-            peerRef.current?.addTrack(track, stream)
-        })
+        const audioTrack = stream.getAudioTracks()[0]
+
+        if (audioTrack) {
+            peerRef.current?.addTrack(audioTrack, stream)
+        }
 
         const offer = await peerRef.current!.createOffer()
         await peerRef.current!.setLocalDescription(offer)
@@ -580,10 +582,12 @@ export function GroupStudyView() {
 
             if (otherUserId) {
 
+                const chatId = activeChat || localStorage.getItem("chatId")
+
                 await connectionRef.current.invoke(
                     "EndCall",
                     String(otherUserId),
-                    String(activeChat)
+                    String(chatId)
                 )
 
             }
@@ -851,9 +855,8 @@ export function GroupStudyView() {
         connection.on("IncomingCall", (data) => {
             console.log("📞 Incoming Call:", data)
 
-            // ✅ ADD THESE HERE
-            console.log("Students:", students)
-            console.log("Incoming:", data)
+            // 🔥 STORE chatId HERE (VERY IMPORTANT)
+            localStorage.setItem("chatId", data.chatId)
 
             let name = data.fromUserName
 
@@ -868,11 +871,6 @@ export function GroupStudyView() {
                 ...data,
                 fromUserName: name
             })
-
-            if (ringtoneRef.current) {
-                ringtoneRef.current.currentTime = 0
-                ringtoneRef.current.play().catch(() => { })
-            }
         })
 
         connection.on("ReceiveOffer", async (data) => {
@@ -994,6 +992,8 @@ export function GroupStudyView() {
             // 🔥 SHOW UI FIRST (IMPORTANT)
             setCallType("voice")
 
+            const chatId = localStorage.getItem("chatId") // 🔥 ADD
+
             await connectionRef.current.invoke("AcceptCall", fromUserId)
 
             // cleanup
@@ -1006,24 +1006,25 @@ export function GroupStudyView() {
 
             try {
                 stream = await navigator.mediaDevices.getUserMedia({
-                    audio: true,
-                    video: true   // 🔥 CHANGE THIS
-                })
-            } catch {
-                stream = await navigator.mediaDevices.getUserMedia({
                     audio: true
                 })
+            } catch (err) {
+                console.error("Mic error:", err)
+                alert("Mic permission required")
+                setIsAccepting(false)
+                return
             }
+
+            console.log("🎤 Local Audio Tracks (acceptCall):", stream.getAudioTracks())
 
             localStream.current = stream
 
-            if (videoRef.current) {
-                videoRef.current.srcObject = stream
-            }
 
-            stream.getTracks().forEach(track => {
-                peerRef.current?.addTrack(track, stream)
-            })
+            const audioTrack = stream.getAudioTracks()[0]
+
+            if (audioTrack) {
+                peerRef.current?.addTrack(audioTrack, stream)
+            }
 
             console.log("🎥 Video Tracks:", stream.getVideoTracks())
 
@@ -1565,19 +1566,9 @@ export function GroupStudyView() {
                             {/* CENTER */}
                             <div className="flex-1 relative flex items-center justify-center">
 
-                                {isCameraOn ? (
-                                    <video
-                                        ref={videoRef}
-                                        autoPlay
-                                        playsInline
-                                        muted
-                                        className="absolute inset-0 w-full h-full object-cover"
-                                    />
-                                ) : (
-                                    <div className="w-32 h-32 rounded-full bg-gray-500 flex items-center justify-center text-4xl text-white">
-                                        {activeChatName?.charAt(0) || "U"}
-                                    </div>
-                                )}
+                                <div className="w-32 h-32 rounded-full bg-gray-500 flex items-center justify-center text-4xl text-white">
+                                    {activeChatName?.charAt(0) || "U"}
+                                </div>
 
                                 <div className="absolute bottom-6 text-center w-full">
                                     <h2 className="text-white text-lg font-semibold">
@@ -1596,12 +1587,7 @@ export function GroupStudyView() {
 
                                 <div className="flex gap-3">
 
-                                    <button
-                                        onClick={toggleCamera}
-                                        className={`p-3 rounded-full ${!isCameraOn ? "bg-red-500" : "bg-gray-800"}`}
-                                    >
-                                        {!isCameraOn ? "🚫📷" : "📷"}
-                                    </button>
+
 
                                     <button
                                         onClick={toggleMute}
@@ -2154,6 +2140,3 @@ export function GroupStudyView() {
 
     )
 }
-
-
-

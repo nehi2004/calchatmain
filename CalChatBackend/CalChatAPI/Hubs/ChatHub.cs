@@ -139,42 +139,42 @@ namespace CalChatAPI.Hubs
             {
                 fromUserId,
                 fromUserName,
-                callType = "voice"
+                callType = "voice",
+                chatId = chatId // 🔥 ADD THIS
             });
         }
         public async Task EndCall(string targetUserId, string chatId)
         {
-            var callerId = Context.User?.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var callerId = Context.UserIdentifier;
             var callerName = Context.User?.Identity?.Name ?? "User";
 
-            if (string.IsNullOrEmpty(callerId)) return;
+            if (string.IsNullOrEmpty(callerId))
+                return;
 
-            // ✅ CALCULATE DURATION
-            string durationText = "0 sec";
-
-            if (activeCalls.ContainsKey(chatId))
+            // 🔥 FIX: prevent crash
+            if (string.IsNullOrEmpty(chatId) || !activeCalls.ContainsKey(chatId))
             {
-                var startTime = activeCalls[chatId];
-                var duration = DateTime.UtcNow - startTime;
-
-                activeCalls.Remove(chatId);
-
-                if (duration.TotalMinutes >= 1)
-                {
-                    durationText = $"{(int)duration.TotalMinutes} min {duration.Seconds} sec";
-                }
-                else
-                {
-                    durationText = $"{duration.Seconds} sec";
-                }
+                await Clients.User(targetUserId).SendAsync("CallEnded");
+                await Clients.User(callerId).SendAsync("CallEnded");
+                return;
             }
+
+            var startTime = activeCalls[chatId];
+            var duration = DateTime.UtcNow - startTime;
+
+            activeCalls.Remove(chatId);
+
+            string durationText =
+                duration.TotalMinutes >= 1
+                    ? $"{(int)duration.TotalMinutes} min {duration.Seconds} sec"
+                    : $"{duration.Seconds} sec";
 
             var message = new Message
             {
                 ChatId = int.Parse(chatId),
                 SenderId = callerId,
                 SenderName = callerName,
-                Text = $"📞 Voice call • {durationText}", // ✅ FINAL TEXT
+                Text = $"📞 Voice call • {durationText}",
                 Time = DateTime.UtcNow,
                 IsCall = true,
                 Status = "read"
@@ -194,7 +194,9 @@ namespace CalChatAPI.Hubs
                 chatId = chatId
             });
 
+            // 🔥 BOTH SIDE END
             await Clients.User(targetUserId).SendAsync("CallEnded");
+            await Clients.User(callerId).SendAsync("CallEnded");
         }
 
         public async Task SendOffer(string offer, string toUserId)
@@ -237,9 +239,18 @@ namespace CalChatAPI.Hubs
             if (string.IsNullOrEmpty(fromUserId) || string.IsNullOrEmpty(toUserId))
                 return;
 
+            // ✅ Notify CALLER (User1)
             await Clients.User(toUserId).SendAsync("CallAccepted", new
             {
-                fromUserId
+                fromUserId = fromUserId,   // receiver
+                toUserId = toUserId        // caller
+            });
+
+            // ✅ Notify RECEIVER (User2) ALSO (VERY IMPORTANT)
+            await Clients.User(fromUserId).SendAsync("CallAccepted", new
+            {
+                fromUserId = fromUserId,
+                toUserId = toUserId
             });
         }
 
@@ -250,7 +261,11 @@ namespace CalChatAPI.Hubs
             if (string.IsNullOrEmpty(fromUserId) || string.IsNullOrEmpty(toUserId))
                 return;
 
+            // ✅ Notify caller
             await Clients.User(toUserId).SendAsync("CallRejected", fromUserId);
+
+            // ✅ (OPTIONAL BUT BEST) notify receiver also
+            await Clients.User(fromUserId).SendAsync("CallRejected");
         }
     }
 }
