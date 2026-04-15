@@ -17,7 +17,7 @@ namespace CalChatAPI.Services
 
         public async Task<string> GetChatResponse(string message)
         {
-            var apiKey = _config["Groq:ApiKey"];
+            var apiKey = _config["GROQ_API_KEY"];
 
             if (string.IsNullOrEmpty(apiKey))
             {
