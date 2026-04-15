@@ -23,14 +23,13 @@ namespace CalChatAPI.Services
             {
                 throw new Exception("Groq API key is missing");
             }
-
             var requestBody = new
             {
-                model = "llama3-8b-8192",
+                model = "llama-3.1-8b-instant",
                 messages = new[]
                 {
-            new { role = "user", content = message }
-        }
+        new { role = "user", content = message }
+    }
             };
 
             var request = new HttpRequestMessage(HttpMethod.Post, "https://api.groq.com/openai/v1/chat/completions");
