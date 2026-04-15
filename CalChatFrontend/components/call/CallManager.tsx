@@ -31,7 +31,9 @@ export default function CallManager() {
         // 📞 INCOMING CALL
         connection.on("IncomingCall", (data) => {
 
-            // 🔥 STORE chatId HERE
+            console.log("📞 Incoming Call:", data)
+
+            // 🔥 STORE chatId
             localStorage.setItem("chatId", data.chatId)
 
             setIncomingCall({
@@ -39,10 +41,43 @@ export default function CallManager() {
                 fromUserName: data.fromUserName || "User",
                 callType: data.callType || "voice"
             })
+
+            // 🔊 PLAY RINGTONE (SAFE + CLEAN)
+            try {
+                const audio = new Audio("/sounds/ringtone.mp3")
+                audio.loop = true
+
+                audio.play()
+                    .then(() => {
+                        console.log("🔊 Ringtone playing")
+                    })
+                    .catch(err => {
+                        console.log("🔇 Autoplay blocked:", err)
+                    })
+
+                    // 🔥 SAFE STORE GLOBAL
+                    ; (window as any).ringtone = audio
+
+            } catch (err) {
+                console.log("Ringtone error:", err)
+            }
         })
 
+        // 📴 CALL ENDED
         connection.on("CallEnded", () => {
+
+            console.log("📴 Call Ended")
+
             setIncomingCall(null)
+
+            // 🔕 STOP RINGTONE (SAFE)
+            const ringtone = (window as any).ringtone
+
+            if (ringtone && typeof ringtone.pause === "function") {
+                ringtone.pause()
+                ringtone.currentTime = 0
+                    ; (window as any).ringtone = null
+            }
         })
 
         connectionRef.current = connection

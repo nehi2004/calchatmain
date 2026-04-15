@@ -1231,7 +1231,7 @@ interface SuggestedAction {
 
 const suggestedActions: SuggestedAction[] = [
     { label: "Schedule a meeting", prompt: "Schedule a meeting tomorrow 2pm", icon: Calendar },
-    { label: "Find free time", prompt: "When am I free this week?", icon: Clock },
+    { label: "Find free time", prompt: "Find free time ", icon: Clock },
     { label: "Show my Schedule", prompt: "Show my schedule", icon: Clock },
     { label: "Normal Chat", prompt: "How are you?", icon: Sparkles }
 ]

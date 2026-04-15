@@ -267,5 +267,19 @@ namespace CalChatAPI.Hubs
             // ✅ (OPTIONAL BUT BEST) notify receiver also
             await Clients.User(fromUserId).SendAsync("CallRejected");
         }
+
+        public async Task ToggleMute(string toUserId, bool isMuted)
+        {
+            var fromUserId = Context.UserIdentifier;
+
+            if (string.IsNullOrEmpty(fromUserId) || string.IsNullOrEmpty(toUserId))
+                return;
+
+            await Clients.User(toUserId).SendAsync("UserMuted", new
+            {
+                fromUserId,
+                isMuted
+            });
+        }
     }
 }

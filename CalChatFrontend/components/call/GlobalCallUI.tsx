@@ -17,6 +17,7 @@ export default function GlobalCallUI() {
     const peerRef = useRef<RTCPeerConnection | null>(null)
     const localStream = useRef<MediaStream | null>(null)
     const remoteAudioRef = useRef<HTMLAudioElement>(null)
+    const ringtoneRef = useRef<HTMLAudioElement | null>(null)
 
     const pendingOfferRef = useRef<any>(null)
 
@@ -146,6 +147,13 @@ export default function GlobalCallUI() {
         })
 
         connection.on("CallEnded", () => {
+
+            const ringtone = (window as any).ringtone
+
+            if (ringtone && typeof ringtone.pause === "function") {
+                ringtone.pause()
+                ringtone.currentTime = 0
+            }
             endCall()
         })
 
@@ -157,14 +165,25 @@ export default function GlobalCallUI() {
 
     /* ================= CONTROLS ================= */
 
-    const toggleMute = () => {
+    const toggleMute = async () => {
+
         if (!localStream.current) return
 
         const track = localStream.current.getAudioTracks()[0]
         if (!track) return
 
+        // 🔁 TOGGLE MIC
         track.enabled = !track.enabled
-        setIsMuted(!track.enabled)
+
+        const muted = !track.enabled
+        setIsMuted(muted)
+
+        console.log("🎤 Mic:", track.enabled ? "ON" : "OFF")
+
+        // 🔥 SEND TO OTHER USER
+        if (connection && callUserId) {
+            await connection.invoke("ToggleMute", callUserId, muted)
+        }
     }
 
     const endCall = () => {

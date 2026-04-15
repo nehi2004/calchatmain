@@ -72,6 +72,14 @@ export const CallProvider = ({ children }: { children: React.ReactNode }) => {
     // ✅ ACCEPT CALL
     const acceptCall = async () => {
 
+        // 🔕 STOP RINGTONE (SAFE FIX)
+        const ringtone = (window as any).ringtone
+
+        if (ringtone && typeof ringtone.pause === "function") {
+            ringtone.pause()
+            ringtone.currentTime = 0
+        }
+
         if (!incomingCall || !connectionRef.current) return
 
         try {
@@ -96,6 +104,14 @@ export const CallProvider = ({ children }: { children: React.ReactNode }) => {
 
     // ❌ REJECT CALL
     const rejectCall = async () => {
+
+        // 🔕 STOP RINGTONE (SAFE FIX)
+        const ringtone = (window as any).ringtone
+
+        if (ringtone && typeof ringtone.pause === "function") {
+            ringtone.pause()
+            ringtone.currentTime = 0
+        }
 
         if (!incomingCall || !connectionRef.current) return
 
