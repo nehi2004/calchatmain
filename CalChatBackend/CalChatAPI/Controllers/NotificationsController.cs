@@ -6,36 +6,36 @@ using System.Security.Claims;
 
 namespace CalChatAPI.Controllers
 {
-	[Route("api/[controller]")]
-	[ApiController]
-	public class NotificationsController : ControllerBase
-	{
-		private readonly ApplicationDbContext _context;
+    [Route("api/[controller]")]
+    [ApiController]
+    public class NotificationsController : ControllerBase
+    {
+        private readonly ApplicationDbContext _context;
 
-		public NotificationsController(ApplicationDbContext context)
-		{
-			_context = context;
-		}
+        public NotificationsController(ApplicationDbContext context)
+        {
+            _context = context;
+        }
 
-		// =========================
-		// GET CURRENT USER NOTIFICATIONS
-		// =========================
+        // =========================
+        // GET CURRENT USER NOTIFICATIONS
+        // =========================
 
-		[HttpGet]
-		public async Task<IActionResult> GetMyNotifications()
-		{
-			var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        [HttpGet]
+        public async Task<IActionResult> GetMyNotifications()
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 
-			if (string.IsNullOrEmpty(userId))
-				return Unauthorized();
+            if (string.IsNullOrEmpty(userId))
+                return Unauthorized();
 
-			var notifications = await _context.Notifications
-				.Where(n => n.ToUserId == userId)
-				.OrderByDescending(n => n.CreatedAt)
-				.ToListAsync();
+            var notifications = await _context.Notifications
+                .Where(n => n.ToUserId == userId)
+                .OrderByDescending(n => n.CreatedAt)
+                .ToListAsync();
 
-			return Ok(notifications);
-		}
+            return Ok(notifications);
+        }
 
         // =========================
         // GET USER NOTIFICATIONS BY ID
@@ -75,99 +75,113 @@ namespace CalChatAPI.Controllers
         // =========================
 
         [HttpPost("request")]
-		public async Task<IActionResult> SendRequest(NotificationRequest request)
-		{
-			var already = await _context.Notifications
-				.FirstOrDefaultAsync(n =>
-					n.FromUserId == request.FromUserId &&
-					n.ToUserId == request.ToUserId &&
-					n.Type == "chat_request");
+        public async Task<IActionResult> SendRequest(NotificationRequest request)
+        {
+            var already = await _context.Notifications
+                .FirstOrDefaultAsync(n =>
+                    n.FromUserId == request.FromUserId &&
+                    n.ToUserId == request.ToUserId &&
+                    n.Type == "chat_request");
 
-			if (already != null)
-				return BadRequest("Request already sent");
+            if (already != null)
+                return BadRequest("Request already sent");
 
-			var notification = new Notification
-			{
-				FromUserId = request.FromUserId,
-				FromUserName = request.FromUserName,
-				ToUserId = request.ToUserId,
-				Content = request.Content,
-				Type = "chat_request",
-				Status = "pending",
-				IsRead = false,
-				CreatedAt = DateTime.UtcNow
-			};
+            var notification = new Notification
+            {
+                FromUserId = request.FromUserId,
+                FromUserName = request.FromUserName,
+                ToUserId = request.ToUserId,
+                Content = request.Content,
+                Type = "chat_request",
+                Status = "pending",
+                IsRead = false,
+                CreatedAt = DateTime.UtcNow
+            };
 
-			_context.Notifications.Add(notification);
+            _context.Notifications.Add(notification);
 
-			await _context.SaveChangesAsync();
+            await _context.SaveChangesAsync();
 
-			return Ok(notification);
-		}
+            return Ok(notification);
+        }
 
-		// =========================
-		// ACCEPT / REJECT REQUEST
-		// =========================
+        // =========================
+        // ACCEPT / REJECT REQUEST
+        // =========================
 
-		[HttpPut("{id}")]
-		public async Task<IActionResult> UpdateStatus(int id, [FromBody] string status)
-		{
-			var notif = await _context.Notifications.FindAsync(id);
+        [HttpPut("{id}")]
+        public async Task<IActionResult> UpdateStatus(int id, [FromBody] string status)
+        {
+            var notif = await _context.Notifications.FindAsync(id);
 
-			if (notif == null)
-				return NotFound();
+            if (notif == null)
+                return NotFound();
 
-			notif.Status = status;
+            notif.Status = status;
 
-			if (status == "accepted")
-			{
-				var chat = new Chat
-				{
-					Name = "Personal Chat",
-					Type = "personal",
-					CreatedAt = DateTime.UtcNow
-				};
+            if (status == "accepted")
+            {
+                var existingChat = await _context.ChatMembers
+                    .Where(cm => cm.UserId == notif.FromUserId)
+                    .Select(cm => cm.ChatId)
+                    .Intersect(
+                        _context.ChatMembers
+                            .Where(cm => cm.UserId == notif.ToUserId)
+                            .Select(cm => cm.ChatId)
+                    )
+                    .FirstOrDefaultAsync();
 
-				_context.Chats.Add(chat);
+                if (existingChat == 0)
+                {
+                    var chat = new Chat
+                    {
+                        Name = "Personal Chat",
+                        Type = "personal",
+                        CreatedAt = DateTime.UtcNow
+                    };
 
-				await _context.SaveChangesAsync();
+                    _context.Chats.Add(chat);
+                    await _context.SaveChangesAsync();
 
-				_context.ChatMembers.AddRange(
+                    _context.ChatMembers.AddRange(
+                        new ChatMember { ChatId = chat.Id, UserId = notif.FromUserId },
+                        new ChatMember { ChatId = chat.Id, UserId = notif.ToUserId }
+                    );
+                }
+            }
 
-					new ChatMember
-					{
-						ChatId = chat.Id,
-						UserId = notif.FromUserId
-					},
+            // ✅ NEW BLOCK
+            if (status == "accepted" || status == "rejected")
+            {
+                var oldRequests = await _context.Notifications
+                    .Where(n => n.FromUserId == notif.FromUserId
+                             && n.ToUserId == notif.ToUserId
+                             && n.Type == "chat_request"
+                             && n.Id != id)
+                    .ToListAsync();
 
-					new ChatMember
-					{
-						ChatId = chat.Id,
-						UserId = notif.ToUserId
-					}
+                _context.Notifications.RemoveRange(oldRequests);
+            }
 
-				);
-			}
+            await _context.SaveChangesAsync();
 
-			await _context.SaveChangesAsync();
+            return Ok(notif);
+        }
 
-			return Ok(notif);
-		}
+        // =========================
+        // GET SENT REQUESTS
+        // =========================
 
-		// =========================
-		// GET SENT REQUESTS
-		// =========================
+        [HttpGet("sent/{userId}")]
+        public async Task<IActionResult> GetSentRequests(string userId)
+        {
+            var sent = await _context.Notifications
+                .Where(n => n.FromUserId == userId && n.Type == "chat_request")
+                .Select(n => n.ToUserId)
+                .ToListAsync();
 
-		[HttpGet("sent/{userId}")]
-		public async Task<IActionResult> GetSentRequests(string userId)
-		{
-			var sent = await _context.Notifications
-				.Where(n => n.FromUserId == userId && n.Type == "chat_request")
-				.Select(n => n.ToUserId)
-				.ToListAsync();
-
-			return Ok(sent);
-		}
+            return Ok(sent);
+        }
         // =========================
         // CREATE GENERAL NOTIFICATION (TASK, ALERT, etc.)
         // =========================

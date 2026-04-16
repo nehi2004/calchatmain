@@ -1,5 +1,3 @@
-     
-
 "use client"
 
 import Link from "next/link"
@@ -187,17 +185,18 @@ export function DashboardHeader({ onMenuClick, title }: DashboardHeaderProps) {
             const cleanTitle = removeUUID(data.title)
             const cleanContent = removeUUID(data.content)
 
+            const senderName = data.fromUserName || data.createdByName || "User"
+
             setChatNotifs(prev => [
                 {
                     id: Date.now(),
-                    fromUserId: "system",
-                    fromUserName: "HR",
+                    fromUserId: data.fromUserId || "system",
+                    fromUserName: senderName,
                     toUserId: currentUserId,
 
-                    // ✅ SINGLE MESSAGE
-                    content: `📅 New meeting: ${cleanTitle || cleanContent}`,
+                    // ✅ NAME ADD HERE
+                    content: `📅 ${senderName}: ${cleanTitle || cleanContent}`,
 
-                    // ✅ IMPORTANT
                     meetingLink: data.meetingLink || data.link || null,
 
                     status: "info",
@@ -289,27 +288,32 @@ export function DashboardHeader({ onMenuClick, title }: DashboardHeaderProps) {
                     ""
                 ).trim()
             }
-
             setChatNotifs(
-                filtered.map((n: Notification) => {
+                filtered
+                    .filter((n: Notification) => n.status === "pending") // ✅ IMPORTANT FIX
+                    .map((n: Notification) => {
 
-                    const removeUUID = (text: string) => {
-                        return (text || "").replace(
-                            /^[0-9a-fA-F-]{36}\s*/,   // ✅ REMOVE UUID ONLY FROM START
-                            ""
-                        ).trim()
-                    }
+                        const removeUUID = (text: string) => {
+                            return (text || "").replace(
+                                /^[0-9a-fA-F-]{36}\s*/,
+                                ""
+                            ).trim()
+                        }
 
-                    return {
-                        ...n,
+                        const senderName = n.fromUserName || "User"
+                        const cleanContent = removeUUID(n.content)
 
-                        // ✅ CLEAN CONTENT (REMOVE ID)
-                        content: removeUUID(n.content),
+                        return {
+                            ...n,
+                            content:
+                                n.type === "chat_request"
+                                    ? cleanContent // ✅ request shows clean text
+                                    : `${senderName}: ${cleanContent}`, // normal notif
 
-                        createdAt: n.createdAt || new Date().toISOString(),
-                        isRead: readIds.includes(n.id) ? true : n.isRead
-                    }
-                })
+                            createdAt: n.createdAt || new Date().toISOString(),
+                            isRead: getReadIds().includes(n.id) ? true : n.isRead
+                        }
+                    })
             )
 
         } catch {
@@ -451,35 +455,33 @@ export function DashboardHeader({ onMenuClick, title }: DashboardHeaderProps) {
     /* ================= REQUEST HANDLER ================= */
 
     const handleRequest = async (notifId: number, status: string) => {
+        try {
+            const res = await fetch(
+                `https://steadfast-warmth-production-64c8.up.railway.app/api/notifications/${notifId}`,
+                {
+                    method: "PUT",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(status) // ✅ IMPORTANT FIX
+                }
+            )
 
-        await fetch(`https://steadfast-warmth-production-64c8.up.railway.app/api/notifications/${notifId}`, {
-            method: "PUT",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(status)
-        })
+            if (!res.ok) {
+                console.error("handleRequest failed:", res.status)
+                return
+            }
 
-        if (status === "accepted") {
-            await fetch("https://steadfast-warmth-production-64c8.up.railway.app/api/chat/create", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json"
-                },
-                body: JSON.stringify({
-                    notificationId: notifId
-                })
-            })
-
+            // ✅ refresh chat UI
             window.dispatchEvent(new Event("chat-updated"))
+
+            // ✅ remove instantly from UI
+            setChatNotifs(prev => prev.filter(n => n.id !== notifId))
+
+            fetchNotifications()
+
+        } catch (err) {
+            console.error("Request error:", err)
         }
-
-        // ✅ REMOVE FROM UI (IMPORTANT)
-        setChatNotifs(prev =>
-            prev.filter(n => n.id !== notifId)
-        )
-
-        fetchNotifications()
     }
-
     /* ================= PROFILE SAVE ================= */
 
     const saveProfile = async () => {
@@ -529,19 +531,12 @@ export function DashboardHeader({ onMenuClick, title }: DashboardHeaderProps) {
 
     const unreadCalendarCount = calendarNotifs.filter(n => !n.isRead).length
 
-    //const totalCount =
-    //    unreadChatCount +
-    //    unreadMeetingCount +
-    //    unreadCalendarCount
+
     const totalCount =
         unreadChatCount +
         unreadMeetingCount +
         unreadCalendarCount
 
-    //const totalCount =
-    //    showNotifications
-    //        ? 0
-    //        : unreadChatCount + unreadMeetingCount + unreadCalendarCount
 
     /* ================= UI ================= */
     if (!mounted) return null
@@ -564,59 +559,7 @@ export function DashboardHeader({ onMenuClick, title }: DashboardHeaderProps) {
                     {/* 🔔 NOTIFICATIONS */}
                     <div className="relative">
 
-                        {/*<Button*/}
-                        {/*    variant="ghost"*/}
-                        {/*    size="icon"*/}
-                        {/*    onClick={async () => {*/}
 
-                        {/*        const opening = !showNotifications*/}
-                        {/*        setShowNotifications(opening)*/}
-
-                        {/*        if (opening) {*/}
-                        {/*            try {*/}
-                        {/*                await fetch(*/}
-                        {/*                    `https://steadfast-warmth-production-64c8.up.railway.app/api/notifications/mark-read/${currentUserId}`,*/}
-                        {/*                    { method: "PUT" }*/}
-                        {/*                )*/}
-
-                        {/*                // ✅ calendar notifications read mark*/}
-                        {/*                const updated = calendarNotifs.map(n => ({ ...n, isRead: true }))*/}
-                        {/*                setCalendarNotifs(updated)*/}
-                        {/*                localStorage.setItem("globalNotifications", JSON.stringify(updated))*/}
-
-                        {/*                //// ✅ SAVE ALL IDs AS READ (PERSIST)*/}
-                        {/*                //const allIds = chatNotifs.map(n => n.id)*/}
-                        {/*                //saveReadIds(allIds)*/}
-
-                        {/*                const existing = getReadIds()*/}
-                        {/*                const newIds = chatNotifs.map(n => n.id)*/}
-
-                        {/*                const merged = Array.from(new Set([...existing, ...newIds]))*/}
-                        {/*                saveReadIds(merged)*/}
-
-                        {/*                // ✅ UI update*/}
-                        {/*                setChatNotifs(prev =>*/}
-                        {/*                    prev.map(n => ({ ...n, isRead: true }))*/}
-                        {/*                )*/}
-
-                        {/*                setMeetingNotifs(prev =>*/}
-                        {/*                    prev.map(m => ({ ...m, isRead: true }))*/}
-                        {/*                )*/}
-
-                        {/*            } catch (err) {*/}
-                        {/*                console.error("Mark read error:", err)*/}
-                        {/*            }*/}
-                        {/*        }*/}
-                        {/*    }}*/}
-                        {/*>*/}
-                        {/*    <Bell className="h-4 w-4" />*/}
-
-                        {/*    {totalCount > 0 && (*/}
-                        {/*        <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs px-1 rounded-full">*/}
-                        {/*            {totalCount}*/}
-                        {/*        </span>*/}
-                        {/*    )}*/}
-                        {/*</Button>*/}
 
 
                         <Button
@@ -679,7 +622,7 @@ export function DashboardHeader({ onMenuClick, title }: DashboardHeaderProps) {
                         </Button>
 
                         {showNotifications && (
-        //                    <div className="absolute right-0 mt-3 w-[380px] bg-white dark:bg-[#020617]
+                            //                    <div className="absolute right-0 mt-3 w-[380px] bg-white dark:bg-[#020617]
                             //border border-gray-200 dark:border-white/10 rounded-xl shadow-xl z-50 overflow-hidden">
 
                             <div className="absolute right-0 mt-3 w-[380px] 
@@ -708,8 +651,8 @@ flex flex-col max-h-[80vh]">
                                             ...chatNotifs,
                                             ...meetingNotifs.map(m => ({
                                                 ...m,
-                                                type: "meeting", // 🔥 IMPORTANT
-                                                content: `📅 Meeting: ${m.title}`,
+                                                type: "meeting",
+                                                content: `📅 ${m.createdByName || "User"}: ${m.title}`,
                                                 createdAt: m.createdAt || m.startTime
                                             }))
                                         ].sort((a: any, b: any) => {
@@ -763,6 +706,8 @@ flex flex-col max-h-[80vh]">
                                                 {/* ITEMS */}
                                                 {grouped[group].map((n: any, i: number) => {
 
+                                                    const isRequest = n.type === "chat_request" || n.type === "request"
+
                                                     const isCalendar = n.eventDate
                                                     const isUnread = !n.isRead
 
@@ -786,9 +731,43 @@ flex flex-col max-h-[80vh]">
                                                             {/* CONTENT */}
                                                             <div className="flex-1">
 
-                                                                <p className="text-sm font-medium leading-tight">
-                                                                    {n.content}
-                                                                </p>
+                                                                <div className="text-sm font-medium leading-tight">
+                                                                    <p>
+                                                                        {isRequest
+                                                                            ? `${n.fromUserName} sent you a chat request`
+                                                                            : n.content}
+                                                                    </p>
+
+                                                                    {isRequest && (
+                                                                        <div className="flex gap-2 mt-2">
+
+                                                                            <button
+                                                                                onClick={(e) => {
+                                                                                    e.stopPropagation()
+
+                                                                                    setChatNotifs(prev => prev.filter(x => x.id !== n.id))
+                                                                                    handleRequest(n.id, "accepted")
+                                                                                }}
+                                                                                className="text-xs bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded-md"
+                                                                            >
+                                                                                Accept
+                                                                            </button>
+
+                                                                            <button
+                                                                                onClick={(e) => {
+                                                                                    e.stopPropagation()
+
+                                                                                    setChatNotifs(prev => prev.filter(x => x.id !== n.id))
+                                                                                    handleRequest(n.id, "rejected")
+                                                                                }}
+                                                                                className="text-xs bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded-md"
+                                                                            >
+                                                                                Reject
+                                                                            </button>
+
+                                                                        </div>
+                                                                    )}
+                                                                </div>
 
 
 
