@@ -93,13 +93,12 @@ public class MeetingController : ControllerBase
     public async Task<IActionResult> GetMyMeetings()
     {
         var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-
         var meetings = await _context.Meetings
             .Include(m => m.Participants)
-           .Where(m =>
-    m.Participants.Any(p => p.UserId == userId)
-    || m.OrganizerId == userId
-)
+            .Where(m =>
+                m.Participants.Any(p => p.UserId == userId)
+                || m.OrganizerId == userId
+            )
             .Select(m => new MeetingResponseDto
             {
                 Id = m.Id,
@@ -109,9 +108,13 @@ public class MeetingController : ControllerBase
                 MeetingLink = m.MeetingLink,
                 ParticipantIds = m.Participants
                     .Select(p => p.UserId)
-                    .ToList()
+                    .ToList(),
+                HasRecording = m.HasRecording,
+                Summary = m.Summary
             })
-            .ToListAsync();
+            .ToListAsync();   // ✅ YE LINE MISSING THI
+
+        return Ok(meetings);
 
         return Ok(meetings);
     }
@@ -133,7 +136,54 @@ public class MeetingController : ControllerBase
         return Ok(users);
     }
 
-   
+
+    // ✅ SAVE RECORDING DATA (Python bot yahan POST karega)
+    [HttpPost("{id}/recording")]
+    public async Task<IActionResult> SaveRecording(int id, [FromBody] RecordingDto dto)
+    {
+        var meeting = await _context.Meetings.FindAsync(id);
+        if (meeting == null) return NotFound();
+
+        meeting.Transcript = dto.Transcript;
+        meeting.LabeledTranscript = dto.LabeledTranscript;
+        meeting.Summary = dto.Summary;
+        meeting.Speakers = dto.Speakers;
+        meeting.DurationSeconds = dto.DurationSeconds;
+        meeting.HasRecording = true;
+
+        await _context.SaveChangesAsync();
+        return Ok(new { message = "Recording saved!", meetingId = id });
+    }
+
+    // ✅ GET MEETING DETAIL WITH RECORDING
+    [Authorize]
+    [HttpGet("{id}/detail")]
+    public async Task<IActionResult> GetMeetingDetail(int id)
+    {
+        var meeting = await _context.Meetings
+            .Include(m => m.Participants)
+            .FirstOrDefaultAsync(m => m.Id == id);
+
+        if (meeting == null) return NotFound();
+
+        return Ok(new
+        {
+            meeting.Id,
+            meeting.Title,
+            meeting.StartTime,
+            meeting.EndTime,
+            meeting.MeetingLink,
+            meeting.Transcript,
+            meeting.LabeledTranscript,
+            meeting.Summary,
+            meeting.Speakers,
+            meeting.DurationSeconds,
+            meeting.HasRecording
+        });
+    }
+
+
+
 }
 
 

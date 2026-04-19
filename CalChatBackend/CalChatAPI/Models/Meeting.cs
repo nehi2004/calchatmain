@@ -30,4 +30,11 @@ public class Meeting
     public string OrganizerId { get; set; }
     // ✅ ADD THIS LINE(VERY IMPORTANT)
     public ICollection<MeetingParticipant> Participants { get; set; } = new List<MeetingParticipant>();
+
+    public string? Transcript { get; set; }
+    public string? LabeledTranscript { get; set; }
+    public string? Summary { get; set; }        // JSON string
+    public string? Speakers { get; set; }       // JSON string
+    public int? DurationSeconds { get; set; }
+    public bool HasRecording { get; set; } = false;
 }

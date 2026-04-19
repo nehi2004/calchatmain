@@ -6,4 +6,6 @@ public class MeetingResponseDto
     public DateTimeOffset EndTime { get; set; }
     public string? MeetingLink { get; set; }
     public List<string> ParticipantIds { get; set; }
+    public bool HasRecording { get; set; }
+    public string? Summary { get; set; }
 }

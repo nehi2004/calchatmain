@@ -319,17 +319,45 @@ export function MeetingsView() {
                     )}
 
                     {filteredPast.map((m) => (
-                        <div key={m.id} className="p-4 rounded-xl border opacity-70">
-
-                            <div className="flex items-center gap-2">
-                                <h3>{m.title}</h3>
-                                <Badge variant="secondary">Completed</Badge>
+                        <div key={m.id} className="p-4 rounded-xl border">
+                            <div className="flex items-center justify-between">
+                                <div>
+                                    <div className="flex items-center gap-2">
+                                        <h3 className="font-medium">{m.title}</h3>
+                                        <Badge variant="secondary">Completed</Badge>
+                                        {m.hasRecording && (
+                                            <Badge className="bg-green-500/10 text-green-600 
+                                         border-green-500/20">
+                                                Recording Ready
+                                            </Badge>
+                                        )}
+                                    </div>
+                                    <p className="text-sm text-muted-foreground mt-1">
+                                        {formatDate(m.startTime)} • {formatTime(m.startTime, m.endTime)}
+                                    </p>
+                                    {m.summary && (
+                                        <p className="text-xs text-muted-foreground mt-2 
+                                  max-w-lg line-clamp-2">
+                                            {(() => {
+                                                try {
+                                                    const s = typeof m.summary === 'string'
+                                                        ? JSON.parse(m.summary) : m.summary
+                                                    return s?.summary || ""
+                                                } catch { return "" }
+                                            })()}
+                                        </p>
+                                    )}
+                                </div>
+                                {m.hasRecording && (
+                                    <Button
+                                        size="sm"
+                                        variant="outline"
+                                        onClick={() => window.location.href = `/meetings/${m.id}`}
+                                    >
+                                        View Details
+                                    </Button>
+                                )}
                             </div>
-
-                            <p className="text-sm text-muted-foreground">
-                                {formatDate(m.startTime)} • {formatTime(m.startTime, m.endTime)}
-                            </p>
-
                         </div>
                     ))}
                 </TabsContent>
