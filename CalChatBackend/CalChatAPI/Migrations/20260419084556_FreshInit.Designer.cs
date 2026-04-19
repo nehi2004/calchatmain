@@ -12,8 +12,8 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace CalChatAPI.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20260408134826_AddMeetingRecord")]
-    partial class AddMeetingRecord
+    [Migration("20260419084556_FreshInit")]
+    partial class FreshInit
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -355,7 +355,7 @@ namespace CalChatAPI.Migrations
                     b.ToTable("GroupMembers");
                 });
 
-            modelBuilder.Entity("CalChatAPI.Models.MeetingRecord", b =>
+            modelBuilder.Entity("CalChatAPI.Models.Meeting", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -363,61 +363,46 @@ namespace CalChatAPI.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
-                    b.Property<DateTime>("CreatedAt")
+                    b.Property<int?>("DurationSeconds")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTimeOffset>("EndTime")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<string>("FilePath")
+                    b.Property<bool>("HasRecording")
+                        .HasColumnType("boolean")
+                        .HasColumnName("has_recording");
+
+                    b.Property<string>("LabeledTranscript")
+                        .HasColumnType("text");
+
+                    b.Property<string>("MeetingLink")
                         .IsRequired()
                         .HasColumnType("text");
 
+                    b.Property<string>("OrganizerId")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("Speakers")
+                        .HasColumnType("text");
+
+                    b.Property<DateTimeOffset>("StartTime")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<string>("Summary")
+                        .HasColumnType("text");
+
+                    b.Property<string>("Title")
                         .IsRequired()
                         .HasColumnType("text");
 
                     b.Property<string>("Transcript")
-                        .IsRequired()
                         .HasColumnType("text");
 
                     b.HasKey("Id");
 
-                    b.ToTable("MeetingRecords");
-                });
-
-            modelBuilder.Entity("CalChatAPI.Models.Message", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
-
-                    b.Property<int>("ChatId")
-                        .HasColumnType("integer");
-
-                    b.Property<string>("FileUrl")
-                        .HasColumnType("text");
-
-                    b.Property<bool>("IsRead")
-                        .HasColumnType("boolean");
-
-                    b.Property<string>("SenderId")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<string>("SenderName")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<string>("Text")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<DateTime>("Time")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("Messages");
+                    b.ToTable("Meetings");
                 });
 
             modelBuilder.Entity("CalChatAPI.Models.Note", b =>
@@ -655,37 +640,6 @@ namespace CalChatAPI.Migrations
                     b.ToTable("GroupReports");
                 });
 
-            modelBuilder.Entity("Meeting", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
-
-                    b.Property<DateTimeOffset>("EndTime")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("MeetingLink")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<string>("OrganizerId")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<DateTimeOffset>("StartTime")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("Title")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("Meetings");
-                });
-
             modelBuilder.Entity("MeetingParticipant", b =>
                 {
                     b.Property<int>("Id")
@@ -708,6 +662,50 @@ namespace CalChatAPI.Migrations
                     b.HasIndex("UserId");
 
                     b.ToTable("MeetingParticipants");
+                });
+
+            modelBuilder.Entity("Message", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("ChatId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("FileUrl")
+                        .HasColumnType("text");
+
+                    b.Property<bool>("IsCall")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("IsRead")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("SenderId")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("SenderName")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("Text")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateTime>("Time")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Messages");
                 });
 
             modelBuilder.Entity("MessageRead", b =>
@@ -928,7 +926,7 @@ namespace CalChatAPI.Migrations
 
             modelBuilder.Entity("MeetingParticipant", b =>
                 {
-                    b.HasOne("Meeting", "Meeting")
+                    b.HasOne("CalChatAPI.Models.Meeting", "Meeting")
                         .WithMany("Participants")
                         .HasForeignKey("MeetingId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -1007,14 +1005,14 @@ namespace CalChatAPI.Migrations
                     b.Navigation("User");
                 });
 
+            modelBuilder.Entity("CalChatAPI.Models.Meeting", b =>
+                {
+                    b.Navigation("Participants");
+                });
+
             modelBuilder.Entity("CalChatAPI.Models.Note", b =>
                 {
                     b.Navigation("NoteUsers");
-                });
-
-            modelBuilder.Entity("Meeting", b =>
-                {
-                    b.Navigation("Participants");
                 });
 #pragma warning restore 612, 618
         }
