@@ -79,19 +79,29 @@ export function MeetingsView() {
 
     const fetchMeetings = async () => {
         const token = localStorage.getItem("token")
-
-        const res = await fetch("https://steadfast-warmth-production-64c8.up.railway.app/api/meeting/my-meetings", {
-            headers: { Authorization: `Bearer ${token}` }
+        const res = await fetch("https://steadfast-warmth-production-64c8.up.railway.app/api/meeting/create", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${token}`
+            },
+            body: JSON.stringify({
+                title,
+                startTime: new Date(startTime).toISOString(),
+                endTime: new Date(endTime).toISOString(),
+                meetingLink: meetingLink || "https://meet.google.com/new",
+                participantIds: selectedUsers
+            })
         })
 
         const data = await res.json()
-        console.log("MEETINGS DATA 👉", data)
-        console.log({
-            title,
-            startTime,
-            endTime,
-            selectedUsers
-        })
+
+        console.log("CREATE RESPONSE 👉", data)
+
+        if (!res.ok) {
+            alert(data.error || data.inner || "Something failed")
+            return
+        }
         const now = new Date(Date.now() - 60000) // 1 min buffer
         setUpcomingMeetings(
             data
