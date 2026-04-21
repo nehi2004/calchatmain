@@ -87,35 +87,74 @@ public class MeetingController : ControllerBase
         return Ok();
     }
 
-    // ✅ GET USER MEETINGS
+    //// ✅ GET USER MEETINGS
+    //[Authorize]
+    //[HttpGet("my-meetings")]
+    //public async Task<IActionResult> GetMyMeetings()
+    //{
+    //    var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+    //    var meetings = await _context.Meetings
+    //        .Include(m => m.Participants)
+    //        .Where(m =>
+    //            m.Participants.Any(p => p.UserId == userId)
+    //            || m.OrganizerId == userId
+    //        )
+    //        .Select(m => new MeetingResponseDto
+    //        {
+    //            Id = m.Id,
+    //            Title = m.Title,
+    //            StartTime = m.StartTime,
+    //            EndTime = m.EndTime,
+    //            MeetingLink = m.MeetingLink,
+    //            ParticipantIds = m.Participants
+    //                .Select(p => p.UserId)
+    //                .ToList(),
+    //            HasRecording = m.HasRecording,
+    //            Summary = m.Summary
+    //        })
+    //        .ToListAsync();
+
+    //    return Ok(meetings);   // ← sirf EK return
+    //}
+
+
+
     [Authorize]
     [HttpGet("my-meetings")]
     public async Task<IActionResult> GetMyMeetings()
     {
-        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        var meetings = await _context.Meetings
-            .Include(m => m.Participants)
-            .Where(m =>
-                m.Participants.Any(p => p.UserId == userId)
-                || m.OrganizerId == userId
-            )
-            .Select(m => new MeetingResponseDto
-            {
-                Id = m.Id,
-                Title = m.Title,
-                StartTime = m.StartTime,
-                EndTime = m.EndTime,
-                MeetingLink = m.MeetingLink,
-                ParticipantIds = m.Participants
-                    .Select(p => p.UserId)
-                    .ToList(),
-                HasRecording = m.HasRecording,
-                Summary = m.Summary
-            })
-            .ToListAsync();
+        try
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            var meetings = await _context.Meetings
+                .Include(m => m.Participants)
+                .Where(m =>
+                    m.Participants.Any(p => p.UserId == userId)
+                    || m.OrganizerId == userId
+                )
+                .Select(m => new MeetingResponseDto
+                {
+                    Id = m.Id,
+                    Title = m.Title,
+                    StartTime = m.StartTime,
+                    EndTime = m.EndTime,
+                    MeetingLink = m.MeetingLink,
+                    ParticipantIds = m.Participants
+                        .Select(p => p.UserId)
+                        .ToList(),
+                    HasRecording = m.HasRecording,
+                    Summary = m.Summary
+                })
+                .ToListAsync();
 
-        return Ok(meetings);   // ← sirf EK return
+            return Ok(meetings);  // ← SIRF EK RETURN
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new { error = ex.Message, detail = ex.InnerException?.Message });
+        }
     }
+
 
     // ✅ GET USERS (HR ONLY)
     [Authorize(Roles = "hr")]
