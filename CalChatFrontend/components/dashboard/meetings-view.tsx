@@ -139,8 +139,8 @@ export function MeetingsView() {
             },
             body: JSON.stringify({
                 title,
-                startTime: new Date(startTime).toISOString(),
-                endTime: new Date(endTime).toISOString(),
+                startTime,
+                endTime,
                 meetingLink: meetingLink || "https://meet.google.com/new",
                 participantIds: selectedUsers
             })
