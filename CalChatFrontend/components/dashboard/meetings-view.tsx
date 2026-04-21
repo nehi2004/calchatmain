@@ -704,7 +704,7 @@ export function MeetingsView() {
     const [endTime, setEndTime] = useState("")
     const [meetingLink, setMeetingLink] = useState("")
     const [selectedDate, setSelectedDate] = useState("")
-
+    const [openSummary, setOpenSummary] = useState(false)
     // ── Detail modal ──
     const [detailOpen, setDetailOpen] = useState(false)
     const [detailData, setDetailData] = useState<any>(null)
@@ -1023,42 +1023,92 @@ export function MeetingsView() {
                             <div className="space-y-5 pt-4">
 
                                 {/* SUMMARY */}
-                                {summary && (
-                                    <div className="p-4 rounded-xl border space-y-3">
+                                {/*{summary && (*/}
+                                {/*    <div className="p-4 rounded-xl border space-y-3">*/}
+                                {/*        <h3 className="font-semibold text-sm">📋 Meeting Summary</h3>*/}
+                                {/*        <p className="text-sm text-muted-foreground">{summary.summary}</p>*/}
+
+                                {/*        {summary.key_points?.length > 0 && (*/}
+                                {/*            <div>*/}
+                                {/*                <p className="text-xs font-medium mb-1">Key Points</p>*/}
+                                {/*                {summary.key_points.map((p: string, i: number) => (*/}
+                                {/*                    <p key={i} className="text-sm text-muted-foreground">• {p}</p>*/}
+                                {/*                ))}*/}
+                                {/*            </div>*/}
+                                {/*        )}*/}
+
+                                {/*        {summary.action_items?.length > 0 && (*/}
+                                {/*            <div>*/}
+                                {/*                <p className="text-xs font-medium mb-1">Action Items</p>*/}
+                                {/*                {summary.action_items.map((a: any, i: number) => (*/}
+                                {/*                    <div key={i} className="text-sm text-muted-foreground flex gap-2">*/}
+                                {/*                        <span>•</span>*/}
+                                {/*                        <span>{a.task} — <b>{a.assigned_to}</b> by {a.deadline}</span>*/}
+                                {/*                    </div>*/}
+                                {/*                ))}*/}
+                                {/*            </div>*/}
+                                {/*        )}*/}
+
+                                {/*        {summary.decisions_made?.length > 0 && (*/}
+                                {/*            <div>*/}
+                                {/*                <p className="text-xs font-medium mb-1">Decisions</p>*/}
+                                {/*                {summary.decisions_made.map((d: string, i: number) => (*/}
+                                {/*                    <p key={i} className="text-sm text-muted-foreground">• {d}</p>*/}
+                                {/*                ))}*/}
+                                {/*            </div>*/}
+                                {/*        )}*/}
+                                {/*    </div>*/}
+                                {/*)}*/}
+
+                                <div className="p-4 rounded-xl border space-y-3">
+                                    <button
+                                        onClick={() => setOpenSummary(!openSummary)}
+                                        className="w-full flex justify-between items-center text-left"
+                                    >
                                         <h3 className="font-semibold text-sm">📋 Meeting Summary</h3>
-                                        <p className="text-sm text-muted-foreground">{summary.summary}</p>
+                                        <span className="text-xs text-blue-500">
+                                            {openSummary ? "Hide" : "View"}
+                                        </span>
+                                    </button>
 
-                                        {summary.key_points?.length > 0 && (
-                                            <div>
-                                                <p className="text-xs font-medium mb-1">Key Points</p>
-                                                {summary.key_points.map((p: string, i: number) => (
-                                                    <p key={i} className="text-sm text-muted-foreground">• {p}</p>
-                                                ))}
-                                            </div>
-                                        )}
+                                    {openSummary && (
+                                        <div className="space-y-3">
+                                            <p className="text-sm text-muted-foreground">{summary.summary}</p>
 
-                                        {summary.action_items?.length > 0 && (
-                                            <div>
-                                                <p className="text-xs font-medium mb-1">Action Items</p>
-                                                {summary.action_items.map((a: any, i: number) => (
-                                                    <div key={i} className="text-sm text-muted-foreground flex gap-2">
-                                                        <span>•</span>
-                                                        <span>{a.task} — <b>{a.assigned_to}</b> by {a.deadline}</span>
-                                                    </div>
-                                                ))}
-                                            </div>
-                                        )}
+                                            {summary.key_points?.length > 0 && (
+                                                <div>
+                                                    <p className="text-xs font-medium mb-1">Key Points</p>
+                                                    {summary.key_points.map((p: string, i: number) => (
+                                                        <p key={i} className="text-sm text-muted-foreground">• {p}</p>
+                                                    ))}
+                                                </div>
+                                            )}
 
-                                        {summary.decisions_made?.length > 0 && (
-                                            <div>
-                                                <p className="text-xs font-medium mb-1">Decisions</p>
-                                                {summary.decisions_made.map((d: string, i: number) => (
-                                                    <p key={i} className="text-sm text-muted-foreground">• {d}</p>
-                                                ))}
-                                            </div>
-                                        )}
-                                    </div>
-                                )}
+                                            {summary.action_items?.length > 0 && (
+                                                <div>
+                                                    <p className="text-xs font-medium mb-1">Action Items</p>
+                                                    {summary.action_items.map((a: any, i: number) => (
+                                                        <div key={i} className="text-sm text-muted-foreground flex gap-2">
+                                                            <span>•</span>
+                                                            <span>
+                                                                {a.task} — <b>{a.assigned_to}</b> by {a.deadline}
+                                                            </span>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            )}
+
+                                            {summary.decisions_made?.length > 0 && (
+                                                <div>
+                                                    <p className="text-xs font-medium mb-1">Decisions</p>
+                                                    {summary.decisions_made.map((d: string, i: number) => (
+                                                        <p key={i} className="text-sm text-muted-foreground">• {d}</p>
+                                                    ))}
+                                                </div>
+                                            )}
+                                        </div>
+                                    )}
+                                </div>
 
                                 {/* SPEAKERS */}
                                 {speakers?.length > 0 && (
