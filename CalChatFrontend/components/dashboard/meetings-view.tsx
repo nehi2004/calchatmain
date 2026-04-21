@@ -127,8 +127,17 @@ export function MeetingsView() {
             setUsers([])
         }
     }
-
     const createMeeting = async () => {
+        if (!title || !startTime || !endTime) {
+            alert("Please fill all fields")
+            return
+        }
+
+        if (new Date(startTime) >= new Date(endTime)) {
+            alert("End time must be after start time")
+            return
+        }
+
         const token = localStorage.getItem("token")
 
         await fetch("https://steadfast-warmth-production-64c8.up.railway.app/api/meeting/create", {
@@ -139,8 +148,8 @@ export function MeetingsView() {
             },
             body: JSON.stringify({
                 title,
-                startTime,
-                endTime,
+                startTime: new Date(startTime).toISOString(),   // ✅ IMPORTANT
+                endTime: new Date(endTime).toISOString(),       // ✅ IMPORTANT
                 meetingLink: meetingLink || "https://meet.google.com/new",
                 participantIds: selectedUsers
             })

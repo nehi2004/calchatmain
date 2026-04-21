@@ -36,11 +36,17 @@ public class MeetingController : ControllerBase
         //dto.StartTime = dto.StartTime.ToUniversalTime();
         //dto.EndTime = dto.EndTime.ToUniversalTime();
 
+        //if (dto.StartTime >= dto.EndTime)
+        //    return BadRequest("Start time must be before end time");
+
+        //if (dto.StartTime < DateTimeOffset.UtcNow)
+        //    return BadRequest("Meeting cannot be in the past");
+
         if (dto.StartTime >= dto.EndTime)
-            return BadRequest("Start time must be before end time");
+            return BadRequest(new { error = "Start time must be before end time" });
 
         if (dto.StartTime < DateTimeOffset.UtcNow)
-            return BadRequest("Meeting cannot be in the past");
+            return BadRequest(new { error = "Meeting cannot be in the past" });
 
         var meeting = new Meeting
         {
