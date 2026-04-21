@@ -112,11 +112,9 @@ public class MeetingController : ControllerBase
                 HasRecording = m.HasRecording,
                 Summary = m.Summary
             })
-            .ToListAsync();   // ✅ YE LINE MISSING THI
+            .ToListAsync();
 
-        return Ok(meetings);
-
-        return Ok(meetings);
+        return Ok(meetings);   // ← sirf EK return
     }
 
     // ✅ GET USERS (HR ONLY)
