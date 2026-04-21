@@ -93,7 +93,6 @@ public class MeetingController : ControllerBase
     //    return Ok();
     //}
 
-
     [HttpPost("create")]
     public async Task<IActionResult> CreateMeeting(CreateMeetingDto dto)
     {
@@ -101,59 +100,41 @@ public class MeetingController : ControllerBase
         {
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 
-            // ✅ VALIDATIONS
+            if (string.IsNullOrEmpty(userId))
+                return Unauthorized("User not found");
+
             if (dto.StartTime >= dto.EndTime)
                 return BadRequest("Start time must be before end time");
 
-            if (dto.StartTime < DateTimeOffset.UtcNow)
-                return BadRequest("Meeting cannot be in the past");
-
-            // ✅ CREATE MEETING OBJECT
             var meeting = new Meeting
             {
                 Title = dto.Title,
                 StartTime = dto.StartTime,
                 EndTime = dto.EndTime,
-                MeetingLink = string.IsNullOrEmpty(dto.MeetingLink)
-                    ? "https://meet.google.com/new"
-                    : dto.MeetingLink,
+                MeetingLink = dto.MeetingLink ?? "https://meet.google.com/new",
                 OrganizerId = userId
             };
 
-            // ✅ STEP 1: SAVE MEETING FIRST
             _context.Meetings.Add(meeting);
             await _context.SaveChangesAsync();
 
-            // ✅ STEP 2: ADD PARTICIPANTS + NOTIFICATIONS (PASTE HERE)
-            if (dto.ParticipantIds != null && dto.ParticipantIds.Any())
+            if (dto.ParticipantIds?.Any() == true)
             {
-                foreach (var user in dto.ParticipantIds)
-                {
-                    if (string.IsNullOrEmpty(user)) continue;
+                var validUsers = await _context.Users
+                    .Where(u => dto.ParticipantIds.Contains(u.Id))
+                    .Select(u => u.Id)
+                    .ToListAsync();
 
-                    // 👥 ADD PARTICIPANT
+                foreach (var user in validUsers)
+                {
                     _context.MeetingParticipants.Add(new MeetingParticipant
                     {
                         MeetingId = meeting.Id,
                         UserId = user
                     });
-
-                    // 🔔 ADD NOTIFICATION
-                    _context.Notifications.Add(new Notification
-                    {
-                        FromUserId = userId,
-                        ToUserId = user,
-                        FromUserName = User.Identity?.Name ?? "HR",
-                        Type = "meeting",
-                        Content = $"📅 New meeting: {dto.Title} at {dto.StartTime.ToLocalTime():dd MMM yyyy hh:mm tt}",
-                        Status = "info",
-                        IsRead = false,
-                        CreatedAt = DateTime.UtcNow
-                    });
                 }
             }
 
-            // ✅ STEP 3: SAVE PARTICIPANTS + NOTIFICATIONS
             await _context.SaveChangesAsync();
 
             return Ok(new { message = "Meeting created successfully" });
@@ -167,7 +148,6 @@ public class MeetingController : ControllerBase
             });
         }
     }
-
 
 
     //// ✅ GET USER MEETINGS
