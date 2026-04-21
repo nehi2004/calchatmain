@@ -51,7 +51,7 @@ namespace CalChatAPI.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Announcements");
+                    b.ToTable("Announcements", (string)null);
                 });
 
             modelBuilder.Entity("BlockUser", b =>
@@ -72,7 +72,7 @@ namespace CalChatAPI.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("BlockUsers");
+                    b.ToTable("BlockUsers", (string)null);
                 });
 
             modelBuilder.Entity("CalChatAPI.Models.AIChatHistory", b =>
@@ -100,7 +100,7 @@ namespace CalChatAPI.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("AIChatHistories");
+                    b.ToTable("AIChatHistories", (string)null);
                 });
 
             modelBuilder.Entity("CalChatAPI.Models.ApplicationUser", b =>
@@ -256,7 +256,7 @@ namespace CalChatAPI.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("CalendarEvents");
+                    b.ToTable("CalendarEvents", (string)null);
                 });
 
             modelBuilder.Entity("CalChatAPI.Models.Chat", b =>
@@ -280,7 +280,7 @@ namespace CalChatAPI.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Chats");
+                    b.ToTable("Chats", (string)null);
                 });
 
             modelBuilder.Entity("CalChatAPI.Models.ChatMember", b =>
@@ -303,7 +303,7 @@ namespace CalChatAPI.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("ChatMembers");
+                    b.ToTable("ChatMembers", (string)null);
                 });
 
             modelBuilder.Entity("CalChatAPI.Models.ChatMessage", b =>
@@ -329,7 +329,7 @@ namespace CalChatAPI.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("ChatMessages");
+                    b.ToTable("ChatMessages", (string)null);
                 });
 
             modelBuilder.Entity("CalChatAPI.Models.GroupMember", b =>
@@ -349,7 +349,7 @@ namespace CalChatAPI.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("GroupMembers");
+                    b.ToTable("GroupMembers", (string)null);
                 });
 
             modelBuilder.Entity("CalChatAPI.Models.Meeting", b =>
@@ -399,7 +399,7 @@ namespace CalChatAPI.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Meetings");
+                    b.ToTable("Meetings", (string)null);
                 });
 
             modelBuilder.Entity("CalChatAPI.Models.Note", b =>
@@ -431,7 +431,7 @@ namespace CalChatAPI.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Notes");
+                    b.ToTable("Notes", (string)null);
                 });
 
             modelBuilder.Entity("CalChatAPI.Models.NoteUser", b =>
@@ -453,7 +453,7 @@ namespace CalChatAPI.Migrations
 
                     b.HasIndex("NoteId");
 
-                    b.ToTable("NoteUsers");
+                    b.ToTable("NoteUsers", (string)null);
                 });
 
             modelBuilder.Entity("CalChatAPI.Models.Notification", b =>
@@ -496,7 +496,7 @@ namespace CalChatAPI.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Notifications");
+                    b.ToTable("Notifications", (string)null);
                 });
 
             modelBuilder.Entity("CalChatAPI.Models.TaskItem", b =>
@@ -547,7 +547,7 @@ namespace CalChatAPI.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("tasks");
+                    b.ToTable("tasks", (string)null);
                 });
 
             modelBuilder.Entity("ChatMute", b =>
@@ -570,7 +570,7 @@ namespace CalChatAPI.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("ChatMutes");
+                    b.ToTable("ChatMutes", (string)null);
                 });
 
             modelBuilder.Entity("EventItem", b =>
@@ -611,7 +611,7 @@ namespace CalChatAPI.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Events");
+                    b.ToTable("Events", (string)null);
                 });
 
             modelBuilder.Entity("GroupReport", b =>
@@ -634,7 +634,7 @@ namespace CalChatAPI.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("GroupReports");
+                    b.ToTable("GroupReports", (string)null);
                 });
 
             modelBuilder.Entity("MeetingParticipant", b =>
@@ -658,7 +658,7 @@ namespace CalChatAPI.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("MeetingParticipants");
+                    b.ToTable("MeetingParticipants", (string)null);
                 });
 
             modelBuilder.Entity("Message", b =>
@@ -702,7 +702,7 @@ namespace CalChatAPI.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Messages");
+                    b.ToTable("Messages", (string)null);
                 });
 
             modelBuilder.Entity("MessageRead", b =>
@@ -722,7 +722,7 @@ namespace CalChatAPI.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("MessageReads");
+                    b.ToTable("MessageReads", (string)null);
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRole", b =>
@@ -883,7 +883,7 @@ namespace CalChatAPI.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("PasswordTokens");
+                    b.ToTable("PasswordTokens", (string)null);
                 });
 
             modelBuilder.Entity("RolePermission", b =>
@@ -907,7 +907,7 @@ namespace CalChatAPI.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("RolePermissions");
+                    b.ToTable("RolePermissions", (string)null);
                 });
 
             modelBuilder.Entity("CalChatAPI.Models.NoteUser", b =>
