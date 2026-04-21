@@ -100,8 +100,12 @@ public class MeetingController : ControllerBase
         {
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 
+            Console.WriteLine("USER ID 👉 " + userId);   // ADD THIS
+
             if (string.IsNullOrEmpty(userId))
-                return Unauthorized("User not found");
+            {
+                return Unauthorized(new { error = "UserId is NULL from token" });
+            }
 
             if (dto.StartTime >= dto.EndTime)
                 return BadRequest("Start time must be before end time");
@@ -118,6 +122,22 @@ public class MeetingController : ControllerBase
             _context.Meetings.Add(meeting);
             await _context.SaveChangesAsync();
 
+            //if (dto.ParticipantIds?.Any() == true)
+            //{
+            //    var validUsers = await _context.Users
+            //        .Where(u => dto.ParticipantIds.Contains(u.Id))
+            //        .Select(u => u.Id)
+            //        .ToListAsync();
+
+            //    foreach (var user in validUsers)
+            //    {
+            //        _context.MeetingParticipants.Add(new MeetingParticipant
+            //        {
+            //            MeetingId = meeting.Id,
+            //            UserId = user
+            //        });
+            //    }
+            //}
             if (dto.ParticipantIds?.Any() == true)
             {
                 var validUsers = await _context.Users
@@ -134,7 +154,6 @@ public class MeetingController : ControllerBase
                     });
                 }
             }
-
             await _context.SaveChangesAsync();
 
             return Ok(new { message = "Meeting created successfully" });
