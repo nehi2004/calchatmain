@@ -26,6 +26,8 @@ public class CreateMeetingDto
     public DateTimeOffset StartTime { get; set; }
     public DateTimeOffset EndTime { get; set; }
 
-    public string MeetingLink { get; set; }
+    public string MeetingLink { get; set; } = string.Empty;
     public List<string> ParticipantIds { get; set; }
+
+
 }

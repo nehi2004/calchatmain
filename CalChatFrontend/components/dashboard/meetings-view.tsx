@@ -127,43 +127,43 @@ export function MeetingsView() {
             setUsers([])
         }
     }
-    const createMeeting = async () => {
-        if (!title || !startTime || !endTime) {
-            alert("Please fill all fields")
-            return
-        }
-
-        if (new Date(startTime) >= new Date(endTime)) {
-            alert("End time must be after start time")
-            return
-        }
-
-        const token = localStorage.getItem("token")
-
-        await fetch("https://steadfast-warmth-production-64c8.up.railway.app/api/meeting/create", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                Authorization: `Bearer ${token}`
-            },
-            body: JSON.stringify({
-                title,
-                startTime: new Date(startTime).toISOString(),   // ✅ IMPORTANT
-                endTime: new Date(endTime).toISOString(),       // ✅ IMPORTANT
-                meetingLink: meetingLink || "https://meet.google.com/new",
-                participantIds: selectedUsers
-            })
-        })
-
-        setOpenModal(false)
-        setTitle("")
-        setStartTime("")
-        setEndTime("")
-        setMeetingLink("")
-        setSelectedUsers([])
-
-        fetchMeetings()
+const createMeeting = async () => {
+    if (!title || !startTime || !endTime) {
+        alert("Please fill all fields")
+        return
     }
+
+    if (new Date(startTime) >= new Date(endTime)) {
+        alert("End time must be after start time")
+        return
+    }
+
+    const token = localStorage.getItem("token")
+
+    await fetch("https://steadfast-warmth-production-64c8.up.railway.app/api/meeting/create", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({
+            title,
+            startTime: new Date(startTime).toISOString(),   // ✅ IMPORTANT
+            endTime: new Date(endTime).toISOString(),       // ✅ IMPORTANT
+            meetingLink: meetingLink || "https://meet.google.com/new",
+            participantIds: selectedUsers
+        })
+    })
+
+    setOpenModal(false)
+    setTitle("")
+    setStartTime("")
+    setEndTime("")
+    setMeetingLink("")
+    setSelectedUsers([])
+
+    fetchMeetings()
+}
 
     const formatDate = (d: string) => new Date(d).toLocaleDateString()
 

@@ -27,71 +27,129 @@ public class MeetingController : ControllerBase
 
     // ✅ CREATE MEETING (HR ONLY)
     [Authorize(Roles = "hr")]
+    //[HttpPost("create")]
+    //public async Task<IActionResult> CreateMeeting(CreateMeetingDto dto)
+    //{
+    //    var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+    //    //// ✅ Convert to UTC
+    //    //dto.StartTime = dto.StartTime.ToUniversalTime();
+    //    //dto.EndTime = dto.EndTime.ToUniversalTime();
+
+    //    //if (dto.StartTime >= dto.EndTime)
+    //    //    return BadRequest("Start time must be before end time");
+
+    //    //if (dto.StartTime < DateTimeOffset.UtcNow)
+    //    //    return BadRequest("Meeting cannot be in the past");
+
+    //    if (dto.StartTime >= dto.EndTime)
+    //        return BadRequest(new { error = "Start time must be before end time" });
+
+    //    if (dto.StartTime < DateTimeOffset.UtcNow)
+    //        return BadRequest(new { error = "Meeting cannot be in the past" });
+
+    //    var meeting = new Meeting
+    //    {
+    //        Title = dto.Title,
+    //        StartTime = dto.StartTime,
+    //        EndTime = dto.EndTime,
+    //        MeetingLink = dto.MeetingLink,
+    //        OrganizerId = userId
+    //    };
+
+    //    _context.Meetings.Add(meeting);
+    //    await _context.SaveChangesAsync();
+
+    //    // ✅ ADD PARTICIPANTS + NOTIFICATIONS
+    //    foreach (var user in dto.ParticipantIds)
+    //    {
+    //        // 👥 Add participant
+    //        _context.MeetingParticipants.Add(new MeetingParticipant
+    //        {
+    //            MeetingId = meeting.Id,
+    //            UserId = user
+    //        });
+
+    //        // 🔔 NEW MEETING NOTIFICATION
+    //        _context.Notifications.Add(new Notification
+    //        {
+    //            FromUserId = userId,
+    //            ToUserId = user,
+    //            FromUserName = User.Identity?.Name ?? "HR",
+    //            Type = "meeting",
+    //            Content = $"📅 New meeting: {dto.Title} at {dto.StartTime.ToLocalTime():dd MMM yyyy hh:mm tt}",
+    //            Status = "info",
+    //            IsRead = false,
+    //            CreatedAt = DateTime.UtcNow
+    //        });
+
+    //    }
+
+    //    // ✅ ADD HR ALSO
+
+
+    //    await _context.SaveChangesAsync();
+
+    //    return Ok();
+    //}
+
+
+
     [HttpPost("create")]
     public async Task<IActionResult> CreateMeeting(CreateMeetingDto dto)
     {
-        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-
-        //// ✅ Convert to UTC
-        //dto.StartTime = dto.StartTime.ToUniversalTime();
-        //dto.EndTime = dto.EndTime.ToUniversalTime();
-
-        //if (dto.StartTime >= dto.EndTime)
-        //    return BadRequest("Start time must be before end time");
-
-        //if (dto.StartTime < DateTimeOffset.UtcNow)
-        //    return BadRequest("Meeting cannot be in the past");
-
-        if (dto.StartTime >= dto.EndTime)
-            return BadRequest(new { error = "Start time must be before end time" });
-
-        if (dto.StartTime < DateTimeOffset.UtcNow)
-            return BadRequest(new { error = "Meeting cannot be in the past" });
-
-        var meeting = new Meeting
+        try
         {
-            Title = dto.Title,
-            StartTime = dto.StartTime,
-            EndTime = dto.EndTime,
-            MeetingLink = dto.MeetingLink,
-            OrganizerId = userId
-        };
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 
-        _context.Meetings.Add(meeting);
-        await _context.SaveChangesAsync();
+            if (dto.StartTime >= dto.EndTime)
+                return BadRequest("Start time must be before end time");
 
-        // ✅ ADD PARTICIPANTS + NOTIFICATIONS
-        foreach (var user in dto.ParticipantIds)
-        {
-            // 👥 Add participant
-            _context.MeetingParticipants.Add(new MeetingParticipant
+            if (dto.StartTime < DateTimeOffset.UtcNow)
+                return BadRequest("Meeting cannot be in the past");
+
+            var meeting = new Meeting
             {
-                MeetingId = meeting.Id,
-                UserId = user
-            });
+                Title = dto.Title,
+                StartTime = dto.StartTime,
+                EndTime = dto.EndTime,
+                MeetingLink = string.IsNullOrEmpty(dto.MeetingLink)
+                    ? "https://meet.google.com/new"
+                    : dto.MeetingLink,
+                OrganizerId = userId
+            };
 
-            // 🔔 NEW MEETING NOTIFICATION
-            _context.Notifications.Add(new Notification
+            _context.Meetings.Add(meeting);
+            await _context.SaveChangesAsync();
+
+            if (dto.ParticipantIds != null)
             {
-                FromUserId = userId,
-                ToUserId = user,
-                FromUserName = User.Identity?.Name ?? "HR",
-                Type = "meeting",
-                Content = $"📅 New meeting: {dto.Title} at {dto.StartTime.ToLocalTime():dd MMM yyyy hh:mm tt}",
-                Status = "info",
-                IsRead = false,
-                CreatedAt = DateTime.UtcNow
-            });
-           
+                foreach (var user in dto.ParticipantIds)
+                {
+                    _context.MeetingParticipants.Add(new MeetingParticipant
+                    {
+                        MeetingId = meeting.Id,
+                        UserId = user
+                    });
+                }
+            }
+
+            await _context.SaveChangesAsync();
+
+            return Ok(new { message = "Meeting created successfully" });
         }
-
-        // ✅ ADD HR ALSO
-
-
-        await _context.SaveChangesAsync();
-
-        return Ok();
+        catch (Exception ex)
+        {
+            return StatusCode(500, new
+            {
+                error = ex.Message,
+                inner = ex.InnerException?.Message
+            });
+        }
     }
+
+
+
 
     //// ✅ GET USER MEETINGS
     //[Authorize]
