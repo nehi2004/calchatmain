@@ -1,157 +1,3 @@
-//using Microsoft.AspNetCore.Mvc;
-//using CalChatAPI.Data;
-//using CalChatAPI.Models;
-//using CalChatAPI.DTOs;
-//using System.Security.Claims;
-//using Microsoft.EntityFrameworkCore;
-//using System.Linq;
-//using Microsoft.AspNetCore.Authorization;
-//using CalChatAPI.Hubs;
-//using Microsoft.AspNetCore.SignalR;
-
-//namespace CalChatAPI.Controllers
-//{
-//    [Authorize]
-//    [Route("api/[controller]")]
-//    [ApiController]
-//    public class NotesController : ControllerBase
-//    {
-//        private readonly ApplicationDbContext _context;
-//        private readonly IHubContext<ChatHub> _hub;
-
-//        public NotesController(ApplicationDbContext context, IHubContext<ChatHub> hub)
-//        {
-//            _context = context;
-//            _hub = hub;
-//        }
-
-//        public NotesController(ApplicationDbContext context)
-//        {
-//            _context = context;
-//        }
-//        [HttpPost("create")]
-//        public async Task<IActionResult> CreateNote(CreateNoteDto dto)
-//        {
-//            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-
-//            var note = new Note
-//            {
-//                Title = dto.Title,
-//                Content = dto.Content,
-//                Category = dto.Category,
-//                CreatedById = userId
-//            };
-
-//            _context.Notes.Add(note);
-//            await _context.SaveChangesAsync();
-
-//            // Mapping save
-//            foreach (var uid in dto.UserIds)
-//            {
-//                _context.NoteUsers.Add(new NoteUser
-//                {
-//                    NoteId = note.Id,
-//                    UserId = uid
-//                });
-//            }
-//            // 🔔 CREATE NOTIFICATIONS FOR SELECTED USERS
-//            foreach (var uid in dto.UserIds)
-//            {
-//                var notification = new Notification
-//                {
-//                    FromUserId = userId,
-//                    ToUserId = uid,
-//                    FromUserName = User.Identity.Name, // or fetch from DB
-//                    Content = $"shared a note: {note.Title}",
-//                    Type = "note",
-//                    Status = "sent",
-//                    IsRead = false,
-//                    CreatedAt = DateTime.UtcNow
-//                };
-
-//                _context.Notifications.Add(notification);
-//            }
-
-//            await _context.SaveChangesAsync();
-
-//            await _context.SaveChangesAsync();
-
-//            return Ok(new { message = "Note created successfully" });
-//        }
-//        [HttpGet]
-//        public async Task<IActionResult> GetMyNotes()
-//        {
-//            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-
-//            var notes = await _context.Notes
-//                .Include(n => n.NoteUsers)
-//                .Where(n =>
-//                    n.CreatedById == userId   // ✅ HR ke notes
-//                    || n.NoteUsers.Any(nu => nu.UserId == userId) // ✅ employee notes
-//                )
-//                .Select(n => new
-//                {
-//                    n.Id,
-//                    n.Title,
-//                    n.Content,
-//                    n.Category,
-//                    Date = n.CreatedAt
-//                })
-//                .ToListAsync();
-
-//            return Ok(notes);
-//        }
-//        [HttpDelete("{id}")]
-//        public async Task<IActionResult> DeleteNote(int id)
-//        {
-//            var note = await _context.Notes.FindAsync(id);
-
-//            if (note == null)
-//                return NotFound();
-
-//            // delete mapping first
-//            var mappings = _context.NoteUsers.Where(nu => nu.NoteId == id);
-//            _context.NoteUsers.RemoveRange(mappings);
-
-//            _context.Notes.Remove(note);
-//            await _context.SaveChangesAsync();
-
-//            return Ok(new { message = "Note deleted" });
-//        }
-//        [HttpPut("{id}")]
-//        public async Task<IActionResult> UpdateNote(int id, CreateNoteDto dto)
-//        {
-//            var note = await _context.Notes.FindAsync(id);
-
-//            if (note == null)
-//                return NotFound();
-
-//            note.Title = dto.Title;
-//            note.Content = dto.Content;
-//            note.Category = dto.Category;
-
-//            // remove old mappings
-//            var oldMappings = _context.NoteUsers.Where(nu => nu.NoteId == id);
-//            _context.NoteUsers.RemoveRange(oldMappings);
-
-//            // add new mappings
-//            foreach (var uid in dto.UserIds)
-//            {
-//                _context.NoteUsers.Add(new NoteUser
-//                {
-//                    NoteId = id,
-//                    UserId = uid
-//                });
-//            }
-
-//            await _context.SaveChangesAsync();
-
-//            return Ok(new { message = "Note updated" });
-//        }
-//    }
-//}
-
-
 using Microsoft.AspNetCore.Mvc;
 using CalChatAPI.Data;
 using CalChatAPI.Models;
@@ -213,13 +59,16 @@ namespace CalChatAPI.Controllers
             }
 
             // ✅ CREATE NOTIFICATIONS
+            // 🔥 GET USER NAME ONCE (TOP OF METHOD)
+            var user = await _context.Users.FindAsync(userId);
+
             foreach (var uid in dto.UserIds)
             {
                 var notification = new Notification
                 {
                     FromUserId = userId,
                     ToUserId = uid,
-                    FromUserName = userName,
+                    FromUserName = user?.Name ?? "User",
                     Content = $"shared a note: {note.Title}",
                     Type = "note",
                     Status = "sent",

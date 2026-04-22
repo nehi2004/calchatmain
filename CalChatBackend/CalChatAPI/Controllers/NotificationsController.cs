@@ -86,10 +86,13 @@ namespace CalChatAPI.Controllers
             if (already != null)
                 return BadRequest("Request already sent");
 
+            // 🔥 GET USER FROM DB
+            var user = await _context.Users.FindAsync(request.FromUserId);
+
             var notification = new Notification
             {
                 FromUserId = request.FromUserId,
-                FromUserName = request.FromUserName,
+                FromUserName = user?.Name ?? "User",
                 ToUserId = request.ToUserId,
                 Content = request.Content,
                 Type = "chat_request",
@@ -121,46 +124,32 @@ namespace CalChatAPI.Controllers
 
             if (status == "accepted")
             {
-                var existingChat = await _context.ChatMembers
-                    .Where(cm => cm.UserId == notif.FromUserId)
-                    .Select(cm => cm.ChatId)
-                    .Intersect(
-                        _context.ChatMembers
-                            .Where(cm => cm.UserId == notif.ToUserId)
-                            .Select(cm => cm.ChatId)
-                    )
-                    .FirstOrDefaultAsync();
-
-                if (existingChat == 0)
+                var chat = new Chat
                 {
-                    var chat = new Chat
+                    Name = "Personal Chat",
+                    Type = "personal",
+                    CreatedAt = DateTime.UtcNow
+                };
+
+                _context.Chats.Add(chat);
+
+                await _context.SaveChangesAsync();
+
+                _context.ChatMembers.AddRange(
+
+                    new ChatMember
                     {
-                        Name = "Personal Chat",
-                        Type = "personal",
-                        CreatedAt = DateTime.UtcNow
-                    };
+                        ChatId = chat.Id,
+                        UserId = notif.FromUserId
+                    },
 
-                    _context.Chats.Add(chat);
-                    await _context.SaveChangesAsync();
+                    new ChatMember
+                    {
+                        ChatId = chat.Id,
+                        UserId = notif.ToUserId
+                    }
 
-                    _context.ChatMembers.AddRange(
-                        new ChatMember { ChatId = chat.Id, UserId = notif.FromUserId },
-                        new ChatMember { ChatId = chat.Id, UserId = notif.ToUserId }
-                    );
-                }
-            }
-
-            // ✅ NEW BLOCK
-            if (status == "accepted" || status == "rejected")
-            {
-                var oldRequests = await _context.Notifications
-                    .Where(n => n.FromUserId == notif.FromUserId
-                             && n.ToUserId == notif.ToUserId
-                             && n.Type == "chat_request"
-                             && n.Id != id)
-                    .ToListAsync();
-
-                _context.Notifications.RemoveRange(oldRequests);
+                );
             }
 
             await _context.SaveChangesAsync();
@@ -192,6 +181,11 @@ namespace CalChatAPI.Controllers
             if (model == null)
                 return BadRequest();
 
+            // 🔥 GET USER NAME FROM DATABASE
+            var user = await _context.Users.FindAsync(model.FromUserId);
+
+            model.FromUserName = user?.Name ?? "User"; // ✅ MAIN FIX
+
             model.CreatedAt = DateTime.UtcNow;
             model.IsRead = false;
 
@@ -200,7 +194,6 @@ namespace CalChatAPI.Controllers
 
             return Ok(model);
         }
-
         // =========================
         // MARK ALL AS READ
         // =========================
