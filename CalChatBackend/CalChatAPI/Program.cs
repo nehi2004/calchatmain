@@ -1,6 +1,5 @@
 
 
-
 //using Microsoft.AspNetCore.Identity;
 //using Microsoft.EntityFrameworkCore;
 //using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -14,27 +13,37 @@
 //using CalChatAPI.Hubs;
 //using CalChatAPI.Services;
 
+
 //var builder = WebApplication.CreateBuilder(args);
 
+//builder.Configuration.AddEnvironmentVariables(); // ✅ MUST
+//builder.Services.AddHttpClient<GroqService>();
 ////////////////////////////////////////////////////
 //// DATABASE
 ////////////////////////////////////////////////////
-
 //builder.Services.AddDbContext<ApplicationDbContext>(options =>
-//    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+//    options.UseNpgsql(
+//        builder.Configuration.GetConnectionString("DefaultConnection"),
+//        npgsqlOptions =>
+//        {
+//            npgsqlOptions.EnableRetryOnFailure(
+//                maxRetryCount: 5,
+//                maxRetryDelay: TimeSpan.FromSeconds(10),
+//                errorCodesToAdd: null
+//            );
+//        }
+//    ));
 
 ////////////////////////////////////////////////////
 //// IDENTITY
 ////////////////////////////////////////////////////
-
 //builder.Services.AddIdentity<ApplicationUser, IdentityRole>()
 //    .AddEntityFrameworkStores<ApplicationDbContext>()
 //    .AddDefaultTokenProviders();
 
 ////////////////////////////////////////////////////
-//// JWT CONFIG (SignalR support)
+//// JWT
 ////////////////////////////////////////////////////
-
 //var jwtKey = builder.Configuration["Jwt:Key"] ?? "THIS_IS_SECRET_KEY_CHANGE_IT";
 //var key = Encoding.UTF8.GetBytes(jwtKey);
 
@@ -53,8 +62,8 @@
 //        OnMessageReceived = context =>
 //        {
 //            var accessToken = context.Request.Query["access_token"];
-
 //            var path = context.HttpContext.Request.Path;
+
 //            if (!string.IsNullOrEmpty(accessToken) &&
 //                path.StartsWithSegments("/chatHub"))
 //            {
@@ -73,92 +82,67 @@
 //        ValidateIssuerSigningKey = true,
 //        IssuerSigningKey = new SymmetricSecurityKey(key),
 
-//        NameClaimType = ClaimTypes.Name,
+//        NameClaimType = ClaimTypes.NameIdentifier,
 //        RoleClaimType = ClaimTypes.Role
 //    };
 //});
 
 ////////////////////////////////////////////////////
-//// PREVENT LOGIN REDIRECTS
-////////////////////////////////////////////////////
-
-//builder.Services.ConfigureApplicationCookie(options =>
-//{
-//    options.Events.OnRedirectToLogin = context =>
-//    {
-//        context.Response.StatusCode = 401;
-//        return Task.CompletedTask;
-//    };
-
-//    options.Events.OnRedirectToAccessDenied = context =>
-//    {
-//        context.Response.StatusCode = 403;
-//        return Task.CompletedTask;
-//    };
-//});
-
-////////////////////////////////////////////////////
-//// SIGNALR
-////////////////////////////////////////////////////
-
-//builder.Services.AddSignalR(options =>
-//{
-//    options.EnableDetailedErrors = true;
-//});
-
-//builder.Services.AddSingleton<IUserIdProvider, NameIdentifierUserIdProvider>();
-
-////////////////////////////////////////////////////
 //// SERVICES
 ////////////////////////////////////////////////////
+//builder.Services.AddSignalR();
+//builder.Services.AddSingleton<IUserIdProvider, NameIdentifierUserIdProvider>();
 
 //builder.Services.AddScoped<AIService>();
+//builder.Services.AddScoped<HuggingFaceService>();
 //builder.Services.AddScoped<IEmailService, EmailService>();
-//builder.Services.AddHostedService<MeetingNotificationService>();
 
-////////////////////////////////////////////////////
-//// CONTROLLERS
-////////////////////////////////////////////////////
+//// ✅ ADD THIS BELOW
+//builder.Services.Configure<EmailSettings>(
+//    builder.Configuration.GetSection("EmailSettings")
+//);
+
 
 //builder.Services.AddControllers();
 
-////////////////////////////////////////////////////
-//// CORS (ONLY ONE)
-////////////////////////////////////////////////////
 
+
+////////////////////////////////////////////////////
+//// CORS
+////////////////////////////////////////////////////
 //builder.Services.AddCors(options =>
 //{
 //    options.AddPolicy("AllowFrontend", policy =>
 //    {
 //        policy
-//            .WithOrigins("https://calchatmain-le3p.vercel.app")
+//            .SetIsOriginAllowed(origin =>
+//                origin.Contains("vercel.app") ||
+//                origin.Contains("localhost")
+//            )
 //            .AllowAnyHeader()
 //            .AllowAnyMethod()
 //            .AllowCredentials();
 //    });
 //});
 
+
+
 ////////////////////////////////////////////////////
 //// SWAGGER
 ////////////////////////////////////////////////////
+/////
 
 //builder.Services.AddEndpointsApiExplorer();
-
 //builder.Services.AddSwaggerGen(options =>
 //{
-//    options.SwaggerDoc("v1", new OpenApiInfo
-//    {
-//        Title = "CalChat API",
-//        Version = "v1"
-//    });
-
 //    options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
 //    {
 //        Name = "Authorization",
 //        Type = SecuritySchemeType.Http,
 //        Scheme = "bearer",
 //        BearerFormat = "JWT",
-//        In = ParameterLocation.Header
+//        In = ParameterLocation.Header,
+//        Description = "Enter JWT Token like: Bearer {your token}"
 //    });
 
 //    options.AddSecurityRequirement(new OpenApiSecurityRequirement
@@ -178,40 +162,43 @@
 //});
 
 ////////////////////////////////////////////////////
-//// BUILD APP (ONLY ONCE)
+//// BUILD APP (ONLY ONE TIME)
 ////////////////////////////////////////////////////
-
 //var app = builder.Build();
+
+////////////////////////////////////////////////////
+//// PORT FIX (Railway)
+////////////////////////////////////////////////////
+//var port = Environment.GetEnvironmentVariable("PORT") ?? "8080";
+//app.Urls.Add($"http://*:{port}");
 
 ////////////////////////////////////////////////////
 //// MIDDLEWARE
 ////////////////////////////////////////////////////
+//app.UseSwagger();
+//app.UseSwaggerUI();
 
-//if (app.Environment.IsDevelopment())
+//app.UseExceptionHandler(errorApp =>
 //{
-//    app.UseSwagger();
-//    app.UseSwaggerUI();
-//}
+//    errorApp.Run(async context =>
+//    {
+//        context.Response.StatusCode = 500;
+//        var error = context.Features.Get<Microsoft.AspNetCore.Diagnostics.IExceptionHandlerFeature>();
+//        await context.Response.WriteAsync("ERROR: " + error?.Error?.Message);
+//    });
+//});
 
 //app.UseRouting();
 
-//app.UseCors("AllowFrontend");
+//app.UseCors("AllowFrontend"); // ✅ BEFORE auth
 
 //app.UseAuthentication();
 //app.UseAuthorization();
 
-//app.UseStaticFiles();
-
-////////////////////////////////////////////////////
-//// ENDPOINTS
-////////////////////////////////////////////////////
-
 //app.MapControllers();
-
-//app.MapHub<ChatHub>("/chatHub")
-//   .RequireCors("AllowFrontend");
-
+//app.MapHub<ChatHub>("/chatHub").RequireCors("AllowFrontend");
 //app.Run();
+
 
 
 using Microsoft.AspNetCore.Identity;
@@ -268,7 +255,7 @@ builder.Services.AddAuthentication(options =>
 })
 .AddJwtBearer(options =>
 {
-    options.RequireHttpsMetadata = false;
+    options.RequireHttpsMetadata = true;
     options.SaveToken = true;
 
     options.Events = new JwtBearerEvents
@@ -329,13 +316,13 @@ builder.Services.AddCors(options =>
     options.AddPolicy("AllowFrontend", policy =>
     {
         policy
-            .SetIsOriginAllowed(origin =>
-                origin.Contains("vercel.app") ||
-                origin.Contains("localhost")
-            )
-            .AllowAnyHeader()
-            .AllowAnyMethod()
-            .AllowCredentials();
+.WithOrigins(
+    "https://calchatmain-le3p.vercel.app",
+    "http://localhost:3000"
+)
+.AllowAnyHeader()
+.AllowAnyMethod()
+.AllowCredentials();
     });
 });
 
@@ -403,6 +390,11 @@ app.UseExceptionHandler(errorApp =>
 });
 
 app.UseRouting();
+
+app.UseForwardedHeaders(new ForwardedHeadersOptions
+{
+    ForwardedHeaders = Microsoft.AspNetCore.HttpOverrides.ForwardedHeaders.All
+});
 
 app.UseCors("AllowFrontend"); // ✅ BEFORE auth
 
