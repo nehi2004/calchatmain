@@ -785,6 +785,33 @@ export function MeetingsView() {
         }
     }
 
+    const deleteMeeting = async (id: number) => {
+        const confirmDelete = confirm("Are you sure you want to delete this meeting?")
+        if (!confirmDelete) return
+
+        try {
+            const token = localStorage.getItem("token")
+
+            const res = await fetch(`${API}/api/meeting/${id}`, {
+                method: "DELETE",
+                headers: {
+                    Authorization: `Bearer ${token}`
+                }
+            })
+
+            if (!res.ok) {
+                const err = await res.json()
+                alert(err.error || "Delete failed")
+                return
+            }
+
+            // ✅ refresh list
+            fetchMeetings()
+        } catch (e) {
+            console.error(e)
+        }
+    }
+
     const createMeeting = async () => {
         if (!title || !startTime || !endTime) {
             alert("Please fill all fields")
@@ -955,6 +982,17 @@ export function MeetingsView() {
                             <Button size="sm" onClick={() => window.open(m.meetingLink, "_blank")}>
                                 <Video className="h-4 w-4 mr-1" /> Join
                             </Button>
+
+
+                            {(userRole === "hr") && (
+                                <Button
+                                    size="sm"
+                                    variant="destructive"
+                                    onClick={() => deleteMeeting(m.id)}
+                                >
+                                    Delete
+                                </Button>
+                            )}
                         </div>
                     ))}
                 </TabsContent>
@@ -994,6 +1032,17 @@ export function MeetingsView() {
                                         onClick={() => openDetail(m.id)}
                                     >
                                         <FileText className="h-3 w-3 mr-1" /> View Details
+                                    </Button>
+                                )}
+
+
+                                {(userRole === "hr") && (
+                                    <Button
+                                        size="sm"
+                                        variant="destructive"
+                                        onClick={() => deleteMeeting(m.id)}
+                                    >
+                                        Delete
                                     </Button>
                                 )}
                             </div>

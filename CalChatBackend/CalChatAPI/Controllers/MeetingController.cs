@@ -311,6 +311,50 @@ public class MeetingController : ControllerBase
         });
 
     }
+    // ✅ DELETE MEETING (HR + Organizer)
+    [Authorize]
+    [HttpDelete("{id}")]
+    public async Task<IActionResult> DeleteMeeting(int id)
+    {
+        try
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            var meeting = await _context.Meetings
+                .Include(m => m.Participants)
+                .FirstOrDefaultAsync(m => m.Id == id);
+
+            if (meeting == null)
+                return NotFound(new { error = "Meeting not found" });
+
+            // ✅ Allow only HR or organizer
+            var isHR = User.IsInRole("hr");
+
+            if (!isHR && meeting.OrganizerId != userId)
+                return Forbid();
+
+            // ✅ Delete participants first
+            var participants = _context.MeetingParticipants
+                .Where(p => p.MeetingId == id);
+
+            _context.MeetingParticipants.RemoveRange(participants);
+
+            // ✅ Delete meeting
+            _context.Meetings.Remove(meeting);
+
+            await _context.SaveChangesAsync();
+
+            return Ok(new { message = "Meeting deleted successfully" });
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new
+            {
+                error = ex.Message,
+                inner = ex.InnerException?.Message
+            });
+        }
+    }
 
 
 
