@@ -171,6 +171,8 @@
 //        }
 //    }
 //}
+
+
 using Microsoft.AspNetCore.Mvc;
 using CalChatAPI.Data;
 using CalChatAPI.Models;
@@ -424,6 +426,82 @@ namespace CalChatAPI.Controllers
                 return BadRequest(new { message = ex.Message });
             }
         }
+        [HttpGet("attachment/{attachmentId}/view")]
+        public async Task<IActionResult> ViewAttachment(int attachmentId)
+        {
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+            if (string.IsNullOrEmpty(userId))
+                return Unauthorized();
+
+            var attachment = await _context.NoteAttachments
+                .Include(a => a.Note)
+                .ThenInclude(n => n.NoteUsers)
+                .FirstOrDefaultAsync(a => a.Id == attachmentId);
+
+            if (attachment == null)
+                return NotFound();
+
+            var canAccess =
+                attachment.Note.CreatedById == userId ||
+                attachment.Note.NoteUsers.Any(nu => nu.UserId == userId);
+
+            if (!canAccess)
+                return Forbid();
+
+            var webRootPath = _environment.WebRootPath;
+            if (string.IsNullOrWhiteSpace(webRootPath))
+            {
+                webRootPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot");
+            }
+
+            var cleanPath = attachment.FilePath.TrimStart('/').Replace("/", Path.DirectorySeparatorChar.ToString());
+            var fullPath = Path.Combine(webRootPath, cleanPath);
+
+            if (!System.IO.File.Exists(fullPath))
+                return NotFound(new { message = "File not found" });
+
+            return PhysicalFile(fullPath, attachment.ContentType, enableRangeProcessing: true);
+        }
+
+        [HttpGet("attachment/{attachmentId}/download")]
+        public async Task<IActionResult> DownloadAttachment(int attachmentId)
+        {
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+            if (string.IsNullOrEmpty(userId))
+                return Unauthorized();
+
+            var attachment = await _context.NoteAttachments
+                .Include(a => a.Note)
+                .ThenInclude(n => n.NoteUsers)
+                .FirstOrDefaultAsync(a => a.Id == attachmentId);
+
+            if (attachment == null)
+                return NotFound();
+
+            var canAccess =
+                attachment.Note.CreatedById == userId ||
+                attachment.Note.NoteUsers.Any(nu => nu.UserId == userId);
+
+            if (!canAccess)
+                return Forbid();
+
+            var webRootPath = _environment.WebRootPath;
+            if (string.IsNullOrWhiteSpace(webRootPath))
+            {
+                webRootPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot");
+            }
+
+            var cleanPath = attachment.FilePath.TrimStart('/').Replace("/", Path.DirectorySeparatorChar.ToString());
+            var fullPath = Path.Combine(webRootPath, cleanPath);
+
+            if (!System.IO.File.Exists(fullPath))
+                return NotFound(new { message = "File not found" });
+
+            return PhysicalFile(fullPath, attachment.ContentType, attachment.OriginalFileName);
+        }
+
 
         private async Task<List<NoteAttachment>> SaveAttachmentsAsync(List<IFormFile> files, int noteId)
         {
