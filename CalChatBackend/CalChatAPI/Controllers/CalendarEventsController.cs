@@ -271,6 +271,208 @@
 //}
 
 
+//using Microsoft.AspNetCore.Authorization;
+//using Microsoft.AspNetCore.Mvc;
+//using Microsoft.EntityFrameworkCore;
+//using CalChatAPI.Data;
+//using CalChatAPI.Models;
+//using System.Security.Claims;
+
+//namespace CalChatAPI.Controllers
+//{
+//    [Route("api/[controller]")]
+//    [ApiController]
+//    [Authorize]
+//    public class CalendarEventsController : ControllerBase
+//    {
+//        private readonly ApplicationDbContext _context;
+
+//        public CalendarEventsController(ApplicationDbContext context)
+//        {
+//            _context = context;
+//        }
+
+//        // GET EVENTS
+//        [HttpGet]
+//        public async Task<IActionResult> GetEvents()
+//        {
+//            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+//            var events = await _context.CalendarEvents
+//                .Where(e => e.UserId == userId)
+//                .OrderBy(e => e.Date)
+//                .ToListAsync();
+
+//            return Ok(events);
+//        }
+
+//        // CREATE EVENT
+//        [HttpPost]
+//        public async Task<IActionResult> CreateEvent(CalendarEvent ev)
+//        {
+//            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+//            ev.Id = Guid.NewGuid();
+//            ev.UserId = userId;
+
+//            ev.Date = DateTime.SpecifyKind(ev.Date.Date, DateTimeKind.Utc);
+
+
+//            ev.Created_At = DateTimeOffset.UtcNow;
+
+
+//            _context.CalendarEvents.Add(ev);
+//            await _context.SaveChangesAsync();
+
+
+
+//            return Ok(ev);
+//        }
+
+//        // UPDATE EVENT
+//        [HttpPut("{id}")]
+//        public async Task<IActionResult> UpdateEvent(Guid id, CalendarEvent updated)
+//        {
+//            var ev = await _context.CalendarEvents.FindAsync(id);
+
+//            if (ev == null) return NotFound();
+
+//            ev.Title = updated.Title;
+//            ev.Date = updated.Date;
+//            ev.Time = updated.Time;
+//            ev.Type = updated.Type;
+//            ev.Priority = updated.Priority;
+//            ev.Color = updated.Color;
+//            ev.ReminderMinutes = updated.ReminderMinutes;
+
+//            await _context.SaveChangesAsync();
+
+//            return Ok(ev);
+//        }
+
+//        // DELETE EVENT
+//        [HttpDelete("{id}")]
+//        public async Task<IActionResult> DeleteEvent(Guid id)
+//        {
+//            var ev = await _context.CalendarEvents.FindAsync(id);
+
+//            if (ev == null) return NotFound();
+
+//            _context.CalendarEvents.Remove(ev);
+//            await _context.SaveChangesAsync();
+
+//            return Ok();
+//        }
+//    }
+//}
+
+
+
+
+//using Microsoft.AspNetCore.Authorization;
+//using Microsoft.AspNetCore.Mvc;
+//using Microsoft.EntityFrameworkCore;
+//using CalChatAPI.Data;
+//using CalChatAPI.Models;
+//using System.Security.Claims;
+
+//namespace CalChatAPI.Controllers
+//{
+//    [Route("api/[controller]")]
+//    [ApiController]
+//    [Authorize]
+//    public class CalendarEventsController : ControllerBase
+//    {
+//        private readonly ApplicationDbContext _context;
+
+//        public CalendarEventsController(ApplicationDbContext context)
+//        {
+//            _context = context;
+//        }
+
+//        [HttpGet]
+//        public async Task<IActionResult> GetEvents()
+//        {
+//            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+//            var events = await _context.CalendarEvents
+//                .Where(e => e.UserId == userId)
+//                .OrderBy(e => e.Date)
+//                .ThenBy(e => e.Time)
+//                .ToListAsync();
+
+//            return Ok(events);
+//        }
+
+//        [HttpGet("{id}")]
+//        public async Task<IActionResult> GetEvent(Guid id)
+//        {
+//            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+//            var ev = await _context.CalendarEvents
+//                .FirstOrDefaultAsync(e => e.Id == id && e.UserId == userId);
+
+//            if (ev == null) return NotFound();
+
+//            return Ok(ev);
+//        }
+
+//        [HttpPost]
+//        public async Task<IActionResult> CreateEvent(CalendarEvent ev)
+//        {
+//            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+//            ev.Id = Guid.NewGuid();
+//            ev.UserId = userId;
+//            ev.Date = DateTime.SpecifyKind(ev.Date.Date, DateTimeKind.Utc);
+//            ev.Created_At = DateTimeOffset.UtcNow;
+
+//            _context.CalendarEvents.Add(ev);
+//            await _context.SaveChangesAsync();
+
+//            return Ok(ev);
+//        }
+
+//        [HttpPut("{id}")]
+//        public async Task<IActionResult> UpdateEvent(Guid id, CalendarEvent updated)
+//        {
+//            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+//            var ev = await _context.CalendarEvents
+//                .FirstOrDefaultAsync(e => e.Id == id && e.UserId == userId);
+
+//            if (ev == null) return NotFound();
+
+//            ev.Title = updated.Title;
+//            ev.Date = DateTime.SpecifyKind(updated.Date.Date, DateTimeKind.Utc);
+//            ev.Time = updated.Time;
+//            ev.Type = updated.Type;
+//            ev.Priority = updated.Priority;
+//            ev.Color = updated.Color;
+//            ev.ReminderMinutes = updated.ReminderMinutes;
+
+//            await _context.SaveChangesAsync();
+
+//            return Ok(ev);
+//        }
+
+//        [HttpDelete("{id}")]
+//        public async Task<IActionResult> DeleteEvent(Guid id)
+//        {
+//            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+//            var ev = await _context.CalendarEvents
+//                .FirstOrDefaultAsync(e => e.Id == id && e.UserId == userId);
+
+//            if (ev == null) return NotFound();
+
+//            _context.CalendarEvents.Remove(ev);
+//            await _context.SaveChangesAsync();
+
+//            return Ok();
+//        }
+//    }
+//}
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -292,7 +494,6 @@ namespace CalChatAPI.Controllers
             _context = context;
         }
 
-        // GET EVENTS
         [HttpGet]
         public async Task<IActionResult> GetEvents()
         {
@@ -301,12 +502,25 @@ namespace CalChatAPI.Controllers
             var events = await _context.CalendarEvents
                 .Where(e => e.UserId == userId)
                 .OrderBy(e => e.Date)
+                .ThenBy(e => e.Time)
                 .ToListAsync();
 
             return Ok(events);
         }
 
-        // CREATE EVENT
+        [HttpGet("{id}")]
+        public async Task<IActionResult> GetEvent(Guid id)
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            var ev = await _context.CalendarEvents
+                .FirstOrDefaultAsync(e => e.Id == id && e.UserId == userId);
+
+            if (ev == null) return NotFound();
+
+            return Ok(ev);
+        }
+
         [HttpPost]
         public async Task<IActionResult> CreateEvent(CalendarEvent ev)
         {
@@ -314,31 +528,27 @@ namespace CalChatAPI.Controllers
 
             ev.Id = Guid.NewGuid();
             ev.UserId = userId;
-
             ev.Date = DateTime.SpecifyKind(ev.Date.Date, DateTimeKind.Utc);
-
-
             ev.Created_At = DateTimeOffset.UtcNow;
-
 
             _context.CalendarEvents.Add(ev);
             await _context.SaveChangesAsync();
 
-
-
             return Ok(ev);
         }
 
-        // UPDATE EVENT
         [HttpPut("{id}")]
         public async Task<IActionResult> UpdateEvent(Guid id, CalendarEvent updated)
         {
-            var ev = await _context.CalendarEvents.FindAsync(id);
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            var ev = await _context.CalendarEvents
+                .FirstOrDefaultAsync(e => e.Id == id && e.UserId == userId);
 
             if (ev == null) return NotFound();
 
             ev.Title = updated.Title;
-            ev.Date = updated.Date;
+            ev.Date = DateTime.SpecifyKind(updated.Date.Date, DateTimeKind.Utc);
             ev.Time = updated.Time;
             ev.Type = updated.Type;
             ev.Priority = updated.Priority;
@@ -350,11 +560,13 @@ namespace CalChatAPI.Controllers
             return Ok(ev);
         }
 
-        // DELETE EVENT
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteEvent(Guid id)
         {
-            var ev = await _context.CalendarEvents.FindAsync(id);
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            var ev = await _context.CalendarEvents
+                .FirstOrDefaultAsync(e => e.Id == id && e.UserId == userId);
 
             if (ev == null) return NotFound();
 
@@ -365,4 +577,3 @@ namespace CalChatAPI.Controllers
         }
     }
 }
-

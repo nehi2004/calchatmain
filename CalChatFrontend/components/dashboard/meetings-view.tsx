@@ -2324,11 +2324,11 @@ export function MeetingsView() {
 
             <Dialog open={editOpen} onOpenChange={setEditOpen}>
                 <DialogContent className="max-w-md overflow-hidden rounded-2xl border border-white/10 bg-white p-0 text-gray-900 shadow-xl dark:bg-[#020617] dark:text-white">
-                    <div className="bg-gradient-to-r from-amber-500 to-orange-500 px-4 py-3 text-white">
+                    <div className="bg-gradient-to-r from-blue-500 to-indigo-500 px-4 py-3 text-white">
                         <DialogTitle className="flex items-center gap-2 text-base font-semibold">
                             Reschedule Meeting
                         </DialogTitle>
-                        <DialogDescription className="mt-1 text-xs text-orange-100">
+                        <DialogDescription className="mt-1 text-xs text-blue-100">
                             Update title, time, link, and participants
                         </DialogDescription>
                     </div>
@@ -2350,7 +2350,7 @@ export function MeetingsView() {
                                     type="datetime-local"
                                     value={editStartTime}
                                     onChange={(e) => setEditStartTime(e.target.value)}
-                                    className="h-10 w-full rounded-lg border bg-white px-3 text-sm outline-none dark:bg-white/5"
+                                    className="h-10 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm outline-none focus:border-blue-500 dark:border-white/10 dark:bg-white/5"
                                 />
                             </div>
                             <div className="space-y-2">
@@ -2359,7 +2359,7 @@ export function MeetingsView() {
                                     type="datetime-local"
                                     value={editEndTime}
                                     onChange={(e) => setEditEndTime(e.target.value)}
-                                    className="h-10 w-full rounded-lg border bg-white px-3 text-sm outline-none dark:bg-white/5"
+                                    className="h-10 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm outline-none focus:border-blue-500 dark:border-white/10 dark:bg-white/5"
                                 />
                             </div>
                         </div>
@@ -2381,7 +2381,7 @@ export function MeetingsView() {
                                 </span>
                             </div>
 
-                            <div className="max-h-40 space-y-1 overflow-y-auto rounded-lg border bg-gray-50 p-2 dark:bg-white/5">
+                            <div className="max-h-40 space-y-1 overflow-y-auto rounded-lg border border-gray-200 bg-gray-50 p-2 dark:border-white/10 dark:bg-white/5">
                                 {users.map((u) => {
                                     const isSelected = editSelectedUsers.includes(u.id)
                                     return (
@@ -2423,12 +2423,13 @@ export function MeetingsView() {
                         <Button
                             onClick={updateMeeting}
                             disabled={savingEdit}
-                            className="h-11 w-full rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 text-sm transition hover:opacity-90"
+                            className="h-11 w-full rounded-xl bg-gradient-to-r from-blue-500 to-indigo-500 text-sm transition hover:opacity-90"
                         >
                             {savingEdit ? "Saving..." : "Update Meeting"}
                         </Button>
                     </div>
                 </DialogContent>
+
             </Dialog>
         </div>
     )
