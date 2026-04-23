@@ -979,20 +979,22 @@ export function MeetingsView() {
                                     </span>
                                 </div>
                             </div>
-                            <Button size="sm" onClick={() => window.open(m.meetingLink, "_blank")}>
-                                <Video className="h-4 w-4 mr-1" /> Join
-                            </Button>
-
-
-                            {(userRole === "hr") && (
-                                <Button
-                                    size="sm"
-                                    variant="destructive"
-                                    onClick={() => deleteMeeting(m.id)}
-                                >
-                                    Delete
+                            <div className="flex gap-2 ml-3">
+                                <Button size="sm" onClick={() => window.open(m.meetingLink, "_blank")}>
+                                    <Video className="h-4 w-4 mr-1" /> Join
                                 </Button>
-                            )}
+
+                                {(userRole === "hr") && (
+                                    <Button
+                                        size="sm"
+                                        variant="destructive"
+                                        onClick={() => deleteMeeting(m.id)}
+                                    >
+                                        Delete
+                                    </Button>
+                                )}
+                            </div>
+
                         </div>
                     ))}
                 </TabsContent>
