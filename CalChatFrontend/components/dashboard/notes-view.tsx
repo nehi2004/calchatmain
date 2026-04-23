@@ -593,22 +593,26 @@ export function NotesView() {
         const method = editMode ? "PUT" : "POST"
 
         try {
+            const formData = new FormData()
+            formData.append("Title", newNote.title)
+            formData.append("Content", newNote.content)
+            formData.append("Category", newNote.category)
+
+            selectedUsers.forEach((userId) => {
+                formData.append("UserIds", userId)
+            })
+
             const res = await fetch(url, {
                 method,
                 headers: {
-                    "Content-Type": "application/json",
                     Authorization: `Bearer ${localStorage.getItem("token")}`,
                 },
-                body: JSON.stringify({
-                    Title: newNote.title,
-                    Content: newNote.content,
-                    Category: newNote.category,
-                    UserIds: selectedUsers,
-                }),
+                body: formData,
             })
 
             if (!res.ok) {
                 const errorText = await res.text()
+                console.error("Save failed:", errorText)
                 alert(errorText || "Save failed")
                 return
             }
@@ -621,6 +625,7 @@ export function NotesView() {
             alert("Save failed")
         }
     }
+
 
     async function handleDeleteNote(id: string) {
         const confirmDelete = confirm("Are you sure you want to delete this note?")
