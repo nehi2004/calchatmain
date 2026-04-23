@@ -1,43 +1,32 @@
-
 using System.ComponentModel.DataAnnotations;
-using System.ComponentModel.DataAnnotations.Schema;
 
 namespace CalChatAPI.Models
 {
-    [Table("CalendarEvents")]
     public class CalendarEvent
     {
         [Key]
-        [Column("Id")]
         public Guid Id { get; set; }
 
-        [Column("Title")]
         public string Title { get; set; } = string.Empty;
 
-        [Column("Date")]
         public DateTime Date { get; set; }
 
+        public string Time { get; set; } = "09:00";
 
-        [Column("Time")]
-        public string Time { get; set; } = string.Empty;
+        public string Type { get; set; } = "Meeting";
 
-        [Column("Type")]
-        public string Type { get; set; } = string.Empty;
+        public string Priority { get; set; } = "Low";
 
-        [Column("Created_At")]
-        public DateTimeOffset Created_At { get; set; } = DateTimeOffset.UtcNow;
-
-        [Column("Priority")]
-        public string? Priority { get; set; }
-
-        [Column("Color")]
         public string? Color { get; set; }
 
-        [Column("UserId")]
-        public string? UserId { get; set; }
-
-        [Column("ReminderMinutes")]
         public int? ReminderMinutes { get; set; }
 
+        public string? Description { get; set; }
+
+        public bool IsAllDay { get; set; } = false;
+
+        public string? UserId { get; set; }
+
+        public DateTimeOffset Created_At { get; set; }
     }
 }

@@ -1913,7 +1913,6 @@
 //    )
 
 //}
-
 "use client"
 
 import { useEffect, useMemo, useState } from "react"
@@ -1922,11 +1921,10 @@ import {
     ChevronRight,
     Trash2,
     Pencil,
-    Bell,
     Search,
     CalendarDays,
     Clock3,
-    Tag,
+    FileText,
 } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
@@ -1957,22 +1955,11 @@ interface CalendarEvent {
     priority: "Low" | "Medium" | "High"
     color?: string
     reminderMinutes?: number
+    description?: string
+    isAllDay?: boolean
 }
 
 const API_URL = "https://steadfast-warmth-production-64c8.up.railway.app/api/CalendarEvents"
-
-const saveGlobalNotification = (message: string) => {
-    const existing = JSON.parse(localStorage.getItem("globalNotifications") || "[]")
-
-    const newNotif = {
-        id: Date.now(),
-        text: message,
-        isRead: false,
-    }
-
-    localStorage.setItem("globalNotifications", JSON.stringify([newNotif, ...existing]))
-    window.dispatchEvent(new Event("new-notification"))
-}
 
 const MONTHS = [
     "January", "February", "March", "April", "May", "June",
@@ -2007,8 +1994,14 @@ function formatTime(time: string) {
 }
 
 function isToday(dateStr: string) {
-    const today = new Date()
-    return dateStr === formatDate(today)
+    return dateStr === formatDate(new Date())
+}
+
+function getReminderLabel(minutes: number) {
+    if (minutes === 0) return "At time"
+    if (minutes < 60) return `${minutes} min before`
+    const hours = minutes / 60
+    return `${hours} hr before`
 }
 
 export function CalendarView() {
@@ -2019,7 +2012,6 @@ export function CalendarView() {
     const [detailOpen, setDetailOpen] = useState(false)
     const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null)
     const [editId, setEditId] = useState<string | null>(null)
-    const [triggeredEvents, setTriggeredEvents] = useState<Set<string>>(new Set())
 
     const [search, setSearch] = useState("")
     const [typeFilter, setTypeFilter] = useState("All")
@@ -2028,47 +2020,23 @@ export function CalendarView() {
     const [newEvent, setNewEvent] = useState({
         title: "",
         date: "",
-        time: "",
+        time: "09:00",
         type: "Meeting",
         priority: "Low" as "Low" | "Medium" | "High",
         color: "#3b82f6",
         reminder: 10,
+        description: "",
+        isAllDay: false,
     })
 
     useEffect(() => {
         fetchEvents()
     }, [])
 
-    useEffect(() => {
-        const interval = setInterval(() => {
-            const now = new Date()
-            const todayStr = formatDate(now)
-
-            events.forEach((event) => {
-                if (event.date !== todayStr) return
-                if (triggeredEvents.has(event.id)) return
-
-                const eventTime = new Date(`${event.date}T${event.time}`)
-                const reminderMinutes = event.reminderMinutes ?? 0
-                const reminderTime = new Date(eventTime.getTime() - reminderMinutes * 60000)
-                const diff = Math.abs(now.getTime() - reminderTime.getTime())
-
-                if (diff <= 20000) {
-                    const message = `${event.title} at ${formatTime(event.time)}`
-                    saveGlobalNotification(message)
-                    setTriggeredEvents((prev) => new Set(prev).add(event.id))
-                }
-            })
-        }, 15000)
-
-        return () => clearInterval(interval)
-    }, [events, triggeredEvents])
-
     async function fetchEvents() {
         const res = await fetch(API_URL, {
             headers: getAuthHeaders(),
         })
-
         const data = await res.json()
 
         const formatted = data.map((e: any) => ({
@@ -2111,12 +2079,14 @@ export function CalendarView() {
 
         const eventData = {
             title: newEvent.title,
-            date: newEvent.date + "T00:00:00",
-            time: newEvent.time || "09:00",
+            date: `${newEvent.date}T00:00:00`,
+            time: newEvent.isAllDay ? "00:00" : newEvent.time || "09:00",
             type: newEvent.type,
             priority: newEvent.priority,
             color: newEvent.color,
             reminderMinutes: newEvent.reminder,
+            description: newEvent.description,
+            isAllDay: newEvent.isAllDay,
         }
 
         let response
@@ -2138,43 +2108,24 @@ export function CalendarView() {
         if (!response.ok) {
             const err = await response.text()
             console.error("API ERROR:", err)
+            return
         }
 
-        if (response.ok) {
-            await fetchEvents()
-        }
-
-        const userId = localStorage.getItem("userId")
-        const eventDateTime = new Date(`${newEvent.date}T${newEvent.time || "09:00"}`)
-        const triggerTime = new Date(eventDateTime.getTime() - newEvent.reminder * 60000)
-
-        const newNotification = {
-            id: crypto.randomUUID(),
-            userId,
-            text: newEvent.title,
-            eventDate: eventDateTime.toISOString(),
-            triggerTime: triggerTime.toISOString(),
-            triggered: false,
-            isRead: false,
-            createdAt: new Date().toISOString(),
-        }
-
-        const existing = JSON.parse(localStorage.getItem("globalNotifications") || "[]")
-        localStorage.setItem("globalNotifications", JSON.stringify([newNotification, ...existing]))
-        window.dispatchEvent(new Event("new-notification"))
+        await fetchEvents()
 
         setDialogOpen(false)
         setEditId(null)
         setSelectedEvent(null)
-
         setNewEvent({
             title: "",
             date: "",
-            time: "",
+            time: "09:00",
             type: "Meeting",
             priority: "Low",
             color: "#3b82f6",
             reminder: 10,
+            description: "",
+            isAllDay: false,
         })
     }
 
@@ -2193,11 +2144,13 @@ export function CalendarView() {
         setNewEvent({
             title: event.title,
             date: event.date,
-            time: event.time,
+            time: event.time || "09:00",
             type: event.type,
             priority: event.priority,
             color: event.color || "#3b82f6",
             reminder: event.reminderMinutes || 10,
+            description: event.description || "",
+            isAllDay: !!event.isAllDay,
         })
 
         setEditId(event.id)
@@ -2209,11 +2162,13 @@ export function CalendarView() {
         setNewEvent({
             title: "",
             date: formatDate(currentDate),
-            time: String(hour).padStart(2, "0") + ":00",
+            time: `${String(hour).padStart(2, "0")}:00`,
             type: "Meeting",
             priority: "Low",
             color: "#3b82f6",
             reminder: 10,
+            description: "",
+            isAllDay: false,
         })
 
         setEditId(null)
@@ -2229,6 +2184,8 @@ export function CalendarView() {
             priority: "Low",
             color: "#3b82f6",
             reminder: 10,
+            description: "",
+            isAllDay: false,
         })
         setEditId(null)
         setDialogOpen(true)
@@ -2252,7 +2209,7 @@ export function CalendarView() {
 
     const todayEvents = filteredEvents.filter((e) => e.date === formatDate(new Date()))
     const upcomingEvents = filteredEvents
-        .filter((e) => new Date(`${e.date}T${e.time}`) >= new Date())
+        .filter((e) => new Date(`${e.date}T${e.time || "00:00"}`) >= new Date())
         .sort((a, b) => new Date(`${a.date}T${a.time}`).getTime() - new Date(`${b.date}T${b.time}`).getTime())
         .slice(0, 5)
 
@@ -2293,14 +2250,12 @@ export function CalendarView() {
                     </Button>
                 </div>
 
-                <div className="flex items-center gap-4">
-                    <Tabs value={view} onValueChange={(v) => setView(v as any)}>
-                        <TabsList>
-                            <TabsTrigger value="monthly">Monthly</TabsTrigger>
-                            <TabsTrigger value="daily">Daily</TabsTrigger>
-                        </TabsList>
-                    </Tabs>
-                </div>
+                <Tabs value={view} onValueChange={(v) => setView(v as "monthly" | "daily")}>
+                    <TabsList>
+                        <TabsTrigger value="monthly">Monthly</TabsTrigger>
+                        <TabsTrigger value="daily">Daily</TabsTrigger>
+                    </TabsList>
+                </Tabs>
             </div>
 
             <div className="grid gap-3 md:grid-cols-[1fr_180px_180px]">
@@ -2352,11 +2307,8 @@ export function CalendarView() {
                                 return (
                                     <div
                                         key={i}
-                                        className={cn(
-                                            "min-h-32 rounded-xl border p-2 transition",
-                                            day ? "cursor-pointer hover:shadow-sm" : "bg-muted/20",
-                                            isToday(dateStr) && "border-2 border-blue-600"
-                                        )}
+                                        className={`min-h-32 rounded-xl border p-2 transition ${day ? "cursor-pointer hover:shadow-sm" : "bg-muted/20"
+                                            } ${isToday(dateStr) ? "border-2 border-blue-600" : ""}`}
                                         onClick={() => {
                                             if (!day) return
                                             setCurrentDate(new Date(dateStr))
@@ -2391,7 +2343,9 @@ export function CalendarView() {
                                                     }}
                                                 >
                                                     <div className="truncate font-medium">{e.title}</div>
-                                                    <div className="text-muted-foreground">{formatTime(e.time)}</div>
+                                                    <div className="text-muted-foreground">
+                                                        {e.isAllDay ? "All day" : formatTime(e.time)}
+                                                    </div>
                                                 </div>
                                             ))}
 
@@ -2427,7 +2381,7 @@ export function CalendarView() {
 
                                     <div className="flex-1 pt-2">
                                         {getEventsForDate(formatDate(currentDate))
-                                            .filter((e) => Number(e.time.split(":")[0]) === hour)
+                                            .filter((e) => e.isAllDay || Number((e.time || "00:00").split(":")[0]) === hour)
                                             .map((e) => (
                                                 <div
                                                     key={e.id}
@@ -2445,7 +2399,7 @@ export function CalendarView() {
                                                         <div>
                                                             <div className="font-medium text-sm">{e.title}</div>
                                                             <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-                                                                <span>{formatTime(e.time)}</span>
+                                                                <span>{e.isAllDay ? "All day" : formatTime(e.time)}</span>
                                                                 <Badge variant="secondary" className="text-[10px]">
                                                                     {e.type}
                                                                 </Badge>
@@ -2455,10 +2409,7 @@ export function CalendarView() {
                                                             </div>
                                                         </div>
 
-                                                        <div
-                                                            className="flex gap-2"
-                                                            onClick={(ev) => ev.stopPropagation()}
-                                                        >
+                                                        <div className="flex gap-2" onClick={(ev) => ev.stopPropagation()}>
                                                             <Pencil
                                                                 className="h-4 w-4 cursor-pointer text-muted-foreground"
                                                                 onClick={() => handleEdit(e)}
@@ -2492,12 +2443,12 @@ export function CalendarView() {
                                 {todayEvents.map((e) => (
                                     <div
                                         key={e.id}
-                                        className="rounded-lg border p-3 cursor-pointer"
+                                        className="cursor-pointer rounded-lg border p-3"
                                         onClick={() => openDetail(e)}
                                     >
                                         <div className="font-medium text-sm">{e.title}</div>
                                         <div className="mt-1 text-xs text-muted-foreground">
-                                            {formatTime(e.time)} • {e.type}
+                                            {e.isAllDay ? "All day" : formatTime(e.time)} • {e.type}
                                         </div>
                                     </div>
                                 ))}
@@ -2518,12 +2469,12 @@ export function CalendarView() {
                                 {upcomingEvents.map((e) => (
                                     <div
                                         key={e.id}
-                                        className="rounded-lg border p-3 cursor-pointer"
+                                        className="cursor-pointer rounded-lg border p-3"
                                         onClick={() => openDetail(e)}
                                     >
                                         <div className="font-medium text-sm">{e.title}</div>
                                         <div className="mt-1 text-xs text-muted-foreground">
-                                            {e.date} • {formatTime(e.time)}
+                                            {e.date} • {e.isAllDay ? "All day" : formatTime(e.time)}
                                         </div>
                                     </div>
                                 ))}
@@ -2539,13 +2490,11 @@ export function CalendarView() {
                         <>
                             <DialogHeader>
                                 <DialogTitle>{selectedEvent.title}</DialogTitle>
-                                <DialogDescription>
-                                    Event details
-                                </DialogDescription>
+                                <DialogDescription>Event details</DialogDescription>
                             </DialogHeader>
 
                             <div className="space-y-4">
-                                <div className="rounded-xl border p-4 space-y-3">
+                                <div className="space-y-3 rounded-xl border p-4">
                                     <div className="flex items-center justify-between">
                                         <span className="text-sm text-muted-foreground">Date</span>
                                         <span className="text-sm font-medium">{selectedEvent.date}</span>
@@ -2553,7 +2502,9 @@ export function CalendarView() {
 
                                     <div className="flex items-center justify-between">
                                         <span className="text-sm text-muted-foreground">Time</span>
-                                        <span className="text-sm font-medium">{formatTime(selectedEvent.time)}</span>
+                                        <span className="text-sm font-medium">
+                                            {selectedEvent.isAllDay ? "All day" : formatTime(selectedEvent.time)}
+                                        </span>
                                     </div>
 
                                     <div className="flex items-center justify-between">
@@ -2571,7 +2522,7 @@ export function CalendarView() {
                                     <div className="flex items-center justify-between">
                                         <span className="text-sm text-muted-foreground">Reminder</span>
                                         <span className="text-sm font-medium">
-                                            {selectedEvent.reminderMinutes ?? 0} min before
+                                            {getReminderLabel(selectedEvent.reminderMinutes ?? 0)}
                                         </span>
                                     </div>
 
@@ -2582,23 +2533,27 @@ export function CalendarView() {
                                             style={{ backgroundColor: selectedEvent.color }}
                                         />
                                     </div>
+
+                                    {!!selectedEvent.description && (
+                                        <div className="rounded-lg bg-muted/40 p-3">
+                                            <div className="mb-1 flex items-center gap-2 text-sm font-medium">
+                                                <FileText className="h-4 w-4 text-blue-600" />
+                                                Description
+                                            </div>
+                                            <p className="text-sm text-muted-foreground">
+                                                {selectedEvent.description}
+                                            </p>
+                                        </div>
+                                    )}
                                 </div>
 
                                 <div className="flex gap-2">
-                                    <Button
-                                        variant="outline"
-                                        className="flex-1"
-                                        onClick={() => handleEdit(selectedEvent)}
-                                    >
+                                    <Button variant="outline" className="flex-1" onClick={() => handleEdit(selectedEvent)}>
                                         <Pencil className="mr-2 h-4 w-4" />
                                         Edit
                                     </Button>
 
-                                    <Button
-                                        variant="destructive"
-                                        className="flex-1"
-                                        onClick={() => handleDelete(selectedEvent.id)}
-                                    >
+                                    <Button variant="destructive" className="flex-1" onClick={() => handleDelete(selectedEvent.id)}>
                                         <Trash2 className="mr-2 h-4 w-4" />
                                         Delete
                                     </Button>
@@ -2610,30 +2565,49 @@ export function CalendarView() {
             </Dialog>
 
             <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-                <DialogContent className="rounded-2xl">
-                    <DialogHeader>
-                        <DialogTitle>{editId ? "Edit Event" : "Add Event"}</DialogTitle>
-                        <DialogDescription>Enter event details</DialogDescription>
-                    </DialogHeader>
+                <DialogContent className="max-w-md overflow-hidden rounded-2xl border border-white/10 bg-white p-0 text-gray-900 shadow-xl dark:bg-[#020617] dark:text-white">
+                    <div className="bg-gradient-to-r from-blue-500 to-indigo-500 px-4 py-3 text-white">
+                        <DialogTitle className="text-base font-semibold">
+                            {editId ? "Edit Event" : "Add Event"}
+                        </DialogTitle>
+                        <DialogDescription className="mt-1 text-xs text-blue-100">
+                            Plan your day with clean event details
+                        </DialogDescription>
+                    </div>
 
-                    <div className="flex flex-col gap-4">
+                    <div className="flex flex-col gap-4 p-5">
                         <Input
                             placeholder="Title"
                             value={newEvent.title}
                             onChange={(e) => setNewEvent({ ...newEvent, title: e.target.value })}
+                            className="h-10 rounded-lg bg-gray-50 text-sm dark:bg-white/5"
                         />
 
                         <Input
                             type="date"
                             value={newEvent.date}
                             onChange={(e) => setNewEvent({ ...newEvent, date: e.target.value })}
+                            className="h-10 rounded-lg bg-gray-50 text-sm dark:bg-white/5"
                         />
 
-                        <Input
-                            type="time"
-                            value={newEvent.time}
-                            onChange={(e) => setNewEvent({ ...newEvent, time: e.target.value })}
-                        />
+                        <label className="flex items-center gap-2 text-sm">
+                            <input
+                                type="checkbox"
+                                checked={newEvent.isAllDay}
+                                onChange={(e) => setNewEvent({ ...newEvent, isAllDay: e.target.checked })}
+                                className="accent-blue-500"
+                            />
+                            All day event
+                        </label>
+
+                        {!newEvent.isAllDay && (
+                            <Input
+                                type="time"
+                                value={newEvent.time}
+                                onChange={(e) => setNewEvent({ ...newEvent, time: e.target.value })}
+                                className="h-10 rounded-lg bg-gray-50 text-sm dark:bg-white/5"
+                            />
+                        )}
 
                         <Select
                             value={newEvent.type}
@@ -2653,7 +2627,7 @@ export function CalendarView() {
 
                         <Select
                             value={newEvent.priority}
-                            onValueChange={(v) => setNewEvent({ ...newEvent, priority: v as any })}
+                            onValueChange={(v) => setNewEvent({ ...newEvent, priority: v as "Low" | "Medium" | "High" })}
                         >
                             <SelectTrigger>
                                 <SelectValue />
@@ -2678,8 +2652,16 @@ export function CalendarView() {
                                 <SelectItem value="10">10 minutes before</SelectItem>
                                 <SelectItem value="15">15 minutes before</SelectItem>
                                 <SelectItem value="30">30 minutes before</SelectItem>
+                                <SelectItem value="60">1 hour before</SelectItem>
                             </SelectContent>
                         </Select>
+
+                        <textarea
+                            placeholder="Description..."
+                            value={newEvent.description}
+                            onChange={(e) => setNewEvent({ ...newEvent, description: e.target.value })}
+                            className="min-h-[100px] rounded-lg border bg-gray-50 px-3 py-2 text-sm outline-none dark:border-white/10 dark:bg-white/5"
+                        />
 
                         <div className="flex flex-wrap gap-2">
                             {COLORS.map((color) => (
@@ -2693,7 +2675,10 @@ export function CalendarView() {
                             ))}
                         </div>
 
-                        <Button onClick={handleSave}>
+                        <Button
+                            onClick={handleSave}
+                            className="h-11 rounded-xl bg-gradient-to-r from-blue-500 to-indigo-500 text-sm transition hover:opacity-90"
+                        >
                             {editId ? "Save Changes" : "Add Event"}
                         </Button>
                     </div>
@@ -2701,8 +2686,4 @@ export function CalendarView() {
             </Dialog>
         </div>
     )
-}
-
-function cn(...classes: (string | false | null | undefined)[]) {
-    return classes.filter(Boolean).join(" ")
 }
