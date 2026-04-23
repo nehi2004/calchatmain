@@ -1739,8 +1739,6 @@
 //    )
 
 //}
-
-
 "use client"
 
 import React, { useEffect, useMemo, useRef, useState } from "react"
@@ -1774,6 +1772,7 @@ import {
     Pencil,
     Loader2,
     RefreshCw,
+    Trash2,
 } from "lucide-react"
 
 interface EventData {
@@ -1893,6 +1892,7 @@ export function ChatView() {
     const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>("connecting")
     const [isActionLoading, setIsActionLoading] = useState<string | null>(null)
     const [retryMessage, setRetryMessage] = useState<string | null>(null)
+    const [isClearing, setIsClearing] = useState(false)
 
     const [editDialogOpen, setEditDialogOpen] = useState(false)
     const [editingMessageId, setEditingMessageId] = useState<string | null>(null)
@@ -1977,48 +1977,43 @@ export function ChatView() {
         }
     }, [])
 
-    useEffect(() => {
-        const loadHistory = async () => {
-            try {
-                const token = localStorage.getItem("token")
-                const res = await fetch(`${API_BASE}/api/ai/history`, {
-                    headers: {
-                        Authorization: `Bearer ${token}`,
-                    },
-                })
+    const loadHistory = async () => {
+        try {
+            const token = localStorage.getItem("token")
+            const res = await fetch(`${API_BASE}/api/ai/history`, {
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                },
+            })
 
-                if (!res.ok) {
-                    throw new Error("Failed to load history")
-                }
-
-                const data = await res.json()
-
-                const historyMessages: Message[] = data
-                    .sort(
-                        (a: any, b: any) =>
-                            new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
-                    )
-                    .map((item: any) => ({
-                        id: uuidv4(),
-                        role: item.role,
-                        content: item.message,
-                        timestamp: item.timestamp,
-                    }))
-
-                setMessages(historyMessages.length > 0 ? historyMessages : initialMessages)
-            } catch (err) {
-                console.error("History load error:", err)
-                setMessages(initialMessages)
+            if (!res.ok) {
+                throw new Error("Failed to load history")
             }
-        }
 
+            const data = await res.json()
+
+            const historyMessages: Message[] = data.map((item: any) => ({
+                id: uuidv4(),
+                role: item.role,
+                content: item.message,
+                timestamp: item.timestamp,
+            }))
+
+            setMessages(historyMessages.length > 0 ? historyMessages : initialMessages)
+        } catch (err) {
+            console.error("History load error:", err)
+            setMessages(initialMessages)
+        }
+    }
+
+    useEffect(() => {
         loadHistory()
     }, [])
 
-    const saveMessageToDB = async (role: "user" | "assistant", content: string) => {
+    const saveActionMessage = async (role: "user" | "assistant", content: string) => {
         try {
             const token = localStorage.getItem("token")
-            await fetch(`${API_BASE}/api/ai/save-action`, {
+            const res = await fetch(`${API_BASE}/api/ai/save-action`, {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
@@ -2029,8 +2024,13 @@ export function ChatView() {
                     message: content,
                 }),
             })
+
+            if (!res.ok) {
+                const text = await res.text()
+                console.error("save-action failed:", text)
+            }
         } catch (err) {
-            console.error("Save error:", err)
+            console.error("Save action error:", err)
         }
     }
 
@@ -2061,8 +2061,9 @@ export function ChatView() {
         }
 
         setMessages((prev) => [...prev, newMessage])
-        await saveMessageToDB("assistant", content)
+        await saveActionMessage("assistant", content)
     }
+
     const handleSend = async (customInput?: string) => {
         const messageText = (customInput ?? input).trim()
         if (!messageText || isTyping) return
@@ -2216,11 +2217,32 @@ ${data?.time ? `Time: ${formatEventTime(data.time)}` : ""}`.trim()
         })
     }
 
-    const handleNewChat = () => {
-        setMessages(initialMessages)
-        setInput("")
-        setRetryMessage(null)
-        toast.success("Started a new chat")
+    const handleClearHistory = async () => {
+        try {
+            setIsClearing(true)
+            const token = localStorage.getItem("token")
+
+            const res = await fetch(`${API_BASE}/api/ai/history`, {
+                method: "DELETE",
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                },
+            })
+
+            if (!res.ok) {
+                throw new Error("Failed to clear history")
+            }
+
+            setMessages(initialMessages)
+            setRetryMessage(null)
+            setInput("")
+            toast.success("Chat history cleared")
+        } catch (err) {
+            console.error(err)
+            toast.error("Failed to clear history")
+        } finally {
+            setIsClearing(false)
+        }
     }
 
     const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -2241,8 +2263,18 @@ ${data?.time ? `Time: ${formatEventTime(data.time)}` : ""}`.trim()
                 </div>
 
                 <div className="flex items-center gap-2">
-                    <Button variant="outline" size="sm" onClick={handleNewChat}>
-                        New Chat
+                    <Button variant="outline" size="sm" onClick={loadHistory}>
+                        Refresh
+                    </Button>
+
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={handleClearHistory}
+                        disabled={isClearing}
+                    >
+                        <Trash2 className="mr-1 h-4 w-4" />
+                        Clear
                     </Button>
 
                     <Badge className={statusConfig.badgeClass}>
@@ -2266,16 +2298,11 @@ ${data?.time ? `Time: ${formatEventTime(data.time)}` : ""}`.trim()
                             {messages.map((message) => (
                                 <div
                                     key={message.id}
-                                    className={`flex gap-3 ${message.role === "user" ? "flex-row-reverse" : ""
-                                        }`}
+                                    className={`flex gap-3 ${message.role === "user" ? "flex-row-reverse" : ""}`}
                                 >
                                     <Avatar className="h-8 w-8">
                                         <AvatarFallback>
-                                            {message.role === "assistant" ? (
-                                                <Bot className="h-4 w-4" />
-                                            ) : (
-                                                "U"
-                                            )}
+                                            {message.role === "assistant" ? <Bot className="h-4 w-4" /> : "U"}
                                         </AvatarFallback>
                                     </Avatar>
 
@@ -2315,18 +2342,10 @@ ${data?.time ? `Time: ${formatEventTime(data.time)}` : ""}`.trim()
                                                 </div>
 
                                                 <div className="space-y-1 text-xs text-muted-foreground">
-                                                    <div>
-                                                        Date: {formatEventDate(message.eventData.date)}
-                                                    </div>
-                                                    <div>
-                                                        Time: {formatEventTime(message.eventData.time)}
-                                                    </div>
-                                                    <div>
-                                                        Type: {message.eventData.type || "AI"}
-                                                    </div>
-                                                    <div>
-                                                        Priority: {message.eventData.priority || "Medium"}
-                                                    </div>
+                                                    <div>Date: {formatEventDate(message.eventData.date)}</div>
+                                                    <div>Time: {formatEventTime(message.eventData.time)}</div>
+                                                    <div>Type: {message.eventData.type || "AI"}</div>
+                                                    <div>Priority: {message.eventData.priority || "Medium"}</div>
                                                 </div>
                                             </div>
                                         )}
@@ -2415,9 +2434,7 @@ ${data?.time ? `Time: ${formatEventTime(data.time)}` : ""}`.trim()
                     <CardContent className="border-t p-4">
                         {retryMessage && (
                             <div className="mb-3 flex items-center justify-between rounded-lg border bg-muted/40 px-3 py-2 text-xs">
-                                <span className="text-muted-foreground">
-                                    Last request saved for retry
-                                </span>
+                                <span className="text-muted-foreground">Last request saved for retry</span>
                                 <Button
                                     variant="ghost"
                                     size="sm"
@@ -2578,5 +2595,3 @@ ${data?.time ? `Time: ${formatEventTime(data.time)}` : ""}`.trim()
         </div>
     )
 }
-
-

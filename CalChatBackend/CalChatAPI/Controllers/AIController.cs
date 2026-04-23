@@ -146,7 +146,6 @@
 //        public string Message { get; set; }
 //    }
 //}
-
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
@@ -180,31 +179,30 @@ namespace CalChatAPI.Controllers
                 return Unauthorized();
 
             if (request == null || string.IsNullOrWhiteSpace(request.Message))
-                return BadRequest("Message required");
+                return BadRequest(new { error = "Message required" });
 
-            // 1. SAVE USER MESSAGE IMMEDIATELY
-            var userChat = new AIChatHistory
-            {
-                UserId = userId,
-                Role = "user",
-                Message = request.Message.Trim(),
-                Timestamp = DateTime.UtcNow
-            };
-
-            _context.AIChatHistories.Add(userChat);
-            await _context.SaveChangesAsync();
+            var cleanMessage = request.Message.Trim();
 
             try
             {
-                // 2. PROCESS AI
-                var result = await _aiService.ProcessMessage(userId, request.Message.Trim());
+                var userChat = new AIChatHistory
+                {
+                    UserId = userId,
+                    Role = "user",
+                    Message = cleanMessage,
+                    Timestamp = DateTime.UtcNow
+                };
 
-                var replyText = result.GetType()
+                _context.AIChatHistories.Add(userChat);
+                await _context.SaveChangesAsync();
+
+                var result = await _aiService.ProcessMessage(userId, cleanMessage);
+
+                var replyText = result?.GetType()
                     .GetProperty("reply")?
                     .GetValue(result)?
                     .ToString() ?? "I processed your request.";
 
-                // 3. SAVE AI REPLY
                 var aiChat = new AIChatHistory
                 {
                     UserId = userId,
@@ -220,19 +218,24 @@ namespace CalChatAPI.Controllers
             }
             catch (Exception ex)
             {
-                // 4. SAVE FAILURE MESSAGE TOO
                 var fallback = "AI server error. Please try again.";
 
-                var errorChat = new AIChatHistory
+                try
                 {
-                    UserId = userId,
-                    Role = "assistant",
-                    Message = fallback,
-                    Timestamp = DateTime.UtcNow
-                };
+                    var errorChat = new AIChatHistory
+                    {
+                        UserId = userId,
+                        Role = "assistant",
+                        Message = fallback,
+                        Timestamp = DateTime.UtcNow
+                    };
 
-                _context.AIChatHistories.Add(errorChat);
-                await _context.SaveChangesAsync();
+                    _context.AIChatHistories.Add(errorChat);
+                    await _context.SaveChangesAsync();
+                }
+                catch
+                {
+                }
 
                 return StatusCode(500, new
                 {
@@ -252,37 +255,12 @@ namespace CalChatAPI.Controllers
 
             var history = await _context.AIChatHistories
                 .Where(x => x.UserId == userId)
-                .OrderBy(x => x.Timestamp)
+                .OrderByDescending(x => x.Timestamp)
                 .Take(500)
+                .OrderBy(x => x.Timestamp)
                 .ToListAsync();
 
             return Ok(history);
-        }
-
-        // KEEP ONLY ONE STORAGE TABLE: AIChatHistories
-        [HttpPost("save")]
-        public async Task<IActionResult> SaveMessage([FromBody] ChatMessageDto dto)
-        {
-            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-
-            if (string.IsNullOrWhiteSpace(userId))
-                return Unauthorized();
-
-            if (dto == null || string.IsNullOrWhiteSpace(dto.Message))
-                return BadRequest("Invalid message");
-
-            var chat = new AIChatHistory
-            {
-                UserId = userId,
-                Role = string.IsNullOrWhiteSpace(dto.Role) ? "assistant" : dto.Role,
-                Message = dto.Message.Trim(),
-                Timestamp = DateTime.UtcNow
-            };
-
-            _context.AIChatHistories.Add(chat);
-            await _context.SaveChangesAsync();
-
-            return Ok();
         }
 
         [HttpPost("save-action")]
@@ -294,12 +272,12 @@ namespace CalChatAPI.Controllers
                 return Unauthorized();
 
             if (dto == null || string.IsNullOrWhiteSpace(dto.Message))
-                return BadRequest("Invalid message");
+                return BadRequest(new { error = "Invalid message" });
 
             var chat = new AIChatHistory
             {
                 UserId = userId,
-                Role = string.IsNullOrWhiteSpace(dto.Role) ? "assistant" : dto.Role,
+                Role = string.IsNullOrWhiteSpace(dto.Role) ? "assistant" : dto.Role.Trim(),
                 Message = dto.Message.Trim(),
                 Timestamp = DateTime.UtcNow
             };
@@ -307,7 +285,25 @@ namespace CalChatAPI.Controllers
             _context.AIChatHistories.Add(chat);
             await _context.SaveChangesAsync();
 
-            return Ok();
+            return Ok(new { message = "Saved" });
+        }
+
+        [HttpDelete("history")]
+        public async Task<IActionResult> ClearHistory()
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            if (string.IsNullOrWhiteSpace(userId))
+                return Unauthorized();
+
+            var messages = await _context.AIChatHistories
+                .Where(x => x.UserId == userId)
+                .ToListAsync();
+
+            _context.AIChatHistories.RemoveRange(messages);
+            await _context.SaveChangesAsync();
+
+            return Ok(new { message = "History cleared" });
         }
     }
 

@@ -1,5 +1,8 @@
-public class ChatMessageDto
+namespace CalChatAPI.Models
 {
-    public string Role { get; set; }
-    public string Message { get; set; }
+    public class ChatMessageDto
+    {
+        public string Role { get; set; } = string.Empty;
+        public string Message { get; set; } = string.Empty;
+    }
 }
