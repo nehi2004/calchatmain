@@ -1739,6 +1739,7 @@
 //    )
 
 //}
+
 "use client"
 
 import React, { useEffect, useMemo, useRef, useState } from "react"
@@ -1977,6 +1978,17 @@ export function ChatView() {
         }
     }, [])
 
+    const buildActions = (actionState?: string, eventData?: EventData): MessageAction[] | undefined => {
+        if (actionState === "pending" && eventData) {
+            return [
+                { type: "confirm", data: eventData },
+                { type: "edit", data: eventData },
+                { type: "cancel", data: eventData },
+            ]
+        }
+        return undefined
+    }
+
     const loadHistory = async () => {
         try {
             const token = localStorage.getItem("token")
@@ -1992,12 +2004,18 @@ export function ChatView() {
 
             const data = await res.json()
 
-            const historyMessages: Message[] = data.map((item: any) => ({
-                id: uuidv4(),
-                role: item.role,
-                content: item.message,
-                timestamp: item.timestamp,
-            }))
+            const historyMessages: Message[] = data.map((item: any) => {
+                const parsedEventData = item.eventDataJson ? JSON.parse(item.eventDataJson) : undefined
+                return {
+                    id: String(item.id ?? uuidv4()),
+                    role: item.role,
+                    content: item.message,
+                    timestamp: item.timestamp,
+                    eventData: parsedEventData,
+                    actionState: item.actionState || undefined,
+                    actions: buildActions(item.actionState, parsedEventData),
+                }
+            })
 
             setMessages(historyMessages.length > 0 ? historyMessages : initialMessages)
         } catch (err) {
@@ -2010,7 +2028,12 @@ export function ChatView() {
         loadHistory()
     }, [])
 
-    const saveActionMessage = async (role: "user" | "assistant", content: string) => {
+    const saveActionMessage = async (
+        role: "user" | "assistant",
+        content: string,
+        eventData?: EventData,
+        actionState?: "pending" | "confirmed" | "cancelled"
+    ) => {
         try {
             const token = localStorage.getItem("token")
             const res = await fetch(`${API_BASE}/api/ai/save-action`, {
@@ -2022,6 +2045,8 @@ export function ChatView() {
                 body: JSON.stringify({
                     role,
                     message: content,
+                    eventDataJson: eventData ? JSON.stringify(eventData) : null,
+                    actionState: actionState || null,
                 }),
             })
 
@@ -2051,7 +2076,12 @@ export function ChatView() {
         )
     }
 
-    const appendAssistantMessage = async (content: string, extra?: Partial<Message>) => {
+    const appendAssistantMessage = async (
+        content: string,
+        extra?: Partial<Message>,
+        persistEventData?: EventData,
+        persistActionState?: "pending" | "confirmed" | "cancelled"
+    ) => {
         const newMessage: Message = {
             id: uuidv4(),
             role: "assistant",
@@ -2061,7 +2091,7 @@ export function ChatView() {
         }
 
         setMessages((prev) => [...prev, newMessage])
-        await saveActionMessage("assistant", content)
+        await saveActionMessage("assistant", content, persistEventData, persistActionState)
     }
 
     const handleSend = async (customInput?: string) => {
@@ -2173,7 +2203,15 @@ ${data?.title ? `Title: ${data.title}` : ""}
 ${data?.date ? `Date: ${formatEventDate(data.date)}` : ""}
 ${data?.time ? `Time: ${formatEventTime(data.time)}` : ""}`.trim()
 
-            await appendAssistantMessage(confirmMessage)
+            await appendAssistantMessage(
+                confirmMessage,
+                {
+                    eventData: data,
+                    actionState: "confirmed",
+                },
+                data,
+                "confirmed"
+            )
         } catch (err) {
             console.error(err)
             toast.error("Failed to add event")
@@ -2183,10 +2221,16 @@ ${data?.time ? `Time: ${formatEventTime(data.time)}` : ""}`.trim()
         }
     }
 
-    const handleCancelAction = async (messageId: string) => {
+    const handleCancelAction = async (messageId: string, data?: EventData) => {
         updateMessageActionState(messageId, "cancelled")
         await appendAssistantMessage(
-            "No problem. The event was not added to your calendar. You can ask me to schedule another one anytime."
+            "No problem. The event was not added to your calendar. You can ask me to schedule another one anytime.",
+            {
+                eventData: data,
+                actionState: "cancelled",
+            },
+            data,
+            "cancelled"
         )
     }
 
@@ -2339,6 +2383,12 @@ ${data?.time ? `Time: ${formatEventTime(data.time)}` : ""}`.trim()
                                                             Cancelled
                                                         </Badge>
                                                     )}
+
+                                                    {message.actionState === "pending" && (
+                                                        <Badge className="bg-blue-500/10 text-blue-700">
+                                                            Pending
+                                                        </Badge>
+                                                    )}
                                                 </div>
 
                                                 <div className="space-y-1 text-xs text-muted-foreground">
@@ -2397,7 +2447,7 @@ ${data?.time ? `Time: ${formatEventTime(data.time)}` : ""}`.trim()
                                                                 size="sm"
                                                                 variant="ghost"
                                                                 disabled={isActionLoading === message.id}
-                                                                onClick={() => handleCancelAction(message.id)}
+                                                                onClick={() => handleCancelAction(message.id, action.data)}
                                                             >
                                                                 <X className="mr-1 h-3 w-3" />
                                                                 Cancel

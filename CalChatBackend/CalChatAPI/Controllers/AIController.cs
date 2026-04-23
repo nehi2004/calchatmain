@@ -150,6 +150,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
 using Microsoft.EntityFrameworkCore;
+using System.Text.Json;
 using CalChatAPI.Services;
 using CalChatAPI.Data;
 using CalChatAPI.Models;
@@ -198,17 +199,43 @@ namespace CalChatAPI.Controllers
 
                 var result = await _aiService.ProcessMessage(userId, cleanMessage);
 
-                var replyText = result?.GetType()
+                var resultType = result?.GetType();
+
+                var replyText = resultType?
                     .GetProperty("reply")?
                     .GetValue(result)?
                     .ToString() ?? "I processed your request.";
+
+                var action = resultType?
+                    .GetProperty("action")?
+                    .GetValue(result)?
+                    .ToString();
+
+                var eventData = resultType?
+                    .GetProperty("eventData")?
+                    .GetValue(result);
+
+                string? eventDataJson = null;
+                string? actionState = null;
+
+                if (eventData != null)
+                {
+                    eventDataJson = JsonSerializer.Serialize(eventData);
+                }
+
+                if (action == "confirm_event")
+                {
+                    actionState = "pending";
+                }
 
                 var aiChat = new AIChatHistory
                 {
                     UserId = userId,
                     Role = "assistant",
                     Message = replyText,
-                    Timestamp = DateTime.UtcNow
+                    Timestamp = DateTime.UtcNow,
+                    EventDataJson = eventDataJson,
+                    ActionState = actionState
                 };
 
                 _context.AIChatHistories.Add(aiChat);
@@ -258,6 +285,16 @@ namespace CalChatAPI.Controllers
                 .OrderByDescending(x => x.Timestamp)
                 .Take(500)
                 .OrderBy(x => x.Timestamp)
+                .Select(x => new
+                {
+                    x.Id,
+                    x.UserId,
+                    x.Role,
+                    message = x.Message,
+                    x.Timestamp,
+                    x.EventDataJson,
+                    x.ActionState
+                })
                 .ToListAsync();
 
             return Ok(history);
@@ -279,7 +316,9 @@ namespace CalChatAPI.Controllers
                 UserId = userId,
                 Role = string.IsNullOrWhiteSpace(dto.Role) ? "assistant" : dto.Role.Trim(),
                 Message = dto.Message.Trim(),
-                Timestamp = DateTime.UtcNow
+                Timestamp = DateTime.UtcNow,
+                EventDataJson = dto.EventDataJson,
+                ActionState = dto.ActionState
             };
 
             _context.AIChatHistories.Add(chat);
