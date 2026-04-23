@@ -2063,7 +2063,6 @@ export function ChatView() {
         setMessages((prev) => [...prev, newMessage])
         await saveMessageToDB("assistant", content)
     }
-
     const handleSend = async (customInput?: string) => {
         const messageText = (customInput ?? input).trim()
         if (!messageText || isTyping) return
@@ -2080,8 +2079,6 @@ export function ChatView() {
         setInput("")
         setIsTyping(true)
 
-        await saveMessageToDB("user", userMessage.content)
-
         try {
             const token = localStorage.getItem("token")
 
@@ -2094,11 +2091,11 @@ export function ChatView() {
                 body: JSON.stringify({ message: userMessage.content }),
             })
 
-            if (!res.ok) {
-                throw new Error("AI server error")
-            }
-
             const data = await res.json()
+
+            if (!res.ok) {
+                throw new Error(data?.error || "AI server error")
+            }
 
             const aiMessage: Message = {
                 id: uuidv4(),
