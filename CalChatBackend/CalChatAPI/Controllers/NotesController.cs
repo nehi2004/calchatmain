@@ -553,6 +553,31 @@ namespace CalChatAPI.Controllers
 
             return attachments;
         }
+        [HttpDelete("attachment/{attachmentId}")]
+        public async Task<IActionResult> DeleteAttachment(int attachmentId)
+        {
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+            if (string.IsNullOrEmpty(userId))
+                return Unauthorized();
+
+            var attachment = await _context.NoteAttachments
+                .Include(a => a.Note)
+                .FirstOrDefaultAsync(a => a.Id == attachmentId);
+
+            if (attachment == null)
+                return NotFound(new { message = "Attachment not found" });
+
+            if (attachment.Note.CreatedById != userId)
+                return Forbid();
+
+            DeletePhysicalFile(attachment.FilePath);
+
+            _context.NoteAttachments.Remove(attachment);
+            await _context.SaveChangesAsync();
+
+            return Ok(new { message = "Attachment deleted successfully" });
+        }
 
         private void DeletePhysicalFile(string relativeFilePath)
         {

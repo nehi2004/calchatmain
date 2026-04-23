@@ -500,6 +500,8 @@ export function NotesView() {
     const [editId, setEditId] = useState<string | null>(null)
     const [selectedNote, setSelectedNote] = useState<Note | null>(null)
     const [detailOpen, setDetailOpen] = useState(false)
+    const [existingAttachments, setExistingAttachments] = useState<NoteAttachment[]>([])
+    const [deletingAttachmentId, setDeletingAttachmentId] = useState<number | null>(null)
 
     useEffect(() => {
         setRole(localStorage.getItem("role"))
@@ -514,7 +516,9 @@ export function NotesView() {
         setNewNote(defaultNote)
         setSelectedUsers([])
         setSelectedFiles([])
+        setExistingAttachments([])
     }
+
 
     const getColor = (category: string) => {
         switch (category) {
@@ -649,6 +653,65 @@ export function NotesView() {
             alert("Save failed")
         }
     }
+    const handleDeleteAttachment = async (attachmentId: number) => {
+        const confirmDelete = confirm("Are you sure you want to remove this attachment?")
+        if (!confirmDelete) return
+
+        try {
+            setDeletingAttachmentId(attachmentId)
+
+            const res = await fetch(
+                `https://steadfast-warmth-production-64c8.up.railway.app/api/Notes/attachment/${attachmentId}`,
+                {
+                    method: "DELETE",
+                    headers: {
+                        Authorization: `Bearer ${localStorage.getItem("token")}`,
+                    },
+                }
+            )
+
+            if (!res.ok) {
+                const errorText = await res.text()
+                console.error("Delete attachment failed:", errorText)
+                alert("Unable to delete attachment")
+                return
+            }
+
+            setExistingAttachments((prev) =>
+                prev.filter((attachment) => attachment.id !== attachmentId)
+            )
+
+            setNotes((prev) =>
+                prev.map((note) =>
+                    note.id === editId
+                        ? {
+                            ...note,
+                            attachments: (note.attachments || []).filter(
+                                (attachment) => attachment.id !== attachmentId
+                            ),
+                        }
+                        : note
+                )
+            )
+
+            setSelectedNote((prev) =>
+                prev
+                    ? {
+                        ...prev,
+                        attachments: (prev.attachments || []).filter(
+                            (attachment) => attachment.id !== attachmentId
+                        ),
+                    }
+                    : prev
+            )
+        } catch (error) {
+            console.error("Delete attachment error:", error)
+            alert("Unable to delete attachment")
+        } finally {
+            setDeletingAttachmentId(null)
+        }
+    }
+
 
     const openAttachment = async (attachmentId: number) => {
         try {
@@ -727,9 +790,11 @@ export function NotesView() {
         })
         setSelectedUsers(note.userIds || [])
         setSelectedFiles([])
+        setExistingAttachments(note.attachments || [])
         setDialogOpen(true)
         setDetailOpen(false)
     }
+
 
     async function handleDeleteNote(id: string) {
         const confirmDelete = confirm("Are you sure you want to delete this note?")
@@ -874,6 +939,47 @@ export function NotesView() {
                                                             >
                                                                 <X className="h-3.5 w-3.5" />
                                                             </button>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        )}
+                                        {editMode && existingAttachments.length > 0 && (
+                                            <div className="space-y-2 rounded-xl border bg-muted/20 p-3">
+                                                <div className="flex items-center justify-between">
+                                                    <p className="text-xs font-medium text-muted-foreground">
+                                                        Existing attachments ({existingAttachments.length})
+                                                    </p>
+                                                </div>
+
+                                                <div className="max-h-32 space-y-2 overflow-y-auto">
+                                                    {existingAttachments.map((attachment) => (
+                                                        <div
+                                                            key={attachment.id}
+                                                            className="flex items-center justify-between rounded-lg bg-background px-3 py-2 text-xs"
+                                                        >
+                                                            <div className="flex min-w-0 items-center gap-2">
+                                                                <Paperclip className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+                                                                <div className="min-w-0">
+                                                                    <p className="truncate font-medium">
+                                                                        {attachment.originalFileName}
+                                                                    </p>
+                                                                    <p className="text-muted-foreground">
+                                                                        {(attachment.fileSize / 1024 / 1024).toFixed(2)} MB
+                                                                    </p>
+                                                                </div>
+                                                            </div>
+
+                                                            <Button
+                                                                type="button"
+                                                                variant="ghost"
+                                                                size="icon"
+                                                                className="h-7 w-7 text-muted-foreground hover:text-destructive"
+                                                                disabled={deletingAttachmentId === attachment.id}
+                                                                onClick={() => handleDeleteAttachment(attachment.id)}
+                                                            >
+                                                                <Trash2 className="h-3.5 w-3.5" />
+                                                            </Button>
                                                         </div>
                                                     ))}
                                                 </div>
