@@ -650,16 +650,69 @@ export function NotesView() {
         }
     }
 
-    const openAttachment = (attachmentId: number) => {
-        const token = localStorage.getItem("token")
-        const url = `https://steadfast-warmth-production-64c8.up.railway.app/api/Notes/attachment/${attachmentId}/view?token=${token}`
-        window.open(url, "_blank")
+    const openAttachment = async (attachmentId: number) => {
+        try {
+            const res = await fetch(
+                `https://steadfast-warmth-production-64c8.up.railway.app/api/Notes/attachment/${attachmentId}/view`,
+                {
+                    headers: {
+                        Authorization: `Bearer ${localStorage.getItem("token")}`,
+                    },
+                }
+            )
+
+            if (!res.ok) {
+                const errorText = await res.text()
+                console.error("View failed:", errorText)
+                alert("Unable to open file")
+                return
+            }
+
+            const blob = await res.blob()
+            const blobUrl = URL.createObjectURL(blob)
+            window.open(blobUrl, "_blank")
+        } catch (error) {
+            console.error("Open attachment error:", error)
+            alert("Unable to open file")
+        }
     }
 
-    const downloadAttachment = (attachmentId: number) => {
-        const token = localStorage.getItem("token")
-        const url = `https://steadfast-warmth-production-64c8.up.railway.app/api/Notes/attachment/${attachmentId}/download?token=${token}`
-        window.open(url, "_blank")
+    const downloadAttachment = async (
+        attachmentId: number,
+        fileName: string
+    ) => {
+        try {
+            const res = await fetch(
+                `https://steadfast-warmth-production-64c8.up.railway.app/api/Notes/attachment/${attachmentId}/download`,
+                {
+                    headers: {
+                        Authorization: `Bearer ${localStorage.getItem("token")}`,
+                    },
+                }
+            )
+
+            if (!res.ok) {
+                const errorText = await res.text()
+                console.error("Download failed:", errorText)
+                alert("Unable to download file")
+                return
+            }
+
+            const blob = await res.blob()
+            const blobUrl = URL.createObjectURL(blob)
+
+            const link = document.createElement("a")
+            link.href = blobUrl
+            link.download = fileName
+            document.body.appendChild(link)
+            link.click()
+            link.remove()
+
+            URL.revokeObjectURL(blobUrl)
+        } catch (error) {
+            console.error("Download attachment error:", error)
+            alert("Unable to download file")
+        }
     }
 
     const openEditNote = (note: Note) => {
@@ -1104,6 +1157,7 @@ export function NotesView() {
                                                             variant="outline"
                                                             size="sm"
                                                             onClick={() => openAttachment(attachment.id)}
+
                                                             className="gap-1 rounded-lg"
                                                         >
                                                             <Eye className="h-3.5 w-3.5" />
@@ -1113,7 +1167,10 @@ export function NotesView() {
                                                         <Button
                                                             type="button"
                                                             size="sm"
-                                                            onClick={() => downloadAttachment(attachment.id)}
+                                                            onClick={() =>
+                                                                downloadAttachment(attachment.id, attachment.originalFileName)
+                                                            }
+
                                                             className="gap-1 rounded-lg"
                                                         >
                                                             <Download className="h-3.5 w-3.5" />
