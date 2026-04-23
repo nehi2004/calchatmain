@@ -1131,23 +1131,23 @@ export function MeetingsView() {
                                     </div>
                                 )}
 
-                                {/* TRANSCRIPT */}
-                                {/*{detailData.labeledTranscript && (*/}
-                                {/*    <div className="p-4 rounded-xl border">*/}
-                                {/*        <h3 className="font-semibold text-sm mb-3">📝 Transcript</h3>*/}
-                                {/*        <pre className="text-sm text-muted-foreground whitespace-pre-wrap font-sans leading-relaxed max-h-60 overflow-y-auto">*/}
-                                {/*            {detailData.labeledTranscript}*/}
-                                {/*        </pre>*/}
-                                {/*    </div>*/}
-                                {/*)}*/}
-                                {(detailData.labeledTranscript || detailData.transcript) && (
+                                 TRANSCRIPT 
+                                {detailData.labeledTranscript && (
                                     <div className="p-4 rounded-xl border">
                                         <h3 className="font-semibold text-sm mb-3">📝 Transcript</h3>
                                         <pre className="text-sm text-muted-foreground whitespace-pre-wrap font-sans leading-relaxed max-h-60 overflow-y-auto">
-                                            {detailData.labeledTranscript || detailData.transcript}
+                                            {detailData.labeledTranscript}
                                         </pre>
                                     </div>
                                 )}
+                                {/*{(detailData.labeledTranscript || detailData.transcript) && (*/}
+                                {/*    <div className="p-4 rounded-xl border">*/}
+                                {/*        <h3 className="font-semibold text-sm mb-3">📝 Transcript</h3>*/}
+                                {/*        <pre className="text-sm text-muted-foreground whitespace-pre-wrap font-sans leading-relaxed max-h-60 overflow-y-auto">*/}
+                                {/*            {detailData.labeledTranscript || detailData.transcript}*/}
+                                {/*        </pre>*/}
+                                {/*    </div>*/}
+                                {/*)}*/}
 
                                 {/* Duration */}
                                 {detailData.durationSeconds && (
