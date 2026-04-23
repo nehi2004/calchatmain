@@ -549,10 +549,439 @@
 //}
 
 
+//"use client"
+
+//import { useEffect, useState, useMemo } from "react"
+//import { TrendingUp, Clock, CheckCircle2, Target } from "lucide-react"
+//import { StatCard } from "./stat-card"
+
+//import {
+//    AreaChart,
+//    Area,
+//    BarChart,
+//    Bar,
+//    LineChart,
+//    Line,
+//    PieChart,
+//    Pie,
+//    Cell,
+//    XAxis,
+//    YAxis,
+//    CartesianGrid,
+//    Tooltip,
+//    ResponsiveContainer
+//} from "recharts"
+
+///* ================= TYPES ================= */
+
+//interface CalendarEvent {
+//    id: string
+//    title: string
+//    date: string
+//    priority: "Low" | "Medium" | "High"
+//}
+
+//interface Task {
+//    id: string
+//    title: string
+//    priority: "Low" | "Medium" | "High"
+//    status: "Todo" | "In Progress" | "Completed"
+//    deadline: string
+//}
+
+///* ================= API ================= */
+
+//const EVENTS_API = "https://steadfast-warmth-production-64c8.up.railway.app/api/CalendarEvents"
+//const TASKS_API = "https://steadfast-warmth-production-64c8.up.railway.app/api/Tasks"
+
+//function getAuthHeaders() {
+//    const token = localStorage.getItem("token")
+//    return {
+//        Authorization: `Bearer ${token}`
+//    }
+//}
+
+//export function AnalyticsView() {
+
+//    const [events, setEvents] = useState<CalendarEvent[]>([])
+//    const [tasks, setTasks] = useState<Task[]>([])
+
+//    useEffect(() => {
+//        fetchEvents()
+//        fetchTasks()
+//    }, [])
+
+//    /* ================= FETCH EVENTS ================= */
+
+//    async function fetchEvents() {
+
+//        const res = await fetch(EVENTS_API, {
+//            headers: getAuthHeaders()
+//        })
+
+//        const data = await res.json()
+
+//        const formatted = data.map((e: any) => ({
+//            ...e,
+//            date: e.date.split("T")[0]
+//        }))
+
+//        setEvents(formatted)
+//    }
+
+//    /* ================= FETCH TASKS ================= */
+
+//    async function fetchTasks() {
+
+//        const res = await fetch(TASKS_API, {
+//            headers: getAuthHeaders()
+//        })
+
+//        const data = await res.json()
+
+//        const formatted = data.map((t: any) => ({
+//            ...t,
+//            deadline: t.deadline ? t.deadline.split("T")[0] : ""
+//        }))
+
+//        setTasks(formatted)
+//    }
+
+//    /* ================= MERGED DATA ================= */
+
+//    const allItems = useMemo(() => {
+
+//        const eventsMapped = events.map(e => ({
+//            date: e.date,
+//            priority: e.priority
+//        }))
+
+//        const tasksMapped = tasks.map(t => ({
+//            date: t.deadline,
+//            priority: t.priority
+//        }))
+
+//        return [...eventsMapped, ...tasksMapped]
+
+//    }, [events, tasks])
+
+//    /* ================= DAILY GRAPH ================= */
+
+//    const dailyActivity = useMemo(() => {
+
+//        const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]
+
+//        const result: any = {}
+
+//        days.forEach(d => {
+//            result[d] = { day: d, tasks: 0 }
+//        })
+
+//        allItems.forEach(item => {
+
+//            if (!item.date) return
+
+//            const dayIndex = new Date(item.date).getDay()
+//            const day = days[dayIndex]
+
+//            result[day].tasks++
+
+//        })
+
+//        return Object.values(result)
+
+//    }, [allItems])
+
+//    /* ================= PRIORITY GRAPH ================= */
+
+//    const priorityData = useMemo(() => {
+
+//        const counts = {
+//            Low: 0,
+//            Medium: 0,
+//            High: 0
+//        }
+
+//        allItems.forEach(i => {
+//            counts[i.priority]++
+//        })
+
+//        return [
+//            { name: "Low", value: counts.Low, color: "#22c55e" },
+//            { name: "Medium", value: counts.Medium, color: "#f59e0b" },
+//            { name: "High", value: counts.High, color: "#ef4444" }
+//        ]
+
+//    }, [allItems])
+
+//    /* ================= MONTHLY GRAPH ================= */
+
+//    const monthlyData = useMemo(() => {
+
+//        const months = [
+//            "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+//            "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
+//        ]
+
+//        const result = months.map(m => ({
+//            month: m,
+//            tasks: 0
+//        }))
+
+//        allItems.forEach(item => {
+
+//            if (!item.date) return
+
+//            const index = new Date(item.date).getMonth()
+
+//            result[index].tasks++
+
+//        })
+
+//        return result
+
+//    }, [allItems])
+
+//    /* ================= TASK STATUS ================= */
+
+//    const taskStatusData = useMemo(() => {
+
+//        const todo = tasks.filter(t => t.status === "Todo").length
+//        const progress = tasks.filter(t => t.status === "In Progress").length
+//        const completed = tasks.filter(t => t.status === "Completed").length
+
+//        return [
+//            { name: "Todo", value: todo, color: "#64748b" },
+//            { name: "In Progress", value: progress, color: "#3b82f6" },
+//            { name: "Completed", value: completed, color: "#22c55e" }
+//        ]
+
+//    }, [tasks])
+
+//    /* ================= STATS ================= */
+
+//    const totalEvents = events.length
+//    const totalTasks = tasks.length
+//    const completedTasks = tasks.filter(t => t.status === "Completed").length
+
+//    const productivity =
+//        totalTasks > 0
+//            ? Math.round((completedTasks / totalTasks) * 100)
+//            : 0
+
+//    const tooltipStyle = {
+//        backgroundColor: "#fff",
+//        borderRadius: "8px"
+//    }
+
+//    return (
+
+//        <div className="flex flex-col gap-6">
+
+//            {/* ================= STATS ================= */}
+
+//            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+
+//                <StatCard
+//                    icon={TrendingUp}
+//                    title="Productivity"
+//                    value={`${productivity}%`}
+//                    description="Completed tasks"
+//                />
+
+//                <StatCard
+//                    icon={Clock}
+//                    title="Calendar Events"
+//                    value={String(totalEvents)}
+//                />
+
+//                <StatCard
+//                    icon={Target}
+//                    title="Total Tasks"
+//                    value={String(totalTasks)}
+//                />
+
+//                <StatCard
+//                    icon={CheckCircle2}
+//                    title="Completed Tasks"
+//                    value={String(completedTasks)}
+//                />
+
+//            </div>
+
+//            {/* ================= GRAPHS ================= */}
+
+//            <div className="grid gap-6 lg:grid-cols-2">
+
+//                {/* WEEKLY */}
+
+//                <div className="rounded-xl border bg-card p-6">
+
+//                    <h3 className="font-semibold text-lg">
+//                        Task Flow (Weekly)
+//                    </h3>
+
+//                    <div className="h-64 mt-4">
+
+//                        <ResponsiveContainer width="100%" height="100%">
+
+//                            <AreaChart data={dailyActivity}>
+
+//                                <CartesianGrid strokeDasharray="3 3" />
+
+//                                <XAxis dataKey="day" />
+
+//                                <YAxis />
+
+//                                <Tooltip contentStyle={tooltipStyle} />
+
+//                                <Area
+//                                    type="monotone"
+//                                    dataKey="tasks"
+//                                    stroke="#3b82f6"
+//                                    fill="#93c5fd"
+//                                />
+
+//                            </AreaChart>
+
+//                        </ResponsiveContainer>
+
+//                    </div>
+
+//                </div>
+
+//                {/* PRIORITY */}
+
+//                <div className="rounded-xl border bg-card p-6">
+
+//                    <h3 className="font-semibold text-lg">
+//                        Task Priority Breakdown
+//                    </h3>
+
+//                    <div className="h-64 mt-4">
+
+//                        <ResponsiveContainer width="100%" height="100%">
+
+//                            <PieChart>
+
+//                                <Pie
+//                                    data={priorityData}
+//                                    dataKey="value"
+//                                    nameKey="name"
+//                                    outerRadius={90}
+//                                    label
+//                                >
+
+//                                    {priorityData.map((e, i) => (
+//                                        <Cell key={i} fill={e.color} />
+//                                    ))}
+
+//                                </Pie>
+
+//                                <Tooltip contentStyle={tooltipStyle} />
+
+//                            </PieChart>
+
+//                        </ResponsiveContainer>
+
+//                    </div>
+
+//                </div>
+
+//                {/* MONTHLY */}
+
+//                <div className="rounded-xl border bg-card p-6">
+
+//                    <h3 className="font-semibold text-lg">
+//                        Monthly Activity
+//                    </h3>
+
+//                    <div className="h-64 mt-4">
+
+//                        <ResponsiveContainer width="100%" height="100%">
+
+//                            <LineChart data={monthlyData}>
+
+//                                <CartesianGrid strokeDasharray="3 3" />
+
+//                                <XAxis dataKey="month" />
+
+//                                <YAxis />
+
+//                                <Tooltip contentStyle={tooltipStyle} />
+
+//                                <Line
+//                                    type="monotone"
+//                                    dataKey="tasks"
+//                                    stroke="#6366f1"
+//                                    strokeWidth={3}
+//                                />
+
+//                            </LineChart>
+
+//                        </ResponsiveContainer>
+
+//                    </div>
+
+//                </div>
+
+//                {/* TASK STATUS */}
+
+//                <div className="rounded-xl border bg-card p-6">
+
+//                    <h3 className="font-semibold text-lg">
+//                        Task Progress Overview
+//                    </h3>
+
+//                    <div className="h-64 mt-4">
+
+//                        <ResponsiveContainer width="100%" height="100%">
+
+//                            <BarChart data={taskStatusData}>
+
+//                                <CartesianGrid strokeDasharray="3 3" />
+
+//                                <XAxis dataKey="name" />
+
+//                                <YAxis />
+
+//                                <Tooltip contentStyle={tooltipStyle} />
+
+//                                <Bar dataKey="value" radius={[4, 4, 0, 0]}>
+//                                    {taskStatusData.map((e, i) => (
+//                                        <Cell key={i} fill={e.color} />
+//                                    ))}
+//                                </Bar>
+
+//                            </BarChart>
+
+//                        </ResponsiveContainer>
+
+//                    </div>
+
+//                </div>
+
+//            </div>
+
+//        </div>
+//    )
+//}
+
+
+
 "use client"
 
-import { useEffect, useState, useMemo } from "react"
-import { TrendingUp, Clock, CheckCircle2, Target } from "lucide-react"
+import { useEffect, useMemo, useState } from "react"
+import {
+    TrendingUp,
+    Clock,
+    CheckCircle2,
+    Target,
+    AlertTriangle,
+    CalendarDays,
+    RefreshCw,
+    Inbox,
+} from "lucide-react"
 import { StatCard } from "./stat-card"
 
 import {
@@ -569,10 +998,10 @@ import {
     YAxis,
     CartesianGrid,
     Tooltip,
-    ResponsiveContainer
+    ResponsiveContainer,
+    Legend,
+    ComposedChart,
 } from "recharts"
-
-/* ================= TYPES ================= */
 
 interface CalendarEvent {
     id: string
@@ -587,9 +1016,8 @@ interface Task {
     priority: "Low" | "Medium" | "High"
     status: "Todo" | "In Progress" | "Completed"
     deadline: string
+    category?: string
 }
-
-/* ================= API ================= */
 
 const EVENTS_API = "https://steadfast-warmth-production-64c8.up.railway.app/api/CalendarEvents"
 const TASKS_API = "https://steadfast-warmth-production-64c8.up.railway.app/api/Tasks"
@@ -597,191 +1025,329 @@ const TASKS_API = "https://steadfast-warmth-production-64c8.up.railway.app/api/T
 function getAuthHeaders() {
     const token = localStorage.getItem("token")
     return {
-        Authorization: `Bearer ${token}`
+        Authorization: `Bearer ${token}`,
     }
 }
 
-export function AnalyticsView() {
+function formatShortDate(date: Date) {
+    return date.toLocaleDateString(undefined, {
+        month: "short",
+        day: "numeric",
+    })
+}
 
+function isOverdue(deadline?: string, status?: string) {
+    if (!deadline || status === "Completed") return false
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
+    const due = new Date(deadline)
+    due.setHours(0, 0, 0, 0)
+    return due.getTime() < today.getTime()
+}
+
+function isDueToday(deadline?: string, status?: string) {
+    if (!deadline || status === "Completed") return false
+    const today = new Date()
+    const due = new Date(deadline)
+    return today.toDateString() === due.toDateString()
+}
+
+export function AnalyticsView() {
     const [events, setEvents] = useState<CalendarEvent[]>([])
     const [tasks, setTasks] = useState<Task[]>([])
+    const [loading, setLoading] = useState(true)
+    const [refreshing, setRefreshing] = useState(false)
+    const [error, setError] = useState("")
 
     useEffect(() => {
-        fetchEvents()
-        fetchTasks()
+        loadData()
     }, [])
 
-    /* ================= FETCH EVENTS ================= */
+    async function loadData(isRefresh = false) {
+        try {
+            if (isRefresh) {
+                setRefreshing(true)
+            } else {
+                setLoading(true)
+            }
+            setError("")
 
-    async function fetchEvents() {
+            const [eventsRes, tasksRes] = await Promise.all([
+                fetch(EVENTS_API, { headers: getAuthHeaders() }),
+                fetch(TASKS_API, { headers: getAuthHeaders() }),
+            ])
 
-        const res = await fetch(EVENTS_API, {
-            headers: getAuthHeaders()
-        })
+            if (!eventsRes.ok || !tasksRes.ok) {
+                throw new Error("Failed to load analytics data")
+            }
 
-        const data = await res.json()
+            const eventsData = await eventsRes.json()
+            const tasksData = await tasksRes.json()
 
-        const formatted = data.map((e: any) => ({
-            ...e,
-            date: e.date.split("T")[0]
-        }))
+            const formattedEvents = eventsData.map((e: any) => ({
+                ...e,
+                date: e.date?.split("T")[0],
+            }))
 
-        setEvents(formatted)
+            const formattedTasks = tasksData.map((t: any) => ({
+                ...t,
+                deadline: t.deadline ? t.deadline.split("T")[0] : "",
+            }))
+
+            setEvents(formattedEvents)
+            setTasks(formattedTasks)
+        } catch (err) {
+            console.error(err)
+            setError("Unable to load analytics right now.")
+        } finally {
+            setLoading(false)
+            setRefreshing(false)
+        }
     }
 
-    /* ================= FETCH TASKS ================= */
+    const totalEvents = events.length
+    const totalTasks = tasks.length
+    const completedTasks = tasks.filter((t) => t.status === "Completed").length
+    const overdueTasks = tasks.filter((t) => isOverdue(t.deadline, t.status)).length
+    const dueTodayTasks = tasks.filter((t) => isDueToday(t.deadline, t.status)).length
 
-    async function fetchTasks() {
-
-        const res = await fetch(TASKS_API, {
-            headers: getAuthHeaders()
-        })
-
-        const data = await res.json()
-
-        const formatted = data.map((t: any) => ({
-            ...t,
-            deadline: t.deadline ? t.deadline.split("T")[0] : ""
-        }))
-
-        setTasks(formatted)
-    }
-
-    /* ================= MERGED DATA ================= */
+    const productivity = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0
 
     const allItems = useMemo(() => {
-
-        const eventsMapped = events.map(e => ({
+        const eventsMapped = events.map((e) => ({
+            type: "event" as const,
             date: e.date,
-            priority: e.priority
+            priority: e.priority,
         }))
 
-        const tasksMapped = tasks.map(t => ({
+        const tasksMapped = tasks.map((t) => ({
+            type: "task" as const,
             date: t.deadline,
-            priority: t.priority
+            priority: t.priority,
         }))
 
         return [...eventsMapped, ...tasksMapped]
-
     }, [events, tasks])
 
-    /* ================= DAILY GRAPH ================= */
+    const last7DaysActivity = useMemo(() => {
+        const today = new Date()
+        today.setHours(0, 0, 0, 0)
 
-    const dailyActivity = useMemo(() => {
-
-        const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]
-
-        const result: any = {}
-
-        days.forEach(d => {
-            result[d] = { day: d, tasks: 0 }
+        const days = Array.from({ length: 7 }, (_, i) => {
+            const d = new Date(today)
+            d.setDate(today.getDate() - (6 - i))
+            return {
+                dateKey: d.toISOString().split("T")[0],
+                label: formatShortDate(d),
+                tasks: 0,
+                events: 0,
+                total: 0,
+            }
         })
 
-        allItems.forEach(item => {
+        const map = new Map(days.map((d) => [d.dateKey, d]))
 
-            if (!item.date) return
-
-            const dayIndex = new Date(item.date).getDay()
-            const day = days[dayIndex]
-
-            result[day].tasks++
-
+        events.forEach((event) => {
+            if (!event.date) return
+            const day = map.get(event.date)
+            if (day) {
+                day.events += 1
+                day.total += 1
+            }
         })
 
-        return Object.values(result)
+        tasks.forEach((task) => {
+            if (!task.deadline) return
+            const day = map.get(task.deadline)
+            if (day) {
+                day.tasks += 1
+                day.total += 1
+            }
+        })
 
-    }, [allItems])
-
-    /* ================= PRIORITY GRAPH ================= */
+        return days
+    }, [events, tasks])
 
     const priorityData = useMemo(() => {
+        const counts = { Low: 0, Medium: 0, High: 0 }
 
-        const counts = {
-            Low: 0,
-            Medium: 0,
-            High: 0
-        }
-
-        allItems.forEach(i => {
-            counts[i.priority]++
+        allItems.forEach((item) => {
+            counts[item.priority]++
         })
 
         return [
             { name: "Low", value: counts.Low, color: "#22c55e" },
             { name: "Medium", value: counts.Medium, color: "#f59e0b" },
-            { name: "High", value: counts.High, color: "#ef4444" }
+            { name: "High", value: counts.High, color: "#ef4444" },
         ]
-
     }, [allItems])
 
-    /* ================= MONTHLY GRAPH ================= */
-
-    const monthlyData = useMemo(() => {
-
-        const months = [
-            "Jan", "Feb", "Mar", "Apr", "May", "Jun",
-            "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
-        ]
-
-        const result = months.map(m => ({
-            month: m,
-            tasks: 0
-        }))
-
-        allItems.forEach(item => {
-
-            if (!item.date) return
-
-            const index = new Date(item.date).getMonth()
-
-            result[index].tasks++
-
+    const last6MonthsData = useMemo(() => {
+        const now = new Date()
+        const months = Array.from({ length: 6 }, (_, i) => {
+            const d = new Date(now.getFullYear(), now.getMonth() - (5 - i), 1)
+            return {
+                key: `${d.getFullYear()}-${d.getMonth()}`,
+                month: d.toLocaleDateString(undefined, { month: "short" }),
+                tasks: 0,
+                events: 0,
+                total: 0,
+            }
         })
 
-        return result
+        const map = new Map(months.map((m) => [m.key, m]))
 
-    }, [allItems])
+        events.forEach((event) => {
+            if (!event.date) return
+            const d = new Date(event.date)
+            const key = `${d.getFullYear()}-${d.getMonth()}`
+            const bucket = map.get(key)
+            if (bucket) {
+                bucket.events += 1
+                bucket.total += 1
+            }
+        })
 
-    /* ================= TASK STATUS ================= */
+        tasks.forEach((task) => {
+            if (!task.deadline) return
+            const d = new Date(task.deadline)
+            const key = `${d.getFullYear()}-${d.getMonth()}`
+            const bucket = map.get(key)
+            if (bucket) {
+                bucket.tasks += 1
+                bucket.total += 1
+            }
+        })
+
+        return months
+    }, [events, tasks])
 
     const taskStatusData = useMemo(() => {
-
-        const todo = tasks.filter(t => t.status === "Todo").length
-        const progress = tasks.filter(t => t.status === "In Progress").length
-        const completed = tasks.filter(t => t.status === "Completed").length
+        const todo = tasks.filter((t) => t.status === "Todo").length
+        const progress = tasks.filter((t) => t.status === "In Progress").length
+        const completed = tasks.filter((t) => t.status === "Completed").length
 
         return [
             { name: "Todo", value: todo, color: "#64748b" },
             { name: "In Progress", value: progress, color: "#3b82f6" },
-            { name: "Completed", value: completed, color: "#22c55e" }
+            { name: "Completed", value: completed, color: "#22c55e" },
         ]
-
     }, [tasks])
 
-    /* ================= STATS ================= */
+    const insights = useMemo(() => {
+        const busiestDay =
+            [...last7DaysActivity].sort((a, b) => b.total - a.total)[0]?.label || "N/A"
 
-    const totalEvents = events.length
-    const totalTasks = tasks.length
-    const completedTasks = tasks.filter(t => t.status === "Completed").length
+        const topPriority =
+            [...priorityData].sort((a, b) => b.value - a.value)[0]?.name || "N/A"
 
-    const productivity =
-        totalTasks > 0
-            ? Math.round((completedTasks / totalTasks) * 100)
-            : 0
+        const mostActiveMonth =
+            [...last6MonthsData].sort((a, b) => b.total - a.total)[0]?.month || "N/A"
+
+        return {
+            busiestDay,
+            topPriority,
+            mostActiveMonth,
+        }
+    }, [last7DaysActivity, priorityData, last6MonthsData])
 
     const tooltipStyle = {
         backgroundColor: "#fff",
-        borderRadius: "8px"
+        borderRadius: "10px",
+        border: "1px solid #e5e7eb",
+    }
+
+    if (loading) {
+        return (
+            <div className="flex flex-col gap-6">
+                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+                    {Array.from({ length: 4 }).map((_, i) => (
+                        <div key={i} className="rounded-xl border bg-card p-6">
+                            <div className="animate-pulse space-y-3">
+                                <div className="h-4 w-28 rounded bg-muted" />
+                                <div className="h-8 w-20 rounded bg-muted" />
+                            </div>
+                        </div>
+                    ))}
+                </div>
+
+                <div className="grid gap-6 lg:grid-cols-2">
+                    {Array.from({ length: 4 }).map((_, i) => (
+                        <div key={i} className="rounded-xl border bg-card p-6">
+                            <div className="animate-pulse space-y-4">
+                                <div className="h-5 w-40 rounded bg-muted" />
+                                <div className="h-64 rounded bg-muted" />
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            </div>
+        )
+    }
+
+    if (error) {
+        return (
+            <div className="flex flex-col gap-6">
+                <div className="rounded-2xl border border-red-200 bg-red-50 p-8 text-center">
+                    <p className="font-medium text-red-700">{error}</p>
+                    <button
+                        onClick={() => loadData()}
+                        className="mt-4 rounded-lg bg-red-600 px-4 py-2 text-white"
+                    >
+                        Retry
+                    </button>
+                </div>
+            </div>
+        )
+    }
+
+    if (totalEvents === 0 && totalTasks === 0) {
+        return (
+            <div className="flex flex-col gap-6">
+                <div className="flex items-center justify-between">
+                    <h2 className="text-xl font-semibold">Analytics</h2>
+                    <button
+                        onClick={() => loadData(true)}
+                        className="inline-flex items-center rounded-lg border px-4 py-2 text-sm"
+                    >
+                        <RefreshCw className={`mr-2 h-4 w-4 ${refreshing ? "animate-spin" : ""}`} />
+                        Refresh
+                    </button>
+                </div>
+
+                <div className="flex flex-col items-center justify-center gap-3 rounded-2xl border border-dashed py-16 text-center">
+                    <Inbox className="h-10 w-10 text-muted-foreground" />
+                    <div>
+                        <p className="font-medium">No analytics data available</p>
+                        <p className="text-sm text-muted-foreground">
+                            Add tasks or calendar events to see analytics here.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        )
     }
 
     return (
-
         <div className="flex flex-col gap-6">
+            <div className="flex items-center justify-between">
+                <div>
+                    <h2 className="text-xl font-semibold">Analytics Overview</h2>
+                    <p className="text-sm text-muted-foreground">
+                        High-level insights for tasks and calendar activity
+                    </p>
+                </div>
 
-            {/* ================= STATS ================= */}
+                <button
+                    onClick={() => loadData(true)}
+                    className="inline-flex items-center rounded-lg border px-4 py-2 text-sm"
+                >
+                    <RefreshCw className={`mr-2 h-4 w-4 ${refreshing ? "animate-spin" : ""}`} />
+                    Refresh
+                </button>
+            </div>
 
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-
+            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-6">
                 <StatCard
                     icon={TrendingUp}
                     title="Productivity"
@@ -807,162 +1373,132 @@ export function AnalyticsView() {
                     value={String(completedTasks)}
                 />
 
+                <StatCard
+                    icon={AlertTriangle}
+                    title="Overdue"
+                    value={String(overdueTasks)}
+                />
+
+                <StatCard
+                    icon={CalendarDays}
+                    title="Due Today"
+                    value={String(dueTodayTasks)}
+                />
             </div>
 
-            {/* ================= GRAPHS ================= */}
-
-            <div className="grid gap-6 lg:grid-cols-2">
-
-                {/* WEEKLY */}
-
-                <div className="rounded-xl border bg-card p-6">
-
-                    <h3 className="font-semibold text-lg">
-                        Task Flow (Weekly)
-                    </h3>
-
-                    <div className="h-64 mt-4">
-
-                        <ResponsiveContainer width="100%" height="100%">
-
-                            <AreaChart data={dailyActivity}>
-
-                                <CartesianGrid strokeDasharray="3 3" />
-
-                                <XAxis dataKey="day" />
-
-                                <YAxis />
-
-                                <Tooltip contentStyle={tooltipStyle} />
-
-                                <Area
-                                    type="monotone"
-                                    dataKey="tasks"
-                                    stroke="#3b82f6"
-                                    fill="#93c5fd"
-                                />
-
-                            </AreaChart>
-
-                        </ResponsiveContainer>
-
-                    </div>
-
+            <div className="grid gap-4 lg:grid-cols-3">
+                <div className="rounded-xl border bg-card p-5">
+                    <p className="text-sm text-muted-foreground">Busiest Day</p>
+                    <h3 className="mt-1 text-lg font-semibold">{insights.busiestDay}</h3>
                 </div>
 
-                {/* PRIORITY */}
+                <div className="rounded-xl border bg-card p-5">
+                    <p className="text-sm text-muted-foreground">Highest Priority Load</p>
+                    <h3 className="mt-1 text-lg font-semibold">{insights.topPriority}</h3>
+                </div>
+
+                <div className="rounded-xl border bg-card p-5">
+                    <p className="text-sm text-muted-foreground">Most Active Month</p>
+                    <h3 className="mt-1 text-lg font-semibold">{insights.mostActiveMonth}</h3>
+                </div>
+            </div>
+
+            <div className="grid gap-6 lg:grid-cols-2">
+                <div className="rounded-xl border bg-card p-6">
+                    <h3 className="text-lg font-semibold">Last 7 Days Activity</h3>
+                    <div className="mt-4 h-72">
+                        <ResponsiveContainer width="100%" height="100%">
+                            <ComposedChart data={last7DaysActivity}>
+                                <CartesianGrid strokeDasharray="3 3" />
+                                <XAxis dataKey="label" />
+                                <YAxis />
+                                <Tooltip contentStyle={tooltipStyle} />
+                                <Legend />
+                                <Area
+                                    type="monotone"
+                                    dataKey="total"
+                                    stroke="#3b82f6"
+                                    fill="#93c5fd"
+                                    name="Total Activity"
+                                />
+                                <Bar dataKey="tasks" fill="#6366f1" radius={[4, 4, 0, 0]} name="Tasks" />
+                                <Bar dataKey="events" fill="#22c55e" radius={[4, 4, 0, 0]} name="Events" />
+                            </ComposedChart>
+                        </ResponsiveContainer>
+                    </div>
+                </div>
 
                 <div className="rounded-xl border bg-card p-6">
-
-                    <h3 className="font-semibold text-lg">
-                        Task Priority Breakdown
-                    </h3>
-
-                    <div className="h-64 mt-4">
-
+                    <h3 className="text-lg font-semibold">Priority Breakdown</h3>
+                    <div className="mt-4 h-72">
                         <ResponsiveContainer width="100%" height="100%">
-
                             <PieChart>
-
                                 <Pie
                                     data={priorityData}
                                     dataKey="value"
                                     nameKey="name"
-                                    outerRadius={90}
+                                    outerRadius={95}
                                     label
                                 >
-
-                                    {priorityData.map((e, i) => (
-                                        <Cell key={i} fill={e.color} />
+                                    {priorityData.map((entry, index) => (
+                                        <Cell key={index} fill={entry.color} />
                                     ))}
-
                                 </Pie>
-
                                 <Tooltip contentStyle={tooltipStyle} />
-
+                                <Legend />
                             </PieChart>
-
                         </ResponsiveContainer>
-
                     </div>
-
                 </div>
 
-                {/* MONTHLY */}
-
                 <div className="rounded-xl border bg-card p-6">
-
-                    <h3 className="font-semibold text-lg">
-                        Monthly Activity
-                    </h3>
-
-                    <div className="h-64 mt-4">
-
+                    <h3 className="text-lg font-semibold">Last 6 Months Activity</h3>
+                    <div className="mt-4 h-72">
                         <ResponsiveContainer width="100%" height="100%">
-
-                            <LineChart data={monthlyData}>
-
+                            <LineChart data={last6MonthsData}>
                                 <CartesianGrid strokeDasharray="3 3" />
-
                                 <XAxis dataKey="month" />
-
                                 <YAxis />
-
                                 <Tooltip contentStyle={tooltipStyle} />
-
+                                <Legend />
                                 <Line
                                     type="monotone"
                                     dataKey="tasks"
                                     stroke="#6366f1"
                                     strokeWidth={3}
+                                    name="Tasks"
                                 />
-
+                                <Line
+                                    type="monotone"
+                                    dataKey="events"
+                                    stroke="#22c55e"
+                                    strokeWidth={3}
+                                    name="Events"
+                                />
                             </LineChart>
-
                         </ResponsiveContainer>
-
                     </div>
-
                 </div>
-
-                {/* TASK STATUS */}
 
                 <div className="rounded-xl border bg-card p-6">
-
-                    <h3 className="font-semibold text-lg">
-                        Task Progress Overview
-                    </h3>
-
-                    <div className="h-64 mt-4">
-
+                    <h3 className="text-lg font-semibold">Task Progress Overview</h3>
+                    <div className="mt-4 h-72">
                         <ResponsiveContainer width="100%" height="100%">
-
                             <BarChart data={taskStatusData}>
-
                                 <CartesianGrid strokeDasharray="3 3" />
-
                                 <XAxis dataKey="name" />
-
                                 <YAxis />
-
                                 <Tooltip contentStyle={tooltipStyle} />
-
-                                <Bar dataKey="value" radius={[4, 4, 0, 0]}>
-                                    {taskStatusData.map((e, i) => (
-                                        <Cell key={i} fill={e.color} />
+                                <Bar dataKey="value" radius={[6, 6, 0, 0]}>
+                                    {taskStatusData.map((entry, index) => (
+                                        <Cell key={index} fill={entry.color} />
                                     ))}
                                 </Bar>
-
                             </BarChart>
-
                         </ResponsiveContainer>
-
                     </div>
-
                 </div>
-
             </div>
-
         </div>
     )
 }

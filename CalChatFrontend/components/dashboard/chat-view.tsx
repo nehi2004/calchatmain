@@ -1739,7 +1739,6 @@
 //    )
 
 //}
-
 "use client"
 
 import React, { useEffect, useMemo, useRef, useState } from "react"
@@ -1766,13 +1765,10 @@ import {
     Calendar,
     Clock,
     Sparkles,
-    Mic,
-    Paperclip,
     Check,
     X,
     Pencil,
     Loader2,
-    RefreshCw,
     Trash2,
 } from "lucide-react"
 
@@ -1892,7 +1888,6 @@ export function ChatView() {
     const [mounted, setMounted] = useState(false)
     const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>("connecting")
     const [isActionLoading, setIsActionLoading] = useState<string | null>(null)
-    const [retryMessage, setRetryMessage] = useState<string | null>(null)
     const [isClearing, setIsClearing] = useState(false)
 
     const [editDialogOpen, setEditDialogOpen] = useState(false)
@@ -2094,8 +2089,8 @@ export function ChatView() {
         await saveActionMessage("assistant", content, persistEventData, persistActionState)
     }
 
-    const handleSend = async (customInput?: string) => {
-        const messageText = (customInput ?? input).trim()
+    const handleSend = async () => {
+        const messageText = input.trim()
         if (!messageText || isTyping) return
 
         const userMessage: Message = {
@@ -2106,7 +2101,6 @@ export function ChatView() {
         }
 
         setMessages((prev) => [...prev, userMessage])
-        setRetryMessage(messageText)
         setInput("")
         setIsTyping(true)
 
@@ -2278,7 +2272,6 @@ ${data?.time ? `Time: ${formatEventTime(data.time)}` : ""}`.trim()
             }
 
             setMessages(initialMessages)
-            setRetryMessage(null)
             setInput("")
             toast.success("Chat history cleared")
         } catch (err) {
@@ -2447,7 +2440,9 @@ ${data?.time ? `Time: ${formatEventTime(data.time)}` : ""}`.trim()
                                                                 size="sm"
                                                                 variant="ghost"
                                                                 disabled={isActionLoading === message.id}
-                                                                onClick={() => handleCancelAction(message.id, action.data)}
+                                                                onClick={() =>
+                                                                    handleCancelAction(message.id, action.data)
+                                                                }
                                                             >
                                                                 <X className="mr-1 h-3 w-3" />
                                                                 Cancel
@@ -2482,46 +2477,21 @@ ${data?.time ? `Time: ${formatEventTime(data.time)}` : ""}`.trim()
                     </div>
 
                     <CardContent className="border-t p-4">
-                        {retryMessage && (
-                            <div className="mb-3 flex items-center justify-between rounded-lg border bg-muted/40 px-3 py-2 text-xs">
-                                <span className="text-muted-foreground">Last request saved for retry</span>
-                                <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    onClick={() => handleSend(retryMessage)}
-                                    disabled={isTyping}
-                                >
-                                    <RefreshCw className="mr-1 h-3 w-3" />
-                                    Retry
-                                </Button>
-                            </div>
-                        )}
-
                         <div className="mb-3 flex flex-wrap gap-2">
-                            {["Tomorrow morning", "Next free slot", "Add reminder", "This week meetings"].map(
-                                (chip) => (
-                                    <Button
-                                        key={chip}
-                                        variant="outline"
-                                        size="sm"
-                                        className="text-xs"
-                                        onClick={() => setInput(chip)}
-                                    >
-                                        {chip}
-                                    </Button>
-                                )
-                            )}
+                            {["Today plan", "help", "hello", "what is AI?"].map((chip) => (
+                                <Button
+                                    key={chip}
+                                    variant="outline"
+                                    size="sm"
+                                    className="text-xs"
+                                    onClick={() => setInput(chip)}
+                                >
+                                    {chip}
+                                </Button>
+                            ))}
                         </div>
 
                         <div className="flex gap-2">
-                            <Button
-                                variant="ghost"
-                                size="icon"
-                                onClick={() => toast.info("Attachment support coming soon")}
-                            >
-                                <Paperclip className="h-4 w-4" />
-                            </Button>
-
                             <Input
                                 ref={inputRef}
                                 value={input}
@@ -2530,15 +2500,7 @@ ${data?.time ? `Time: ${formatEventTime(data.time)}` : ""}`.trim()
                                 placeholder="Type message..."
                             />
 
-                            <Button
-                                variant="ghost"
-                                size="icon"
-                                onClick={() => toast.info("Voice input coming soon")}
-                            >
-                                <Mic className="h-4 w-4" />
-                            </Button>
-
-                            <Button onClick={() => handleSend()} disabled={!input.trim() || isTyping}>
+                            <Button onClick={handleSend} disabled={!input.trim() || isTyping}>
                                 {isTyping ? (
                                     <Loader2 className="h-4 w-4 animate-spin" />
                                 ) : (
