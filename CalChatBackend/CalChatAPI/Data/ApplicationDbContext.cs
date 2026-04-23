@@ -52,7 +52,9 @@ namespace CalChatAPI.Data
         public DbSet<RolePermission> RolePermissions { get; set; }
         public DbSet<ChatMessage> ChatMessages { get; set; }
         public DbSet<MessageRead> MessageReads { get; set; }
-       
+        public DbSet<NoteAttachment> NoteAttachments { get; set; }
+
+
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -69,6 +71,13 @@ namespace CalChatAPI.Data
                 .HasOne(mp => mp.Meeting)
                 .WithMany(m => m.Participants)
                 .HasForeignKey(mp => mp.MeetingId);
+
+            modelBuilder.Entity<NoteAttachment>()
+    .HasOne(na => na.Note)
+    .WithMany(n => n.Attachments)
+    .HasForeignKey(na => na.NoteId)
+    .OnDelete(DeleteBehavior.Cascade);
+
         }
     }
 }

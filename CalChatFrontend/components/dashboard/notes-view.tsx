@@ -1,23 +1,453 @@
 
 
 
+//"use client"
+
+//import { useState, useEffect } from "react"
+//import { Plus, Search, Trash2, Clock } from "lucide-react"
+//import { Button } from "@/components/ui/button"
+//import { Input } from "@/components/ui/input"
+//import { Badge } from "@/components/ui/badge"
+//import { Textarea } from "@/components/ui/textarea"
+//import {
+//    Dialog,
+//    DialogContent,
+//    DialogHeader,
+//    DialogTitle,
+//    DialogTrigger,
+//} from "@/components/ui/dialog"
+//import { Label } from "@/components/ui/label"
+//import { cn } from "@/lib/utils"
+//import {
+//    Select,
+//    SelectContent,
+//    SelectItem,
+//    SelectTrigger,
+//    SelectValue,
+//} from "@/components/ui/select"
+
+//interface Note {
+//    id: string
+//    title: string
+//    content: string
+//    category: string
+//    date: string
+//    color?: string
+//}
+
+//export function NotesView() {
+//    const [notes, setNotes] = useState<Note[]>([])
+//    const [users, setUsers] = useState<any[]>([])
+//    const [selectedUsers, setSelectedUsers] = useState<string[]>([])
+
+//    const [search, setSearch] = useState("")
+//    const [dialogOpen, setDialogOpen] = useState(false)
+//    const [selectedNote, setSelectedNote] = useState<Note | null>(null)
+
+
+//    const [newNote, setNewNote] = useState({
+//        title: "",
+//        content: "",
+//        category: "Work",
+//    })
+
+//    const [role, setRole] = useState<string | null>(null)
+//    const [editMode, setEditMode] = useState(false)
+//    const [editId, setEditId] = useState<string | null>(null)
+
+//    useEffect(() => {
+//        const storedRole = localStorage.getItem("role")
+//        setRole(storedRole)
+//    }, [])
+//    // 🎨 Category Colors
+//    const getColor = (category: string) => {
+//        switch (category) {
+//            case "Work":
+//                return "border-l-primary"
+//            case "Client":
+//                return "border-l-accent"
+//            case "Ideas":
+//                return "border-l-chart-4"
+//            case "Meeting":
+//                return "border-l-chart-5"
+//            case "Learning":
+//                return "border-l-chart-3"
+//            default:
+//                return "border-l-primary"
+//        }
+//    }
+
+
+//    // ✅ Fetch Users (HR only)
+//    useEffect(() => {
+//        if (role?.toLowerCase() === "hr") {
+//            fetch("https://steadfast-warmth-production-64c8.up.railway.app/api/hr/employees", {
+//                headers: {
+//                    Authorization: `Bearer ${localStorage.getItem("token")}`,
+//                },
+//            })
+//                .then(async (res) => {
+//                    console.log("STATUS 👉", res.status)
+//                    const data = await res.json()
+//                    console.log("EMPLOYEES API RESPONSE 👉", data) // 👈 MOST IMPORTANT
+//                    setUsers(data)
+//                })
+//                .catch((err) => console.error("ERROR 👉", err))
+//        }
+//    }, [role])
+
+//    // 🔍 Search Filter
+//    const filteredNotes = notes.filter(
+//        (n) =>
+//            n.title.toLowerCase().includes(search.toLowerCase()) ||
+//            n.content.toLowerCase().includes(search.toLowerCase())
+//    )
+
+//    async function handleSaveNote() {
+//        // ✅ Validation
+//        if (!newNote.title.trim()) {
+//            alert("Title is required")
+//            return
+//        }
+
+//        if (selectedUsers.length === 0) {
+//            alert("Select at least one employee")
+//            return
+//        }
+
+//        const url = editMode
+//            ? `https://steadfast-warmth-production-64c8.up.railway.app/api/Notes/${editId}`
+//            : `https://steadfast-warmth-production-64c8.up.railway.app/api/Notes/create`
+
+//        const method = editMode ? "PUT" : "POST"
+
+//        const res = await fetch(url, {
+//            method,
+//            headers: {
+//                "Content-Type": "application/json",
+//                Authorization: `Bearer ${localStorage.getItem("token")}`,
+//            },
+//            body: JSON.stringify({
+//                Title: newNote.title,
+//                Content: newNote.content,
+//                Category: newNote.category,
+//                UserIds: selectedUsers,
+
+
+//            }),
+//        })
+
+//        if (!res.ok) {
+//            alert("Save failed")
+//            return
+//        }
+
+//        await fetchNotes()
+
+//        // reset
+//        setDialogOpen(false)
+//        setNewNote({ title: "", content: "", category: "Work" })
+//        setSelectedUsers([])
+//        setEditMode(false)
+//        setEditId(null)
+//    }
+
+//    const fetchNotes = async () => {
+//        const res = await fetch("https://steadfast-warmth-production-64c8.up.railway.app/api/Notes", {
+//            headers: {
+//                Authorization: `Bearer ${localStorage.getItem("token")}`,
+//            },
+//        })
+
+//        const data = await res.json()
+
+//        setNotes(
+//            data.map((n: Note) => ({
+//                ...n,
+//                color: getColor(n.category),
+//            }))
+//        )
+//    }
+
+//    useEffect(() => {
+//        fetchNotes()
+//    }, [])
+
+//    // ❌ Delete (UI only)
+//    async function handleDeleteNote(id: string) {
+//        const confirmDelete = confirm("Are you sure you want to delete this note?")
+
+//        if (!confirmDelete) return
+
+//        const res = await fetch(`https://steadfast-warmth-production-64c8.up.railway.app/api/Notes/${id}`, {
+//            method: "DELETE",
+//            headers: {
+//                Authorization: `Bearer ${localStorage.getItem("token")}`,
+//            },
+//        })
+
+//        if (!res.ok) {
+//            alert("Delete failed")
+//            return
+//        }
+
+//        await fetchNotes()
+//    }
+//    console.log("USERS STATE 👉", users)
+//    return (
+//        <div className="flex flex-col gap-6">
+//            {/* Header */}
+//            <div className="flex items-center justify-between">
+//                <div>
+//                    <h2 className="font-heading text-xl font-bold text-foreground">
+//                        Notes
+//                    </h2>
+//                    <p className="mt-1 text-sm text-muted-foreground">
+//                        {notes.length} notes
+//                    </p>
+//                </div>
+
+//                {/* ✅ HR ONLY BUTTON (Fixed) */}
+//                {role?.toLowerCase() === "hr" && (
+//                    <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+//                        <DialogTrigger asChild>
+//                            <Button className="gap-2">
+//                                <Plus className="h-4 w-4" /> New Note
+//                            </Button>
+//                        </DialogTrigger>
+
+//                        <DialogContent className="max-w-lg rounded-2xl p-0 overflow-hidden">
+
+//                            {/* HEADER */}
+//                            <div className="bg-gradient-to-r from-primary/90 to-primary p-5 text-white">
+//                                <DialogTitle className="text-lg font-semibold">
+//                                    {editMode ? "✏️ Edit Note" : "📝 Create Note"}
+//                                </DialogTitle>
+//                                <p className="text-xs opacity-80 mt-1">
+//                                    Capture important thoughts & share with your team
+//                                </p>
+//                            </div>
+
+//                            {/* BODY */}
+//                            <div className="p-5 space-y-5">
+
+//                                {/* TITLE */}
+//                                <div className="space-y-2">
+//                                    <Label className="text-sm font-medium">Title</Label>
+//                                    <Input
+//                                        placeholder="Enter note title..."
+//                                        value={newNote.title}
+//                                        onChange={(e) =>
+//                                            setNewNote({ ...newNote, title: e.target.value })
+//                                        }
+//                                        className="rounded-xl"
+//                                    />
+//                                </div>
+
+//                                {/* CONTENT */}
+//                                <div className="space-y-2">
+//                                    <Label className="text-sm font-medium">Content</Label>
+//                                    <Textarea
+//                                        placeholder="Write your note here..."
+//                                        rows={5}
+//                                        value={newNote.content}
+//                                        onChange={(e) =>
+//                                            setNewNote({ ...newNote, content: e.target.value })
+//                                        }
+//                                        className="rounded-xl resize-none"
+//                                    />
+//                                </div>
+
+//                                {/* ✅ UPDATED EMPLOYEE SELECT (CHECKBOX STYLE) */}
+//                                {role?.toLowerCase() === "hr" && (
+//                                    <div className="space-y-3">
+//                                        <Label className="text-sm font-medium">
+//                                            Assign to Employees
+//                                        </Label>
+
+//                                        {/* SELECTED USERS CHIPS */}
+//                                        <div className="flex flex-wrap gap-1">
+//                                            {selectedUsers.map(id => {
+//                                                const user = users.find(u => u.id === id)
+//                                                if (!user) return null
+
+//                                                return (
+//                                                    <div
+//                                                        key={id}
+//                                                        className="flex items-center gap-1 px-2 py-1 bg-blue-500/20 border border-blue-500/40 rounded-full text-[10px]"
+//                                                    >
+//                                                        {user.fullName || user.name}
+//                                                        <button
+//                                                            onClick={() =>
+//                                                                setSelectedUsers(prev => prev.filter(uid => uid !== id))
+//                                                            }
+//                                                            className="text-red-400"
+//                                                        >
+//                                                            ✕
+//                                                        </button>
+//                                                    </div>
+//                                                )
+//                                            })}
+//                                        </div>
+
+//                                        {/* USERS LIST */}
+//                                        <div className="max-h-32 overflow-y-auto rounded-lg border border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-white/5 p-1 space-y-1">
+
+//                                            {users.map(u => {
+//                                                const isSelected = selectedUsers.includes(u.id)
+
+//                                                return (
+//                                                    <label
+//                                                        key={u.id}
+//                                                        className={`flex items-center justify-between px-2 py-1 rounded-md cursor-pointer text-xs
+//                                ${isSelected
+//                                                                ? "bg-blue-500/20"
+//                                                                : "hover:bg-gray-200 dark:hover:bg-white/10"
+//                                                            }`}
+//                                                    >
+//                                                        <div className="flex items-center gap-2">
+//                                                            <input
+//                                                                type="checkbox"
+//                                                                checked={isSelected}
+//                                                                onChange={(e) => {
+//                                                                    if (e.target.checked) {
+//                                                                        setSelectedUsers(prev => [...prev, u.id])
+//                                                                    } else {
+//                                                                        setSelectedUsers(prev => prev.filter(id => id !== u.id))
+//                                                                    }
+//                                                                }}
+//                                                                className="accent-blue-500"
+//                                                            />
+//                                                            {u.fullName || u.name}
+//                                                        </div>
+
+//                                                        <div className="w-6 h-6 flex items-center justify-center rounded-full bg-blue-500 text-[10px] text-white">
+//                                                            {(u.fullName || u.name)?.charAt(0)}
+//                                                        </div>
+//                                                    </label>
+//                                                )
+//                                            })}
+//                                        </div>
+//                                    </div>
+//                                )}
+
+//                                {/* ACTION BUTTON */}
+//                                <Button
+//                                    onClick={handleSaveNote}
+//                                    className="w-full rounded-xl h-11 text-sm font-medium shadow-lg hover:scale-[1.02] transition"
+//                                >
+//                                    {editMode ? "Update Note ✏️" : "Save Note 🚀"}
+//                                </Button>
+
+//                            </div>
+//                        </DialogContent>
+//                    </Dialog>
+//                )}
+//            </div>
+
+//            {/* Search */}
+//            <div className="relative">
+//                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+//                <Input
+//                    placeholder="Search notes..."
+//                    value={search}
+//                    onChange={(e) => setSearch(e.target.value)}
+//                    className="pl-10"
+//                />
+//            </div>
+
+//            {/* Notes Grid */}
+//            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+//                {filteredNotes.map((note) => (
+//                    <div
+//                        key={note.id}
+//                        onClick={() => {
+//                            setEditMode(true)
+//                            setEditId(note.id)
+//                            setNewNote({
+//                                title: note.title,
+//                                content: note.content,
+//                                category: note.category,
+//                            })
+//                            setDialogOpen(true)
+//                        }}
+//                        className={cn(
+//                            "cursor-pointer rounded-xl border border-l-4 bg-card p-5 transition-all hover:shadow-md",
+//                            note.color,
+//                            selectedNote?.id === note.id && "ring-2 ring-primary"
+//                        )}
+//                    >
+//                        <div className="flex items-start justify-between">
+//                            <h3 className="font-heading text-sm font-semibold text-card-foreground">
+//                                {note.title}
+//                            </h3>
+
+//                            {role?.toLowerCase() === "hr" && (
+//                                <Button
+//                                    variant="ghost"
+//                                    size="icon"
+//                                    className="h-7 w-7 text-muted-foreground hover:text-destructive"
+//                                    onClick={(e) => {
+//                                        e.stopPropagation()
+//                                        handleDeleteNote(note.id)
+//                                    }}
+//                                >
+//                                    <Trash2 className="h-3.5 w-3.5" />
+//                                </Button>
+//                            )}
+//                        </div>
+
+//                        <p className="mt-2 line-clamp-3 text-xs leading-relaxed text-muted-foreground whitespace-pre-line">
+//                            {note.content}
+//                        </p>
+
+//                        <div className="mt-3 flex items-center justify-between">
+//                            <Badge variant="secondary" className="text-xs">
+//                                {note.category}
+//                            </Badge>
+
+//                            <span className="flex items-center gap-1 text-xs text-muted-foreground">
+//                                <Clock className="h-3 w-3" /> {note.date && note.date !== "0001-01-01T00:00:00"
+//                                    ? new Date(note.date).toLocaleDateString("en-IN", {
+//                                        day: "2-digit",
+//                                        month: "short",
+//                                        year: "numeric"
+//                                    })
+//                                    : "No Date"}
+//                            </span>
+//                        </div>
+//                    </div>
+//                ))}
+//            </div>
+
+//            {filteredNotes.length === 0 && (
+//                <p className="py-12 text-center text-sm text-muted-foreground">
+//                    No notes found
+//                </p>
+//            )}
+
+//        </div>
+//    )
+//}
+
+
+
+
+
 "use client"
 
-import { useState, useEffect } from "react"
-import { Plus, Search, Trash2, Clock } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
+import { useEffect, useState } from "react"
+import { Clock, Plus, Search, Trash2 } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
-import { Textarea } from "@/components/ui/textarea"
+import { Button } from "@/components/ui/button"
 import {
     Dialog,
     DialogContent,
-    DialogHeader,
     DialogTitle,
     DialogTrigger,
 } from "@/components/ui/dialog"
+import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { cn } from "@/lib/utils"
 import {
     Select,
     SelectContent,
@@ -25,6 +455,14 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select"
+import { Textarea } from "@/components/ui/textarea"
+import { cn } from "@/lib/utils"
+
+interface Employee {
+    id: string
+    fullName?: string
+    name?: string
+}
 
 interface Note {
     id: string
@@ -32,34 +470,42 @@ interface Note {
     content: string
     category: string
     date: string
+    createdById?: string
+    userIds: string[]
     color?: string
+}
+
+const defaultNote = {
+    title: "",
+    content: "",
+    category: "Work",
 }
 
 export function NotesView() {
     const [notes, setNotes] = useState<Note[]>([])
-    const [users, setUsers] = useState<any[]>([])
+    const [users, setUsers] = useState<Employee[]>([])
     const [selectedUsers, setSelectedUsers] = useState<string[]>([])
-
     const [search, setSearch] = useState("")
     const [dialogOpen, setDialogOpen] = useState(false)
-    const [selectedNote, setSelectedNote] = useState<Note | null>(null)
-
-
-    const [newNote, setNewNote] = useState({
-        title: "",
-        content: "",
-        category: "Work",
-    })
-
+    const [newNote, setNewNote] = useState(defaultNote)
     const [role, setRole] = useState<string | null>(null)
     const [editMode, setEditMode] = useState(false)
     const [editId, setEditId] = useState<string | null>(null)
 
     useEffect(() => {
-        const storedRole = localStorage.getItem("role")
-        setRole(storedRole)
+        setRole(localStorage.getItem("role"))
     }, [])
-    // 🎨 Category Colors
+
+    const currentUserId =
+        typeof window !== "undefined" ? localStorage.getItem("userId") : null
+
+    const resetForm = () => {
+        setEditMode(false)
+        setEditId(null)
+        setNewNote(defaultNote)
+        setSelectedUsers([])
+    }
+
     const getColor = (category: string) => {
         switch (category) {
             case "Work":
@@ -77,26 +523,52 @@ export function NotesView() {
         }
     }
 
-
-    // ✅ Fetch Users (HR only)
     useEffect(() => {
-        if (role?.toLowerCase() === "hr") {
-            fetch("https://steadfast-warmth-production-64c8.up.railway.app/api/hr/employees", {
+        if (role?.toLowerCase() !== "hr") return
+
+        fetch("https://steadfast-warmth-production-64c8.up.railway.app/api/hr/employees", {
+            headers: {
+                Authorization: `Bearer ${localStorage.getItem("token")}`,
+            },
+        })
+            .then(async (res) => {
+                if (!res.ok) throw new Error("Failed to fetch employees")
+                const data: Employee[] = await res.json()
+                setUsers(data)
+            })
+            .catch((err) => {
+                console.error("Employees fetch error:", err)
+            })
+    }, [role])
+
+    const fetchNotes = async () => {
+        try {
+            const res = await fetch("https://steadfast-warmth-production-64c8.up.railway.app/api/Notes", {
                 headers: {
                     Authorization: `Bearer ${localStorage.getItem("token")}`,
                 },
             })
-                .then(async (res) => {
-                    console.log("STATUS 👉", res.status)
-                    const data = await res.json()
-                    console.log("EMPLOYEES API RESPONSE 👉", data) // 👈 MOST IMPORTANT
-                    setUsers(data)
-                })
-                .catch((err) => console.error("ERROR 👉", err))
-        }
-    }, [role])
 
-    // 🔍 Search Filter
+            if (!res.ok) throw new Error("Failed to fetch notes")
+
+            const data: Note[] = await res.json()
+
+            setNotes(
+                data.map((n) => ({
+                    ...n,
+                    userIds: n.userIds ?? [],
+                    color: getColor(n.category),
+                }))
+            )
+        } catch (error) {
+            console.error("Notes fetch error:", error)
+        }
+    }
+
+    useEffect(() => {
+        fetchNotes()
+    }, [])
+
     const filteredNotes = notes.filter(
         (n) =>
             n.title.toLowerCase().includes(search.toLowerCase()) ||
@@ -104,7 +576,6 @@ export function NotesView() {
     )
 
     async function handleSaveNote() {
-        // ✅ Validation
         if (!newNote.title.trim()) {
             alert("Title is required")
             return
@@ -121,82 +592,63 @@ export function NotesView() {
 
         const method = editMode ? "PUT" : "POST"
 
-        const res = await fetch(url, {
-            method,
-            headers: {
-                "Content-Type": "application/json",
-                Authorization: `Bearer ${localStorage.getItem("token")}`,
-            },
-            body: JSON.stringify({
-                Title: newNote.title,
-                Content: newNote.content,
-                Category: newNote.category,
-                UserIds: selectedUsers,
-               
-                
-            }),
-        })
+        try {
+            const res = await fetch(url, {
+                method,
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${localStorage.getItem("token")}`,
+                },
+                body: JSON.stringify({
+                    Title: newNote.title,
+                    Content: newNote.content,
+                    Category: newNote.category,
+                    UserIds: selectedUsers,
+                }),
+            })
 
-        if (!res.ok) {
+            if (!res.ok) {
+                const errorText = await res.text()
+                alert(errorText || "Save failed")
+                return
+            }
+
+            await fetchNotes()
+            setDialogOpen(false)
+            resetForm()
+        } catch (error) {
+            console.error("Save note error:", error)
             alert("Save failed")
-            return
         }
-
-        await fetchNotes()
-
-        // reset
-        setDialogOpen(false)
-        setNewNote({ title: "", content: "", category: "Work" })
-        setSelectedUsers([])
-        setEditMode(false)
-        setEditId(null)
     }
 
-    const fetchNotes = async () => {
-        const res = await fetch("https://steadfast-warmth-production-64c8.up.railway.app/api/Notes", {
-            headers: {
-                Authorization: `Bearer ${localStorage.getItem("token")}`,
-            },
-        })
-
-        const data = await res.json()
-
-        setNotes(
-            data.map((n: Note) => ({
-                ...n,
-                color: getColor(n.category),
-            }))
-        )
-    }
-
-    useEffect(() => {
-        fetchNotes()
-    }, [])
-    
-    // ❌ Delete (UI only)
     async function handleDeleteNote(id: string) {
         const confirmDelete = confirm("Are you sure you want to delete this note?")
-
         if (!confirmDelete) return
 
-        const res = await fetch(`https://steadfast-warmth-production-64c8.up.railway.app/api/Notes/${id}`, {
-            method: "DELETE",
-            headers: {
-                Authorization: `Bearer ${localStorage.getItem("token")}`,
-            },
-        })
+        try {
+            const res = await fetch(`https://steadfast-warmth-production-64c8.up.railway.app/api/Notes/${id}`, {
+                method: "DELETE",
+                headers: {
+                    Authorization: `Bearer ${localStorage.getItem("token")}`,
+                },
+            })
 
-        if (!res.ok) {
+            if (!res.ok) {
+                const errorText = await res.text()
+                alert(errorText || "Delete failed")
+                return
+            }
+
+            await fetchNotes()
+        } catch (error) {
+            console.error("Delete note error:", error)
             alert("Delete failed")
-            return
         }
-
-        await fetchNotes()
     }
-    console.log("USERS STATE 👉", users)
+
     return (
         <div className="flex flex-col gap-6">
-            {/* Header */}
             <div className="flex items-center justify-between">
                 <div>
                     <h2 className="font-heading text-xl font-bold text-foreground">
@@ -207,31 +659,36 @@ export function NotesView() {
                     </p>
                 </div>
 
-                {/* ✅ HR ONLY BUTTON (Fixed) */}
                 {role?.toLowerCase() === "hr" && (
-                    <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+                    <Dialog
+                        open={dialogOpen}
+                        onOpenChange={(open) => {
+                            setDialogOpen(open)
+                            if (!open) resetForm()
+                        }}
+                    >
                         <DialogTrigger asChild>
-                            <Button className="gap-2">
+                            <Button
+                                className="gap-2"
+                                onClick={() => {
+                                    resetForm()
+                                }}
+                            >
                                 <Plus className="h-4 w-4" /> New Note
                             </Button>
                         </DialogTrigger>
 
-                        <DialogContent className="max-w-lg rounded-2xl p-0 overflow-hidden">
-
-                            {/* HEADER */}
+                        <DialogContent className="max-w-lg overflow-hidden rounded-2xl p-0">
                             <div className="bg-gradient-to-r from-primary/90 to-primary p-5 text-white">
                                 <DialogTitle className="text-lg font-semibold">
-                                    {editMode ? "✏️ Edit Note" : "📝 Create Note"}
+                                    {editMode ? "Edit Note" : "Create Note"}
                                 </DialogTitle>
-                                <p className="text-xs opacity-80 mt-1">
-                                    Capture important thoughts & share with your team
+                                <p className="mt-1 text-xs opacity-80">
+                                    Capture important thoughts and share with your team
                                 </p>
                             </div>
 
-                            {/* BODY */}
-                            <div className="p-5 space-y-5">
-
-                                {/* TITLE */}
+                            <div className="space-y-5 p-5">
                                 <div className="space-y-2">
                                     <Label className="text-sm font-medium">Title</Label>
                                     <Input
@@ -244,7 +701,6 @@ export function NotesView() {
                                     />
                                 </div>
 
-                                {/* CONTENT */}
                                 <div className="space-y-2">
                                     <Label className="text-sm font-medium">Content</Label>
                                     <Textarea
@@ -254,56 +710,77 @@ export function NotesView() {
                                         onChange={(e) =>
                                             setNewNote({ ...newNote, content: e.target.value })
                                         }
-                                        className="rounded-xl resize-none"
+                                        className="resize-none rounded-xl"
                                     />
                                 </div>
 
-                                {/* ✅ UPDATED EMPLOYEE SELECT (CHECKBOX STYLE) */}
+                                <div className="space-y-2">
+                                    <Label className="text-sm font-medium">Category</Label>
+                                    <Select
+                                        value={newNote.category}
+                                        onValueChange={(value) =>
+                                            setNewNote({ ...newNote, category: value })
+                                        }
+                                    >
+                                        <SelectTrigger className="rounded-xl">
+                                            <SelectValue placeholder="Select category" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="Work">Work</SelectItem>
+                                            <SelectItem value="Client">Client</SelectItem>
+                                            <SelectItem value="Ideas">Ideas</SelectItem>
+                                            <SelectItem value="Meeting">Meeting</SelectItem>
+                                            <SelectItem value="Learning">Learning</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+
                                 {role?.toLowerCase() === "hr" && (
                                     <div className="space-y-3">
                                         <Label className="text-sm font-medium">
                                             Assign to Employees
                                         </Label>
 
-                                        {/* SELECTED USERS CHIPS */}
                                         <div className="flex flex-wrap gap-1">
-                                            {selectedUsers.map(id => {
-                                                const user = users.find(u => u.id === id)
+                                            {selectedUsers.map((id) => {
+                                                const user = users.find((u) => u.id === id)
                                                 if (!user) return null
 
                                                 return (
                                                     <div
                                                         key={id}
-                                                        className="flex items-center gap-1 px-2 py-1 bg-blue-500/20 border border-blue-500/40 rounded-full text-[10px]"
+                                                        className="flex items-center gap-1 rounded-full border border-blue-500/40 bg-blue-500/20 px-2 py-1 text-[10px]"
                                                     >
                                                         {user.fullName || user.name}
                                                         <button
+                                                            type="button"
                                                             onClick={() =>
-                                                                setSelectedUsers(prev => prev.filter(uid => uid !== id))
+                                                                setSelectedUsers((prev) =>
+                                                                    prev.filter((uid) => uid !== id)
+                                                                )
                                                             }
                                                             className="text-red-400"
                                                         >
-                                                            ✕
+                                                            x
                                                         </button>
                                                     </div>
                                                 )
                                             })}
                                         </div>
 
-                                        {/* USERS LIST */}
-                                        <div className="max-h-32 overflow-y-auto rounded-lg border border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-white/5 p-1 space-y-1">
-
-                                            {users.map(u => {
+                                        <div className="max-h-32 space-y-1 overflow-y-auto rounded-lg border border-gray-200 bg-gray-50 p-1 dark:border-white/10 dark:bg-white/5">
+                                            {users.map((u) => {
                                                 const isSelected = selectedUsers.includes(u.id)
 
                                                 return (
                                                     <label
                                                         key={u.id}
-                                                        className={`flex items-center justify-between px-2 py-1 rounded-md cursor-pointer text-xs
-                                ${isSelected
+                                                        className={cn(
+                                                            "flex cursor-pointer items-center justify-between rounded-md px-2 py-1 text-xs",
+                                                            isSelected
                                                                 ? "bg-blue-500/20"
                                                                 : "hover:bg-gray-200 dark:hover:bg-white/10"
-                                                            }`}
+                                                        )}
                                                     >
                                                         <div className="flex items-center gap-2">
                                                             <input
@@ -311,9 +788,11 @@ export function NotesView() {
                                                                 checked={isSelected}
                                                                 onChange={(e) => {
                                                                     if (e.target.checked) {
-                                                                        setSelectedUsers(prev => [...prev, u.id])
+                                                                        setSelectedUsers((prev) => [...prev, u.id])
                                                                     } else {
-                                                                        setSelectedUsers(prev => prev.filter(id => id !== u.id))
+                                                                        setSelectedUsers((prev) =>
+                                                                            prev.filter((id) => id !== u.id)
+                                                                        )
                                                                     }
                                                                 }}
                                                                 className="accent-blue-500"
@@ -321,7 +800,7 @@ export function NotesView() {
                                                             {u.fullName || u.name}
                                                         </div>
 
-                                                        <div className="w-6 h-6 flex items-center justify-center rounded-full bg-blue-500 text-[10px] text-white">
+                                                        <div className="flex h-6 w-6 items-center justify-center rounded-full bg-blue-500 text-[10px] text-white">
                                                             {(u.fullName || u.name)?.charAt(0)}
                                                         </div>
                                                     </label>
@@ -331,23 +810,20 @@ export function NotesView() {
                                     </div>
                                 )}
 
-                                {/* ACTION BUTTON */}
                                 <Button
                                     onClick={handleSaveNote}
-                                    className="w-full rounded-xl h-11 text-sm font-medium shadow-lg hover:scale-[1.02] transition"
+                                    className="h-11 w-full rounded-xl text-sm font-medium shadow-lg transition hover:scale-[1.02]"
                                 >
-                                    {editMode ? "Update Note ✏️" : "Save Note 🚀"}
+                                    {editMode ? "Update Note" : "Save Note"}
                                 </Button>
-
                             </div>
                         </DialogContent>
                     </Dialog>
                 )}
             </div>
 
-            {/* Search */}
             <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                 <Input
                     placeholder="Search notes..."
                     value={search}
@@ -356,12 +832,13 @@ export function NotesView() {
                 />
             </div>
 
-            {/* Notes Grid */}
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 {filteredNotes.map((note) => (
                     <div
                         key={note.id}
                         onClick={() => {
+                            if (role?.toLowerCase() !== "hr") return
+
                             setEditMode(true)
                             setEditId(note.id)
                             setNewNote({
@@ -369,12 +846,13 @@ export function NotesView() {
                                 content: note.content,
                                 category: note.category,
                             })
+                            setSelectedUsers(note.userIds || [])
                             setDialogOpen(true)
                         }}
                         className={cn(
-                            "cursor-pointer rounded-xl border border-l-4 bg-card p-5 transition-all hover:shadow-md",
-                            note.color,
-                            selectedNote?.id === note.id && "ring-2 ring-primary"
+                            "rounded-xl border border-l-4 bg-card p-5 transition-all hover:shadow-md",
+                            role?.toLowerCase() === "hr" ? "cursor-pointer" : "",
+                            note.color
                         )}
                     >
                         <div className="flex items-start justify-between">
@@ -382,22 +860,23 @@ export function NotesView() {
                                 {note.title}
                             </h3>
 
-                            {role?.toLowerCase() === "hr" && (
-                                <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    className="h-7 w-7 text-muted-foreground hover:text-destructive"
-                                    onClick={(e) => {
-                                        e.stopPropagation()
-                                        handleDeleteNote(note.id)
-                                    }}
-                                >
-                                    <Trash2 className="h-3.5 w-3.5" />
-                                </Button>
-                            )}
+                            {role?.toLowerCase() === "hr" &&
+                                (!currentUserId || note.createdById === currentUserId) && (
+                                    <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        className="h-7 w-7 text-muted-foreground hover:text-destructive"
+                                        onClick={(e) => {
+                                            e.stopPropagation()
+                                            handleDeleteNote(note.id)
+                                        }}
+                                    >
+                                        <Trash2 className="h-3.5 w-3.5" />
+                                    </Button>
+                                )}
                         </div>
 
-                        <p className="mt-2 line-clamp-3 text-xs leading-relaxed text-muted-foreground whitespace-pre-line">
+                        <p className="mt-2 line-clamp-3 whitespace-pre-line text-xs leading-relaxed text-muted-foreground">
                             {note.content}
                         </p>
 
@@ -407,11 +886,12 @@ export function NotesView() {
                             </Badge>
 
                             <span className="flex items-center gap-1 text-xs text-muted-foreground">
-                                <Clock className="h-3 w-3" /> {note.date && note.date !== "0001-01-01T00:00:00"
+                                <Clock className="h-3 w-3" />
+                                {note.date && note.date !== "0001-01-01T00:00:00"
                                     ? new Date(note.date).toLocaleDateString("en-IN", {
                                         day: "2-digit",
                                         month: "short",
-                                        year: "numeric"
+                                        year: "numeric",
                                     })
                                     : "No Date"}
                             </span>
@@ -425,7 +905,6 @@ export function NotesView() {
                     No notes found
                 </p>
             )}
-
         </div>
     )
 }
