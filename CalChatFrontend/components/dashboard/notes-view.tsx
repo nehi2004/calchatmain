@@ -663,14 +663,15 @@ export function NotesView() {
 
             if (!res.ok) {
                 const errorText = await res.text()
-                console.error("View failed:", errorText)
-                alert("Unable to open file")
+                console.error("View failed status:", res.status)
+                console.error("View failed body:", errorText)
+                alert(`Unable to open file (${res.status})`)
                 return
             }
 
             const blob = await res.blob()
             const blobUrl = URL.createObjectURL(blob)
-            window.open(blobUrl, "_blank")
+            window.open(blobUrl, "_blank", "noopener,noreferrer")
         } catch (error) {
             console.error("Open attachment error:", error)
             alert("Unable to open file")
@@ -693,8 +694,9 @@ export function NotesView() {
 
             if (!res.ok) {
                 const errorText = await res.text()
-                console.error("Download failed:", errorText)
-                alert("Unable to download file")
+                console.error("Download failed status:", res.status)
+                console.error("Download failed body:", errorText)
+                alert(`Unable to download file (${res.status})`)
                 return
             }
 
@@ -708,7 +710,7 @@ export function NotesView() {
             link.click()
             link.remove()
 
-            URL.revokeObjectURL(blobUrl)
+            setTimeout(() => URL.revokeObjectURL(blobUrl), 1000)
         } catch (error) {
             console.error("Download attachment error:", error)
             alert("Unable to download file")
