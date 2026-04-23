@@ -284,7 +284,6 @@ public class MeetingController : ControllerBase
             .FirstOrDefaultAsync(m => m.Id == id);
 
         if (meeting == null) return NotFound();
-
         return Ok(new
         {
             meeting.Id,
@@ -297,8 +296,20 @@ public class MeetingController : ControllerBase
             meeting.Summary,
             meeting.Speakers,
             meeting.DurationSeconds,
-            meeting.HasRecording
+            meeting.HasRecording,
+
+            // ✅ ADD THIS
+            ParticipantIds = meeting.Participants
+                .Select(p => p.UserId)
+                .ToList(),
+
+            // ✅ ADD THIS (VERY IMPORTANT)
+            OrganizerEmail = await _context.Users
+                .Where(u => u.Id == meeting.OrganizerId)
+                .Select(u => u.Email)
+                .FirstOrDefaultAsync()
         });
+
     }
 
 
