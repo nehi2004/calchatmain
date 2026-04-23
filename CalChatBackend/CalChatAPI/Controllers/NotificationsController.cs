@@ -52,20 +52,27 @@ namespace CalChatAPI.Controllers
                     (ur, r) => r.Name)
                 .ToListAsync();
 
-            var isEmployee = roles.Contains("employee");
+            var normalizedRoles = roles
+     .Where(r => !string.IsNullOrWhiteSpace(r))
+     .Select(r => r.ToLower())
+     .ToList();
+
+            var canSeeAnnouncements =
+                normalizedRoles.Contains("employee") ||
+                normalizedRoles.Contains("professional");
 
             var notifications = await _context.Notifications
                 .Where(n => n.ToUserId == userId)
                 .OrderByDescending(n => n.CreatedAt)
                 .ToListAsync();
 
-            // 🚫 REMOVE ANNOUNCEMENT FOR NON-EMPLOYEE
-            if (!isEmployee)
+            if (!canSeeAnnouncements)
             {
                 notifications = notifications
                     .Where(n => n.Type != "announcement")
                     .ToList();
             }
+
 
             return Ok(notifications);
         }
@@ -213,5 +220,6 @@ namespace CalChatAPI.Controllers
 
             return Ok();
         }
+
     }
 }

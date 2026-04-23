@@ -1,6 +1,3 @@
-
-
-
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using CalChatAPI.Data;
@@ -37,7 +34,10 @@ namespace CalChatAPI.Controllers
             }
 
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            var userName = User.Identity?.Name ?? "HR";
+
+            var creator = await _context.Users.FindAsync(userId);
+            var userName = creator?.Name ?? User.Identity?.Name ?? "HR";
+
 
             // 🔥 FORCE FIX
             model.Id = 0;
@@ -51,23 +51,31 @@ namespace CalChatAPI.Controllers
                 await _context.SaveChangesAsync();
 
                 // ✅ GET ALL EMPLOYEES (EXCEPT CREATOR)
-                var employeeUsers = await _context.UserRoles
-    .Join(_context.Roles,
-        ur => ur.RoleId,
-        r => r.Id,
-        (ur, r) => new { ur.UserId, r.Name })
-   .Where(x =>
-    x.Name.ToLower() == "employee" ||
-    x.Name.ToLower() == "professional"
-)
-    .Select(x => x.UserId)
-    .ToListAsync();
+                var audience = (model.Audience ?? "").ToLower();
 
-                var users = await _context.Users
-                    .Where(u => employeeUsers.Contains(u.Id) && u.Id != userId)
+                var targetRoleNames = audience switch
+                {
+                    "employee" => new[] { "employee" },
+                    "professional" => new[] { "professional" },
+                    _ => new[] { "employee", "professional" }
+                };
+
+                var targetUserIds = await _context.UserRoles
+                    .Join(_context.Roles,
+                        ur => ur.RoleId,
+                        r => r.Id,
+                        (ur, r) => new { ur.UserId, RoleName = r.Name.ToLower() })
+                    .Where(x => targetRoleNames.Contains(x.RoleName))
+                    .Select(x => x.UserId)
+                    .Distinct()
                     .ToListAsync();
 
-              
+                var users = await _context.Users
+                    .Where(u => targetUserIds.Contains(u.Id) && u.Id != userId)
+                    .ToListAsync();
+
+
+
 
                 // ✅ CREATE NOTIFICATIONS
                 var notifications = users.Select(user => new Notification
@@ -76,11 +84,12 @@ namespace CalChatAPI.Controllers
                     ToUserId = user.Id,
                     FromUserName = userName,
                     Type = "announcement",
-                    Content = $"📢 {model.Title} - {model.Content}",
+                    Content = $"{userName} shared an announcement: {model.Title}",
                     Status = "info",
                     IsRead = false,
                     CreatedAt = DateTime.UtcNow
                 }).ToList();
+
 
                 _context.Notifications.AddRange(notifications);
                 await _context.SaveChangesAsync();
@@ -91,11 +100,15 @@ namespace CalChatAPI.Controllers
                     await _hub.Clients.User(user.Id).SendAsync("ReceiveNotification", new
                     {
                         type = "announcement",
+                        fromUserId = userId,
+                        createdByName = userName,
+                        fromUserName = userName,
                         title = model.Title,
-                        content = model.Content,
+                        content = $"{userName} shared an announcement: {model.Title}",
                         createdAt = DateTime.UtcNow
                     });
                 }
+
 
                 return Ok(new
                 {
@@ -109,41 +122,7 @@ namespace CalChatAPI.Controllers
             }
         }
 
-        // ✅ GET ALL
-        //[HttpGet]
-        //[Authorize(Roles = "employee,professional,hr")]
-        //public async Task<IActionResult> GetAnnouncements()
-        //{
-        //    foreach (var claim in User.Claims)
-        //    {
-        //        Console.WriteLine($"CLAIM: {claim.Type} = {claim.Value}");
-        //    }
 
-        //    var role = User.Claims
-        //        .Where(c => c.Type == ClaimTypes.Role
-        //            || c.Type == "role"
-        //            || c.Type.Contains("role"))
-        //        .Select(c => c.Value)
-        //        .FirstOrDefault()?.ToLower();
-
-        //    Console.WriteLine("ROLE FROM TOKEN: " + role);
-
-        //    if (string.IsNullOrEmpty(role))
-        //    {
-        //        return Forbid(); // 🔥 root cause check
-        //    }
-
-        //    if (role != "employee" && role != "professional" && role != "hr")
-        //    {
-        //        return Forbid();
-        //    }
-
-        //    var data = await _context.Announcements
-        //        .OrderByDescending(a => a.CreatedAt)
-        //        .ToListAsync();
-
-        //    return Ok(data);
-        //}
         [HttpGet]
         // [Authorize] ❌ remove this
         public async Task<IActionResult> GetAnnouncements()
