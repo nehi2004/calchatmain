@@ -171,8 +171,6 @@
 //        }
 //    }
 //}
-
-
 using Microsoft.AspNetCore.Mvc;
 using CalChatAPI.Data;
 using CalChatAPI.Models;
@@ -192,7 +190,6 @@ namespace CalChatAPI.Controllers
     {
         private readonly ApplicationDbContext _context;
         private readonly IHubContext<ChatHub> _hub;
-        private readonly IWebHostEnvironment _environment;
 
         private static readonly HashSet<string> AllowedExtensions = new(StringComparer.OrdinalIgnoreCase)
         {
@@ -203,12 +200,10 @@ namespace CalChatAPI.Controllers
 
         public NotesController(
             ApplicationDbContext context,
-            IHubContext<ChatHub> hub,
-            IWebHostEnvironment environment)
+            IHubContext<ChatHub> hub)
         {
             _context = context;
             _hub = hub;
-            _environment = environment;
         }
 
         [HttpPost("create")]
@@ -349,11 +344,6 @@ namespace CalChatAPI.Controllers
             if (note.CreatedById != userId)
                 return Forbid();
 
-            foreach (var attachment in note.Attachments)
-            {
-                DeletePhysicalFile(attachment.FilePath);
-            }
-
             var mappings = _context.NoteUsers.Where(nu => nu.NoteId == id);
             _context.NoteUsers.RemoveRange(mappings);
 
@@ -426,6 +416,7 @@ namespace CalChatAPI.Controllers
                 return BadRequest(new { message = ex.Message });
             }
         }
+
         [HttpGet("attachment/{attachmentId}/view")]
         public async Task<IActionResult> ViewAttachment(int attachmentId)
         {
@@ -440,7 +431,7 @@ namespace CalChatAPI.Controllers
                 .FirstOrDefaultAsync(a => a.Id == attachmentId);
 
             if (attachment == null)
-                return NotFound();
+                return NotFound(new { message = "Attachment not found" });
 
             var canAccess =
                 attachment.Note.CreatedById == userId ||
@@ -449,19 +440,10 @@ namespace CalChatAPI.Controllers
             if (!canAccess)
                 return Forbid();
 
-            var webRootPath = _environment.WebRootPath;
-            if (string.IsNullOrWhiteSpace(webRootPath))
-            {
-                webRootPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot");
-            }
+            if (attachment.FileData == null || attachment.FileData.Length == 0)
+                return NotFound(new { message = "File content not found. Please re-upload this attachment." });
 
-            var cleanPath = attachment.FilePath.TrimStart('/').Replace("/", Path.DirectorySeparatorChar.ToString());
-            var fullPath = Path.Combine(webRootPath, cleanPath);
-
-            if (!System.IO.File.Exists(fullPath))
-                return NotFound(new { message = "File not found" });
-
-            return PhysicalFile(fullPath, attachment.ContentType, enableRangeProcessing: true);
+            return File(attachment.FileData, attachment.ContentType, enableRangeProcessing: true);
         }
 
         [HttpGet("attachment/{attachmentId}/download")]
@@ -478,7 +460,7 @@ namespace CalChatAPI.Controllers
                 .FirstOrDefaultAsync(a => a.Id == attachmentId);
 
             if (attachment == null)
-                return NotFound();
+                return NotFound(new { message = "Attachment not found" });
 
             var canAccess =
                 attachment.Note.CreatedById == userId ||
@@ -487,72 +469,12 @@ namespace CalChatAPI.Controllers
             if (!canAccess)
                 return Forbid();
 
-            var webRootPath = _environment.WebRootPath;
-            if (string.IsNullOrWhiteSpace(webRootPath))
-            {
-                webRootPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot");
-            }
+            if (attachment.FileData == null || attachment.FileData.Length == 0)
+                return NotFound(new { message = "File content not found. Please re-upload this attachment." });
 
-            var cleanPath = attachment.FilePath.TrimStart('/').Replace("/", Path.DirectorySeparatorChar.ToString());
-            var fullPath = Path.Combine(webRootPath, cleanPath);
-
-            if (!System.IO.File.Exists(fullPath))
-                return NotFound(new { message = "File not found" });
-
-            return PhysicalFile(fullPath, attachment.ContentType, attachment.OriginalFileName);
+            return File(attachment.FileData, attachment.ContentType, attachment.OriginalFileName);
         }
 
-
-        private async Task<List<NoteAttachment>> SaveAttachmentsAsync(List<IFormFile> files, int noteId)
-        {
-            var attachments = new List<NoteAttachment>();
-
-            if (files == null || !files.Any())
-                return attachments;
-
-            var webRootPath = _environment.WebRootPath;
-            if (string.IsNullOrWhiteSpace(webRootPath))
-            {
-                webRootPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot");
-            }
-
-            var uploadsFolder = Path.Combine(webRootPath, "uploads", "notes");
-            Directory.CreateDirectory(uploadsFolder);
-
-            foreach (var file in files)
-            {
-                if (file == null || file.Length == 0)
-                    continue;
-
-                var extension = Path.GetExtension(file.FileName);
-                if (!AllowedExtensions.Contains(extension))
-                    throw new InvalidOperationException($"File type not allowed: {file.FileName}");
-
-                if (file.Length > MaxFileSize)
-                    throw new InvalidOperationException($"File too large: {file.FileName}");
-
-                var storedFileName = $"{Guid.NewGuid()}{extension}";
-                var fullPath = Path.Combine(uploadsFolder, storedFileName);
-
-                using (var stream = new FileStream(fullPath, FileMode.Create))
-                {
-                    await file.CopyToAsync(stream);
-                }
-
-                attachments.Add(new NoteAttachment
-                {
-                    NoteId = noteId,
-                    OriginalFileName = file.FileName,
-                    StoredFileName = storedFileName,
-                    ContentType = file.ContentType,
-                    FileSize = file.Length,
-                    FilePath = $"/uploads/notes/{storedFileName}",
-                    UploadedAt = DateTime.UtcNow
-                });
-            }
-
-            return attachments;
-        }
         [HttpDelete("attachment/{attachmentId}")]
         public async Task<IActionResult> DeleteAttachment(int attachmentId)
         {
@@ -571,32 +493,48 @@ namespace CalChatAPI.Controllers
             if (attachment.Note.CreatedById != userId)
                 return Forbid();
 
-            DeletePhysicalFile(attachment.FilePath);
-
             _context.NoteAttachments.Remove(attachment);
             await _context.SaveChangesAsync();
 
             return Ok(new { message = "Attachment deleted successfully" });
         }
 
-        private void DeletePhysicalFile(string relativeFilePath)
+        private async Task<List<NoteAttachment>> SaveAttachmentsAsync(List<IFormFile> files, int noteId)
         {
-            if (string.IsNullOrWhiteSpace(relativeFilePath))
-                return;
+            var attachments = new List<NoteAttachment>();
 
-            var webRootPath = _environment.WebRootPath;
-            if (string.IsNullOrWhiteSpace(webRootPath))
+            if (files == null || !files.Any())
+                return attachments;
+
+            foreach (var file in files)
             {
-                webRootPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot");
+                if (file == null || file.Length == 0)
+                    continue;
+
+                var extension = Path.GetExtension(file.FileName);
+                if (!AllowedExtensions.Contains(extension))
+                    throw new InvalidOperationException($"File type not allowed: {file.FileName}");
+
+                if (file.Length > MaxFileSize)
+                    throw new InvalidOperationException($"File too large: {file.FileName}");
+
+                await using var memoryStream = new MemoryStream();
+                await file.CopyToAsync(memoryStream);
+
+                attachments.Add(new NoteAttachment
+                {
+                    NoteId = noteId,
+                    OriginalFileName = file.FileName,
+                    StoredFileName = $"{Guid.NewGuid()}{extension}",
+                    ContentType = file.ContentType,
+                    FileSize = file.Length,
+                    FilePath = string.Empty,
+                    UploadedAt = DateTime.UtcNow,
+                    FileData = memoryStream.ToArray()
+                });
             }
 
-            var cleanPath = relativeFilePath.TrimStart('/').Replace("/", Path.DirectorySeparatorChar.ToString());
-            var fullPath = Path.Combine(webRootPath, cleanPath);
-
-            if (System.IO.File.Exists(fullPath))
-            {
-                System.IO.File.Delete(fullPath);
-            }
+            return attachments;
         }
     }
 }

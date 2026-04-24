@@ -1758,7 +1758,7 @@ export function NotesView() {
                 const errorText = await res.text()
                 console.error("View failed status:", res.status)
                 console.error("View failed body:", errorText)
-                alert(`Unable to open file (${res.status})`)
+                alert(`Unable to open file (${res.status}). Old files may need re-upload.`)
                 return
             }
 
@@ -1786,7 +1786,7 @@ export function NotesView() {
                 const errorText = await res.text()
                 console.error("Download failed status:", res.status)
                 console.error("Download failed body:", errorText)
-                alert(`Unable to download file (${res.status})`)
+                alert(`Unable to download file (${res.status}). Old files may need re-upload.`)
                 return
             }
 
@@ -1806,6 +1806,7 @@ export function NotesView() {
             alert("Unable to download file")
         }
     }
+
 
     const openEditNote = (note: Note) => {
         setEditMode(true)
