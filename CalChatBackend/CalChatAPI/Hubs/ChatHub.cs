@@ -241,11 +241,13 @@ namespace CalChatAPI.Hubs
 
             room.JoinedUserIds.Add(userId);
 
+            var joinedLabel = await GetUserDisplayLabel(userId);
+
             await PersistCallMessage(
                 chatId,
                 userId,
                 userName,
-                room.IsGroup ? $"{userName} joined the group call" : "Call accepted",
+                room.IsGroup ? $"{joinedLabel} joined the group call" : "Call accepted",
                 "read");
 
             var payload = new
@@ -355,6 +357,23 @@ namespace CalChatAPI.Hubs
                 candidate
             });
         }
+        private async Task<string> GetUserDisplayLabel(string userId)
+        {
+            if (string.IsNullOrWhiteSpace(userId))
+            {
+                return "Unknown User";
+            }
+
+            var user = await _context.Users.FindAsync(userId);
+            if (user == null)
+            {
+                return userId;
+            }
+
+            return !string.IsNullOrWhiteSpace(user.Email)
+                ? user.Email
+                : (!string.IsNullOrWhiteSpace(user.Name) ? user.Name : userId);
+        }
 
         public async Task LeaveCall(string chatId)
         {
@@ -371,7 +390,9 @@ namespace CalChatAPI.Hubs
             room.JoinedUserIds.Remove(userId);
             room.InvitedUserIds.Remove(userId);
 
-            await PersistCallMessage(chatId, userId, userName, $"{userName} left the call", "read");
+            var leftLabel = await GetUserDisplayLabel(userId);
+
+            await PersistCallMessage(chatId, userId, userName, $"{leftLabel} left the call", "read");
 
             var leftPayload = new
             {
@@ -400,5 +421,6 @@ namespace CalChatAPI.Hubs
                 CallRooms.TryRemove(chatId, out _);
             }
         }
+
     }
 }

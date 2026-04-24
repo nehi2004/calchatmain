@@ -1155,6 +1155,7 @@
 
 
 
+
 "use client"
 
 import { useEffect, useMemo, useRef, useState } from "react"
@@ -1273,6 +1274,7 @@ const mapMessage = (item: ApiMessage): Message => ({
     status: item.status || "read",
 })
 
+
 export function GroupStudyView() {
     const { connection, startOutgoingCall, clearCallState, isCallReady } = useCall()
 
@@ -1310,39 +1312,119 @@ export function GroupStudyView() {
 
     const [showStudentDirectory, setShowStudentDirectory] = useState(false)
     const [studentSearch, setStudentSearch] = useState("")
+    const bottomRef = useRef<HTMLDivElement | null>(null)
 
     const currentUserId = useMemo(
         () => (typeof window !== "undefined" ? localStorage.getItem("userId") ?? "" : ""),
         []
     )
+    const currentUserName = useMemo(() => {
+        if (typeof window === "undefined") return "You"
+        return localStorage.getItem("name") || "You"
+    }, [])
 
     const currentUserEmail = useMemo(() => {
         const currentUser = students.find(student => student.id === currentUserId)
-        return currentUser?.email || ""
+        return currentUser?.email || localStorage.getItem("email") || ""
     }, [students, currentUserId])
 
-    const bottomRef = useRef<HTMLDivElement>(null)
+    const getStudentById = (id?: string) => {
+        if (!id) return undefined
 
-    const getStudentById = (id?: string) => students.find(student => String(student.id) === String(id))
+        if (String(id) === String(currentUserId)) {
+            return {
+                id: currentUserId,
+                name: currentUserName,
+                email: currentUserEmail,
+                role: "student",
+            } as Student
+        }
+
+        return students.find(student => String(student.id) === String(id))
+    }
 
     const getStudentLabel = (id?: string) => {
         const student = getStudentById(id)
         return student?.email || student?.name || id || "Unknown User"
     }
 
-    const formatCallMessage = (msg: Message) => {
-        if (!msg.isCall) return msg.message
+    const replaceIdsWithLabels = (text: string) => {
+        if (!text) return text
 
-        let formatted = msg.message
+        let formatted = text
+
+        if (currentUserId) {
+            const currentUserSafeId = currentUserId.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
+            formatted = formatted.replace(
+                new RegExp(currentUserSafeId, "g"),
+                currentUserEmail || currentUserName || "You"
+            )
+        }
 
         students.forEach(student => {
             if (!student.id) return
             const safeId = student.id.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
-            formatted = formatted.replace(new RegExp(safeId, "g"), student.email || student.name)
+            formatted = formatted.replace(
+                new RegExp(safeId, "g"),
+                student.email || student.name
+            )
         })
 
         return formatted
     }
+
+    const formatCallMessage = (msg: Message) => {
+        if (!msg.isCall) return msg.message
+        return replaceIdsWithLabels(msg.message)
+    }
+
+    const getAbsoluteFileUrl = (fileUrl: string) => {
+        if (fileUrl.startsWith("http://") || fileUrl.startsWith("https://")) {
+            return fileUrl
+        }
+
+        return `${API_BASE}${fileUrl}`
+    }
+
+    const openFileWithAuth = async (fileUrl?: string, fileName?: string) => {
+        if (!fileUrl) return
+
+        try {
+            const response = await fetch(getAbsoluteFileUrl(fileUrl), {
+                headers: {
+                    Authorization: `Bearer ${localStorage.getItem("token") || ""}`,
+                },
+            })
+
+            if (!response.ok) {
+                throw new Error("Unable to open file")
+            }
+
+            const blob = await response.blob()
+            const blobUrl = window.URL.createObjectURL(blob)
+            const extension = fileUrl.split(".").pop()?.toLowerCase() || ""
+            const isPreviewable = ["png", "jpg", "jpeg", "gif", "webp", "pdf", "txt"].includes(extension)
+
+            if (isPreviewable) {
+                window.open(blobUrl, "_blank", "noopener,noreferrer")
+            } else {
+                const anchor = document.createElement("a")
+                anchor.href = blobUrl
+                anchor.download = fileName || `file.${extension || "dat"}`
+                document.body.appendChild(anchor)
+                anchor.click()
+                anchor.remove()
+            }
+
+            setTimeout(() => {
+                window.URL.revokeObjectURL(blobUrl)
+            }, 10000)
+        } catch (error: unknown) {
+            console.error("File open failed:", error)
+            alert("Unable to open file right now.")
+        }
+    }
+
 
     const filteredStudents = students.filter(student => {
         if (student.id === currentUserId) return false
@@ -1386,8 +1468,18 @@ export function GroupStudyView() {
         })
 
         const payload = (await response.json()) as ApiMessage[]
-        setMessages(payload.map(mapMessage))
+
+        setMessages(
+            payload.map(item => {
+                const mapped = mapMessage(item)
+                return {
+                    ...mapped,
+                    message: mapped.isCall ? replaceIdsWithLabels(mapped.message) : mapped.message,
+                }
+            })
+        )
     }
+
 
     const markReadAndRefresh = async (chatId = activeChat) => {
         if (!chatId) return
@@ -1667,20 +1759,23 @@ export function GroupStudyView() {
         })
 
         const savedMessage = (await response.json()) as ApiMessage
-
         setMessages((prev: Message[]) => [
             ...prev,
             {
                 id: savedMessage.id,
                 senderId: savedMessage.senderId,
                 senderName: savedMessage.senderName,
-                message: savedMessage.message || savedMessage.text || savedMessage.Text || "",
+                message:
+                    savedMessage.isCall
+                        ? replaceIdsWithLabels(savedMessage.message || savedMessage.text || savedMessage.Text || "")
+                        : (savedMessage.message || savedMessage.text || savedMessage.Text || ""),
                 fileUrl: savedMessage.fileUrl,
                 time: savedMessage.time,
                 status: "sent",
                 isCall: savedMessage.isCall || false,
             },
         ])
+
 
         await connection?.invoke("SendMessage", savedMessage).catch(() => undefined)
         setMessage("")
@@ -1847,14 +1942,29 @@ export function GroupStudyView() {
     useEffect(() => {
         setMounted(true)
     }, [])
+    useEffect(() => {
+        setMessages((prev: Message[]) =>
+            prev.map(item =>
+                item.isCall
+                    ? { ...item, message: replaceIdsWithLabels(item.message) }
+                    : item
+            )
+        )
+    }, [students, currentUserEmail, currentUserId, currentUserName])
 
     useEffect(() => {
         if (!connection) return
-
         const handleReceiveMessage = (payload: ApiMessage) => {
             if (!payload) return
 
-            const nextMessage = mapMessage(payload)
+            const mapped = mapMessage(payload)
+
+            const nextMessage: Message = {
+                ...mapped,
+                message: mapped.isCall
+                    ? replaceIdsWithLabels(mapped.message)
+                    : mapped.message,
+            }
 
             setMessages((prev: Message[]) => {
                 if (prev.some(item => String(item.id) === String(nextMessage.id))) {
@@ -1864,6 +1974,7 @@ export function GroupStudyView() {
                 return [...prev, nextMessage]
             })
         }
+
 
         const handleMessageRead = () => {
             setMessages((prev: Message[]) =>
@@ -2557,25 +2668,27 @@ export function GroupStudyView() {
                                 ) : (
                                     <p className="text-sm leading-6">{msg.message}</p>
                                 )}
-
                                 {msg.fileUrl &&
                                     (msg.fileUrl.match(/\.(jpeg|jpg|png|gif|webp)$/i) ? (
-                                        <img
-                                            src={`${API_BASE}${msg.fileUrl}`}
-                                            alt="chat-image"
-                                            className="mt-3 max-h-60 cursor-pointer rounded-2xl"
-                                            onClick={() => window.open(`${API_BASE}${msg.fileUrl}`, "_blank")}
-                                        />
-                                    ) : (
-                                        <a
-                                            href={`${API_BASE}${msg.fileUrl}`}
-                                            download
-                                            target="_blank"
-                                            className="mt-3 inline-block text-xs underline"
-                                            rel="noreferrer"
+                                        <button
+                                            type="button"
+                                            onClick={() => void openFileWithAuth(msg.fileUrl, "image")}
+                                            className="mt-3 block"
                                         >
-                                            Download File
-                                        </a>
+                                            <img
+                                                src={getAbsoluteFileUrl(msg.fileUrl)}
+                                                alt="chat-image"
+                                                className="max-h-60 rounded-2xl cursor-pointer"
+                                            />
+                                        </button>
+                                    ) : (
+                                        <button
+                                            type="button"
+                                            onClick={() => void openFileWithAuth(msg.fileUrl, "attachment")}
+                                            className="mt-3 inline-block text-xs underline"
+                                        >
+                                            Open File
+                                        </button>
                                     ))}
 
                                 <div className="mt-2 flex items-center justify-end gap-1 text-[10px] opacity-70">
