@@ -2,7 +2,11 @@
 
 import { useEffect, useRef } from "react"
 import * as signalR from "@microsoft/signalr"
-import { useCall } from "@/context/CallContext"
+import {
+    useCall,
+    type ActiveCallData,
+    type CallInviteData,
+} from "@/context/CallContext"
 
 const API_BASE = "https://steadfast-warmth-production-64c8.up.railway.app"
 
@@ -10,16 +14,14 @@ export default function CallManager() {
     const {
         setIncomingCall,
         setConnection,
-        pendingOfferData,
-        startOutgoingCall,
-        clearOutgoingCall,
-        setAcceptedIncomingCall,
-        endCall,
+        clearCallState,
+        setActiveCall,
+        setLastEndedCall,
     } = useCall()
 
     const connectionRef = useRef<signalR.HubConnection | null>(null)
-    const isConnectingRef = useRef(false)
     const retryRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+    const connectingRef = useRef(false)
 
     useEffect(() => {
         let disposed = false
@@ -32,11 +34,24 @@ export default function CallManager() {
         }
 
         const stopRingtone = () => {
-            const ringtone = (window as any).ringtone
-            if (ringtone?.pause) {
-                ringtone.pause()
-                ringtone.currentTime = 0
-                    ; (window as any).ringtone = null
+            const ringtone = (window as Window & { ringtone?: HTMLAudioElement }).ringtone
+            if (!ringtone) {
+                return
+            }
+
+            ringtone.pause()
+            ringtone.currentTime = 0
+            delete (window as Window & { ringtone?: HTMLAudioElement }).ringtone
+        }
+
+        const playRingtone = () => {
+            try {
+                const audio = new Audio("/sounds/ringtone.mp3")
+                audio.loop = true
+                audio.play().catch(() => undefined)
+                    ; (window as Window & { ringtone?: HTMLAudioElement }).ringtone = audio
+            } catch (error: unknown) {
+                console.error("Ringtone failed:", error)
             }
         }
 
@@ -47,50 +62,41 @@ export default function CallManager() {
             }, 1500)
         }
 
-        const attachEvents = (connection: signalR.HubConnection) => {
-            connection.on("OutgoingCall", data => {
-                startOutgoingCall({
-                    userId: data.toUserId,
-                    userName: data.fromUserId === data.toUserId ? "User" : data.toUserName || "User",
-                    chatId: data.chatId,
-                    callType: "voice",
+        const bindEvents = (connection: signalR.HubConnection) => {
+            connection.on("IncomingCall", (payload: CallInviteData) => {
+                stopRingtone()
+                playRingtone()
+                localStorage.setItem("chatId", payload.chatId)
+                setIncomingCall(payload)
+            })
+
+            connection.on("CallRejected", (payload: { chatId: string; endedBy?: string }) => {
+                stopRingtone()
+                clearCallState()
+                setLastEndedCall({
+                    chatId: payload.chatId,
+                    chatName: "Call",
+                    endedBy: payload.endedBy,
                 })
             })
 
-            connection.on("IncomingCall", data => {
-                localStorage.setItem("chatId", data.chatId)
-
-                setAcceptedIncomingCall(false)
-                setIncomingCall({
-                    fromUserId: data.fromUserId,
-                    fromUserName: data.fromUserName || "User",
-                    callType: data.callType || "voice",
-                    chatId: data.chatId,
+            connection.on("CallEnded", (payload: { chatId: string; chatName?: string; endedBy?: string }) => {
+                stopRingtone()
+                clearCallState()
+                setLastEndedCall({
+                    chatId: payload.chatId,
+                    chatName: payload.chatName || "Call",
+                    endedBy: payload.endedBy,
                 })
-
-                try {
-                    const audio = new Audio("/sounds/ringtone.mp3")
-                    audio.loop = true
-                    audio.play().catch(() => undefined)
-                        ; (window as any).ringtone = audio
-                } catch {
-                    console.error("Ringtone playback failed")
-                }
             })
 
-            connection.on("ReceiveOffer", data => {
-                pendingOfferData.current = data
-            })
-
-            connection.on("CallEnded", () => {
+            connection.on("ParticipantJoinedCall", (payload: { chatId: string }) => {
+                setActiveCall((prev: ActiveCallData | null) =>
+                    prev && prev.chatId === payload.chatId
+                        ? { ...prev, state: "connected" }
+                        : prev
+                )
                 stopRingtone()
-                endCall()
-            })
-
-            connection.on("CallRejected", () => {
-                stopRingtone()
-                endCall()
-                clearOutgoingCall()
             })
 
             connection.onreconnecting(() => {
@@ -104,7 +110,7 @@ export default function CallManager() {
             connection.onclose(() => {
                 setConnection(null)
                 connectionRef.current = null
-                isConnectingRef.current = false
+                connectingRef.current = false
 
                 if (!disposed) {
                     scheduleRetry()
@@ -113,7 +119,7 @@ export default function CallManager() {
         }
 
         const ensureConnected = async () => {
-            if (disposed || isConnectingRef.current) {
+            if (disposed || connectingRef.current) {
                 return
             }
 
@@ -138,7 +144,7 @@ export default function CallManager() {
                 return
             }
 
-            isConnectingRef.current = true
+            connectingRef.current = true
 
             const connection = new signalR.HubConnectionBuilder()
                 .withUrl(`${API_BASE}/chatHub`, {
@@ -148,8 +154,8 @@ export default function CallManager() {
                 .withAutomaticReconnect()
                 .build()
 
+            bindEvents(connection)
             connectionRef.current = connection
-            attachEvents(connection)
 
             try {
                 await connection.start()
@@ -159,17 +165,16 @@ export default function CallManager() {
                     return
                 }
 
-                console.log("Global SignalR connected")
                 setConnection(connection)
-            } catch (err) {
-                console.error("Global SignalR connection failed:", err)
+            } catch (error: unknown) {
+                console.error("SignalR connect failed:", error)
                 connectionRef.current = null
 
                 if (!disposed) {
                     scheduleRetry()
                 }
             } finally {
-                isConnectingRef.current = false
+                connectingRef.current = false
             }
         }
 
@@ -179,15 +184,7 @@ export default function CallManager() {
             disposed = true
             clearRetry()
         }
-    }, [
-        clearOutgoingCall,
-        endCall,
-        pendingOfferData,
-        setAcceptedIncomingCall,
-        setConnection,
-        setIncomingCall,
-        startOutgoingCall,
-    ])
+    }, [clearCallState, setActiveCall, setConnection, setIncomingCall, setLastEndedCall])
 
     return null
 }

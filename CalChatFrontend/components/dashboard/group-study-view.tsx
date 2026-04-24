@@ -1,15 +1,21 @@
 "use client"
 
-import { useEffect, useRef, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 import * as signalR from "@microsoft/signalr"
-import { Plus, Send, Paperclip, Smile, Phone, User, Users, Search, Sparkles } from "lucide-react"
+import {
+    Plus,
+    Send,
+    Paperclip,
+    Smile,
+    Phone,
+    User,
+    Users,
+    Sparkles,
+    Video,
+    ChevronDown,
+} from "lucide-react"
 import EmojiPicker from "emoji-picker-react"
-
-import { useCall } from "@/context/CallContext"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { ScrollArea } from "@/components/ui/scroll-area"
-import { cn } from "@/lib/utils"
+import { useCall, type CallType } from "@/context/CallContext"
 
 interface Student {
     id: string
@@ -37,64 +43,86 @@ interface Message {
     isCall?: boolean
 }
 
+interface ApiMessage {
+    id: string
+    senderId: string
+    senderName: string
+    message?: string
+    text?: string
+    Text?: string
+    fileUrl?: string
+    time: string
+    status?: "sent" | "delivered" | "read"
+    isCall?: boolean
+}
+
 const API_BASE = "https://steadfast-warmth-production-64c8.up.railway.app"
 
 const avatarColors = [
-    "bg-rose-500",
     "bg-sky-500",
-    "bg-emerald-500",
-    "bg-amber-500",
-    "bg-fuchsia-500",
-    "bg-indigo-500",
+    "bg-blue-500",
     "bg-cyan-500",
+    "bg-indigo-500",
+    "bg-emerald-500",
+    "bg-teal-500",
+    "bg-rose-500",
 ]
 
 const getAvatarColor = (name?: string) => {
-    if (!name || name.length === 0) {
+    if (!name) {
         return avatarColors[0]
     }
 
-    const index = name.charCodeAt(0) % avatarColors.length
-    return avatarColors[index]
+    return avatarColors[name.charCodeAt(0) % avatarColors.length]
 }
+
+const cn = (...classes: Array<string | false | null | undefined>) =>
+    classes.filter(Boolean).join(" ")
 
 const safeFetch = async <T,>(url: string): Promise<T> => {
     const token = localStorage.getItem("token")
 
-    const res = await fetch(url, {
+    const response = await fetch(url, {
         headers: {
             Authorization: `Bearer ${token}`,
             UserId: localStorage.getItem("userId") || "",
         },
     })
 
-    if (!res.ok) {
-        throw new Error("API Error")
+    if (!response.ok) {
+        throw new Error("API error")
     }
 
-    const text = await res.text()
-    return text ? JSON.parse(text) : ([] as T)
+    const text = await response.text()
+    return text ? (JSON.parse(text) as T) : ([] as T)
 }
 
+const mapMessage = (item: ApiMessage): Message => ({
+    id: item.id,
+    senderId: item.senderId,
+    senderName: item.senderName,
+    message: item.message || item.text || item.Text || "",
+    fileUrl: item.fileUrl,
+    time: item.time,
+    isCall: item.isCall || false,
+    status: item.status || "read",
+})
+
 export function GroupStudyView() {
-    const { connection: callConnection, startOutgoingCall, clearOutgoingCall, isCallReady } = useCall()
+    const { connection, startOutgoingCall, clearCallState, isCallReady } = useCall()
 
     const [students, setStudents] = useState<Student[]>([])
     const [chats, setChats] = useState<Chat[]>([])
     const [messages, setMessages] = useState<Message[]>([])
-
     const [activeTab, setActiveTab] = useState<"personal" | "group">("personal")
     const [activeChat, setActiveChat] = useState<string | null>(null)
     const [activeChatName, setActiveChatName] = useState("")
-
     const [message, setMessage] = useState("")
     const [file, setFile] = useState<File | null>(null)
     const [showEmoji, setShowEmoji] = useState(false)
-
     const [showCreateGroup, setShowCreateGroup] = useState(false)
     const [groupName, setGroupName] = useState("")
     const [selectedStudents, setSelectedStudents] = useState<string[]>([])
-
     const [showProfile, setShowProfile] = useState(false)
     const [profileName, setProfileName] = useState("")
     const [profileId, setProfileId] = useState("")
@@ -107,24 +135,37 @@ export function GroupStudyView() {
     const [typingUser, setTypingUser] = useState<string | null>(null)
     const [sentRequests, setSentRequests] = useState<string[]>([])
     const [mounted, setMounted] = useState(false)
+    const [showCallMenu, setShowCallMenu] = useState(false)
 
-    const currentUserId =
-        typeof window !== "undefined"
-            ? localStorage.getItem("userId") ?? ""
-            : ""
+    const currentUserId = useMemo(
+        () => (typeof window !== "undefined" ? localStorage.getItem("userId") ?? "" : ""),
+        []
+    )
 
     const bottomRef = useRef<HTMLDivElement>(null)
-    const connectionRef = useRef<signalR.HubConnection | null>(null)
 
     const fetchSentRequests = async () => {
         try {
-            const res = await safeFetch<string[]>(
-                `${API_BASE}/api/notifications/sent/${currentUserId}`
-            )
-            setSentRequests(res)
+            const response = await safeFetch<string[]>(`${API_BASE}/api/notifications/sent/${currentUserId}`)
+            setSentRequests(response)
         } catch {
             setSentRequests([])
         }
+    }
+
+    const refreshMessages = async (chatId = activeChat) => {
+        if (!chatId) {
+            return
+        }
+
+        const response = await fetch(`${API_BASE}/api/messages/${chatId}`, {
+            headers: {
+                Authorization: `Bearer ${localStorage.getItem("token")}`,
+            },
+        })
+
+        const payload = (await response.json()) as ApiMessage[]
+        setMessages(payload.map(mapMessage))
     }
 
     const markReadAndRefresh = async (chatId = activeChat) => {
@@ -140,29 +181,9 @@ export function GroupStudyView() {
             },
         })
 
-        connectionRef.current?.invoke("MessageRead", String(chatId))
+        await connection?.invoke("MessageRead", String(chatId)).catch(() => undefined)
         window.dispatchEvent(new Event("chat-updated"))
-
-        const res = await fetch(`${API_BASE}/api/messages/${chatId}`, {
-            headers: {
-                Authorization: `Bearer ${localStorage.getItem("token")}`,
-            },
-        })
-
-        const msgs = await res.json()
-
-        setMessages(
-            msgs.map((m: any) => ({
-                id: m.id,
-                senderId: m.senderId,
-                senderName: m.senderName,
-                message: m.message || m.text || m.Text || "",
-                fileUrl: m.fileUrl,
-                time: m.time,
-                isCall: m.isCall || false,
-                status: m.status || "read",
-            }))
-        )
+        await refreshMessages(chatId)
     }
 
     const sendRequest = async (studentId: string) => {
@@ -176,7 +197,6 @@ export function GroupStudyView() {
         }
 
         let userName = localStorage.getItem("name")
-
         if (!userName) {
             const currentUser = students.find(student => student.id === currentUserId)
             userName = currentUser?.name || "Unknown User"
@@ -193,10 +213,9 @@ export function GroupStudyView() {
             }),
         })
 
-        setSentRequests(prev => [...prev, studentId])
-        fetchSentRequests()
+        setSentRequests((prev: string[]) => [...prev, studentId])
+        await fetchSentRequests()
         window.dispatchEvent(new Event("chat-updated"))
-
         alert("Request Sent")
     }
 
@@ -221,74 +240,94 @@ export function GroupStudyView() {
                 },
             })
 
-            setIsBlocked(prev => !prev)
+            setIsBlocked((prev: boolean) => !prev)
         } catch {
             alert("Error updating block status")
+        } finally {
+            setBlockLoading(false)
+        }
+    }
+
+    const resolveCallParticipants = async () => {
+        if (!activeChat) {
+            return [] as string[]
         }
 
-        setBlockLoading(false)
-    }
-    const startCall = async () => {
-        console.log("VOICE BUTTON CLICKED", {
-            activeChat,
-            activeTab,
-            isCallReady,
-            callConnectionState: callConnection?.state,
-        })
+        const currentChat = chats.find(item => item.id === activeChat)
+        if (!currentChat) {
+            return [] as string[]
+        }
 
-        if (!activeChat || activeTab !== "personal") {
-            alert("Please select a personal chat first.")
+        if (currentChat.type === "personal") {
+            return (currentChat.members || []).filter(
+                member => String(member) !== String(currentUserId)
+            )
+        }
+
+        if (currentChat.members?.length) {
+            return currentChat.members.filter(
+                member => String(member) !== String(currentUserId)
+            )
+        }
+
+        try {
+            const response = await fetch(`${API_BASE}/api/groups/${activeChat}`)
+            const group = (await response.json()) as { members?: Student[] }
+
+            return (group.members || [])
+                .map((member: Student) => String(member.id))
+                .filter((memberId: string) => memberId !== String(currentUserId))
+        } catch {
+            return [] as string[]
+        }
+    }
+
+    const startCall = async (callType: CallType) => {
+        setShowCallMenu(false)
+
+        if (!activeChat) {
+            alert("Please select a chat first.")
             return
         }
 
-        if (!callConnection || !isCallReady) {
+        if (!connection || !isCallReady) {
             alert("Call service is connecting. Please wait a moment.")
             return
         }
 
-        const chat = chats.find(item => item.id === activeChat)
-        if (!chat || chat.type !== "personal") {
-            alert("Calls are available only in personal chats.")
+        const participantIds = await resolveCallParticipants()
+        if (participantIds.length === 0) {
+            alert("No valid participants found for this call.")
             return
         }
 
-        const otherUserId = chat.members?.find(
-            member => String(member) !== String(currentUserId)
-        )
-
-        if (!otherUserId) {
-            alert("Unable to find the other user for this call.")
-            return
-        }
-
-        const otherUser =
-            students.find(student => String(student.id) === String(otherUserId))?.name ||
-            activeChatName ||
-            "User"
-
-        localStorage.setItem("chatId", String(activeChat))
-        setShowProfile(false)
+        const isGroup = activeTab === "group"
 
         startOutgoingCall({
-            userId: otherUserId,
-            userName: otherUser,
             chatId: String(activeChat),
-            callType: "voice",
+            chatName: activeChatName || "Call",
+            participantIds,
+            isGroup,
+            callType,
         })
 
         try {
-            await callConnection.invoke("CallUser", otherUserId, String(activeChat))
-            console.log("CallUser invoke success")
-        } catch (err) {
-            console.error("CallUser invoke failed:", err)
-            clearOutgoingCall()
+            await connection.invoke("StartCall", {
+                chatId: String(activeChat),
+                chatName: activeChatName || "Call",
+                callType,
+                isGroup,
+                participantIds,
+            })
+        } catch (error: unknown) {
+            console.error("StartCall failed:", error)
+            clearCallState()
             alert("Unable to start call right now.")
         }
     }
 
-
     const createGroup = async () => {
-        const res = await fetch(`${API_BASE}/api/groups`, {
+        const response = await fetch(`${API_BASE}/api/groups`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
@@ -297,19 +336,16 @@ export function GroupStudyView() {
             }),
         })
 
-        const data = await res.json()
-        const newGroupId = data.chatId
+        const data = (await response.json()) as { chatId: string }
 
-        setActiveChat(String(newGroupId))
+        setActiveChat(String(data.chatId))
         setActiveChatName(groupName)
         setShowCreateGroup(false)
         setGroupName("")
         setSelectedStudents([])
         setActiveTab("group")
 
-        const updatedChats = await safeFetch<Chat[]>(
-            `${API_BASE}/api/chat/group/${currentUserId}`
-        )
+        const updatedChats = await safeFetch<Chat[]>(`${API_BASE}/api/chat/group/${currentUserId}`)
         setChats(updatedChats)
     }
 
@@ -323,9 +359,7 @@ export function GroupStudyView() {
                 selectedStudents.map(studentId =>
                     fetch(`${API_BASE}/api/groups/add-member`, {
                         method: "POST",
-                        headers: {
-                            "Content-Type": "application/json",
-                        },
+                        headers: { "Content-Type": "application/json" },
                         body: JSON.stringify({
                             groupId: Number(activeChat),
                             userId: studentId,
@@ -338,9 +372,8 @@ export function GroupStudyView() {
             setSelectedStudents([])
             setShowCreateGroup(false)
 
-            const res = await fetch(`${API_BASE}/api/groups/${activeChat}`)
-            const data = await res.json()
-
+            const response = await fetch(`${API_BASE}/api/groups/${activeChat}`)
+            const data = (await response.json()) as { members?: Student[] }
             setGroupMembers(data.members || [])
         } catch {
             alert("Error adding members")
@@ -365,7 +398,7 @@ export function GroupStudyView() {
             formData.append("file", file)
         }
 
-        const res = await fetch(`${API_BASE}/api/messages`, {
+        const response = await fetch(`${API_BASE}/api/messages`, {
             method: "POST",
             headers: {
                 UserId: currentUserId,
@@ -373,9 +406,9 @@ export function GroupStudyView() {
             body: formData,
         })
 
-        const savedMessage = await res.json()
+        const savedMessage = (await response.json()) as ApiMessage
 
-        setMessages(prev => [
+        setMessages((prev: Message[]) => [
             ...prev,
             {
                 id: savedMessage.id,
@@ -385,11 +418,11 @@ export function GroupStudyView() {
                 fileUrl: savedMessage.fileUrl,
                 time: savedMessage.time,
                 status: "sent",
+                isCall: savedMessage.isCall || false,
             },
         ])
 
-        connectionRef.current?.invoke("SendMessage", savedMessage)
-
+        await connection?.invoke("SendMessage", savedMessage).catch(() => undefined)
         setMessage("")
         setFile(null)
         setShowEmoji(false)
@@ -422,7 +455,7 @@ export function GroupStudyView() {
         }
 
         try {
-            const res = await fetch(`${API_BASE}/api/chat/mute/${activeChat}`, {
+            const response = await fetch(`${API_BASE}/api/chat/mute/${activeChat}`, {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
@@ -430,10 +463,9 @@ export function GroupStudyView() {
                 },
             })
 
-            const data = await res.json()
+            const data = (await response.json()) as { isMuted: boolean }
             setIsChatMuted(data.isMuted)
             window.dispatchEvent(new Event("chat-updated"))
-
             alert(data.isMuted ? "Chat muted" : "Chat unmuted")
         } catch {
             alert("Mute failed")
@@ -441,28 +473,22 @@ export function GroupStudyView() {
     }
 
     const addEmoji = (emoji: { emoji: string }) => {
-        setMessage(prev => prev + emoji.emoji)
+        setMessage((prev: string) => prev + emoji.emoji)
     }
 
     useEffect(() => {
-        const joinChat = async () => {
-            if (!activeChat || !connectionRef.current) {
-                return
-            }
-
-            if (connectionRef.current.state !== signalR.HubConnectionState.Connected) {
-                return
-            }
-
-            try {
-                await connectionRef.current.invoke("JoinChat", String(activeChat))
-            } catch (err) {
-                console.error("JoinChat Error:", err)
-            }
+        if (!activeChat || !connection) {
+            return
         }
 
-        joinChat()
-    }, [activeChat])
+        if (connection.state !== signalR.HubConnectionState.Connected) {
+            return
+        }
+
+        connection.invoke("JoinChat", String(activeChat)).catch((error: unknown) => {
+            console.error("JoinChat failed:", error)
+        })
+    }, [activeChat, connection])
 
     useEffect(() => {
         if (!activeChat) {
@@ -476,7 +502,7 @@ export function GroupStudyView() {
                 UserId: currentUserId,
             },
         })
-            .then(res => res.json())
+            .then(response => response.json() as Promise<{ isMuted: boolean }>)
             .then(data => setIsChatMuted(data.isMuted))
             .catch(() => setIsChatMuted(false))
     }, [activeChat, currentUserId])
@@ -484,10 +510,7 @@ export function GroupStudyView() {
     useEffect(() => {
         const refreshChats = async () => {
             try {
-                const data = await safeFetch<Chat[]>(
-                    `${API_BASE}/api/chat/personal/${currentUserId}`
-                )
-
+                const data = await safeFetch<Chat[]>(`${API_BASE}/api/chat/personal/${currentUserId}`)
                 setChats(data)
                 await fetchSentRequests()
             } catch {
@@ -496,17 +519,11 @@ export function GroupStudyView() {
         }
 
         window.addEventListener("chat-updated", refreshChats)
-
-        return () => {
-            window.removeEventListener("chat-updated", refreshChats)
-        }
+        return () => window.removeEventListener("chat-updated", refreshChats)
     }, [currentUserId])
 
     useEffect(() => {
-        fetchSentRequests()
-    }, [])
-
-    useEffect(() => {
+        void fetchSentRequests()
         safeFetch<Student[]>(`${API_BASE}/api/users/students`)
             .then(setStudents)
             .catch(() => setStudents([]))
@@ -531,7 +548,7 @@ export function GroupStudyView() {
             }
         }
 
-        loadChats()
+        void loadChats()
     }, [activeTab, currentUserId])
 
     useEffect(() => {
@@ -539,7 +556,7 @@ export function GroupStudyView() {
             return
         }
 
-        markReadAndRefresh(activeChat)
+        void markReadAndRefresh(activeChat)
     }, [activeChat])
 
     useEffect(() => {
@@ -548,19 +565,20 @@ export function GroupStudyView() {
         }
 
         const interval = setInterval(async () => {
-            const res = await fetch(`${API_BASE}/api/chat/typing/${activeChat}`)
-            const user = await res.text()
-            setTypingUser(user)
+            try {
+                const response = await fetch(`${API_BASE}/api/chat/typing/${activeChat}`)
+                const user = await response.text()
+                setTypingUser(user)
+            } catch {
+                setTypingUser(null)
+            }
         }, 1500)
 
         return () => clearInterval(interval)
     }, [activeChat])
 
     useEffect(() => {
-        bottomRef.current?.scrollIntoView({
-            behavior: "smooth",
-            block: "end",
-        })
+        bottomRef.current?.scrollIntoView({ behavior: "smooth", block: "end" })
     }, [messages])
 
     useEffect(() => {
@@ -573,8 +591,8 @@ export function GroupStudyView() {
 
                 const updatedChats = await safeFetch<Chat[]>(url)
                 setChats(updatedChats)
-            } catch (err) {
-                console.error("Polling error:", err)
+            } catch (error: unknown) {
+                console.error("Polling error:", error)
             }
         }, 5000)
 
@@ -583,91 +601,72 @@ export function GroupStudyView() {
 
     useEffect(() => {
         setMounted(true)
+    }, [])
 
-        if (connectionRef.current) {
+    useEffect(() => {
+        if (!connection) {
             return
         }
 
-        const connection = new signalR.HubConnectionBuilder()
-            .withUrl(`${API_BASE}/chatHub`, {
-                accessTokenFactory: () => localStorage.getItem("token") || "",
-                transport: signalR.HttpTransportType.WebSockets,
-            })
-            .withAutomaticReconnect()
-            .build()
-
-        connection.start()
-            .then(() => {
-                console.log("SignalR connected")
-            })
-            .catch(err => console.error("Connection error:", err))
-
-        connection.on("ReceiveMessage", (msg: any) => {
-            if (!msg) {
+        const handleReceiveMessage = (payload: ApiMessage) => {
+            if (!payload) {
                 return
             }
 
-            const newMessage = {
-                id: msg.id,
-                senderId: msg.senderId,
-                senderName: msg.senderName,
-                message: msg.message || msg.text || msg.Text || "",
-                fileUrl: msg.fileUrl,
-                time: msg.time,
-                isCall: msg.isCall || false,
-                status: msg.status || "delivered",
-            }
+            const nextMessage = mapMessage(payload)
 
-            setMessages(prev => {
-                if (prev.some(item => String(item.id) === String(newMessage.id))) {
+            setMessages((prev: Message[]) => {
+                if (prev.some(item => String(item.id) === String(nextMessage.id))) {
                     return prev
                 }
 
-                return [...prev, newMessage]
+                return [...prev, nextMessage]
             })
-        })
+        }
 
-        connection.on("MessageRead", () => {
-            setMessages(prev =>
+        const handleMessageRead = () => {
+            setMessages((prev: Message[]) =>
                 prev.map(item =>
-                    item.senderId === currentUserId
-                        ? { ...item, status: "read" }
-                        : item
+                    item.senderId === currentUserId ? { ...item, status: "read" } : item
                 )
             )
-        })
+        }
 
-        connectionRef.current = connection
-    }, [currentUserId])
+        connection.on("ReceiveMessage", handleReceiveMessage)
+        connection.on("MessageRead", handleMessageRead)
+
+        return () => {
+            connection.off("ReceiveMessage", handleReceiveMessage)
+            connection.off("MessageRead", handleMessageRead)
+        }
+    }, [connection, currentUserId])
 
     if (!mounted) {
         return null
     }
 
     return (
-        <div className="flex h-[calc(100vh-8rem)] overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-[0_24px_70px_-36px_rgba(15,23,42,0.45)]">
+        <div className="flex h-[calc(100vh-8rem)] overflow-hidden rounded-[30px] border border-sky-100 bg-white shadow-[0_24px_70px_-36px_rgba(14,165,233,0.25)]">
             {showCreateGroup && (
-                <div className="fixed inset-0 z-[99999] flex items-center justify-center bg-slate-950/50 backdrop-blur-sm">
-                    <div className="w-[420px] rounded-[26px] border border-slate-200 bg-white p-6 shadow-2xl">
-                        <div className="mb-5 flex items-start justify-between">
-                            <div>
-                                <h2 className="text-xl font-semibold text-slate-900">
-                                    {activeChat ? "Add Members" : "Create Study Group"}
-                                </h2>
-                                <p className="mt-1 text-sm text-slate-500">
-                                    Build a focused room for notes, discussion, and quick calls.
-                                </p>
-                            </div>
+                <div className="fixed inset-0 z-[99999] flex items-center justify-center bg-slate-950/35 backdrop-blur-sm">
+                    <div className="w-[420px] rounded-[28px] border border-sky-100 bg-white p-6 shadow-2xl">
+                        <div className="mb-5">
+                            <h2 className="text-xl font-semibold text-slate-900">
+                                {activeChat ? "Add Members" : "Create Study Group"}
+                            </h2>
+                            <p className="mt-1 text-sm text-slate-500">
+                                Build a focused room for notes, discussion, and secure calling.
+                            </p>
                         </div>
 
-                        <Input
+                        <input
                             placeholder="Group Name"
                             value={groupName}
-                            onChange={e => setGroupName(e.target.value)}
-                            className="mb-4 h-11 rounded-xl"
+                            onChange={event => setGroupName(event.target.value)}
+                            className="mb-4 h-11 w-full rounded-xl border border-sky-100 px-3 outline-none ring-0"
                         />
 
-                        <div className="max-h-56 overflow-y-auto rounded-2xl border border-slate-200 bg-slate-50 p-3">
+                        <div className="max-h-56 overflow-y-auto rounded-2xl border border-sky-100 bg-sky-50/50 p-3">
                             {students
                                 .filter(student => {
                                     if (activeTab === "group") {
@@ -685,7 +684,7 @@ export function GroupStudyView() {
                                             type="checkbox"
                                             checked={selectedStudents.includes(student.id)}
                                             onChange={() => {
-                                                setSelectedStudents(prev =>
+                                                setSelectedStudents((prev: string[]) =>
                                                     prev.includes(student.id)
                                                         ? prev.filter(id => id !== student.id)
                                                         : [...prev, student.id]
@@ -696,45 +695,40 @@ export function GroupStudyView() {
                                             {student.name.charAt(0).toUpperCase()}
                                         </div>
                                         <div>
-                                            <p className="text-sm font-medium text-slate-900">
-                                                {student.name}
-                                            </p>
-                                            <p className="text-xs text-slate-500">
-                                                {student.email || "Student"}
-                                            </p>
+                                            <p className="text-sm font-medium text-slate-900">{student.name}</p>
+                                            <p className="text-xs text-slate-500">{student.email || "Student"}</p>
                                         </div>
                                     </label>
                                 ))}
                         </div>
 
                         <div className="mt-5 flex justify-end gap-2">
-                            <Button variant="outline" onClick={() => setShowCreateGroup(false)}>
+                            <button
+                                className="rounded-xl border border-sky-100 px-4 py-2 text-slate-700"
+                                onClick={() => setShowCreateGroup(false)}
+                            >
                                 Cancel
-                            </Button>
-                            <Button
+                            </button>
+                            <button
                                 onClick={activeChat ? addMembersToGroup : createGroup}
                                 disabled={selectedStudents.length === 0}
-                                className="rounded-xl"
+                                className="rounded-xl bg-sky-600 px-4 py-2 text-white disabled:opacity-50"
                             >
                                 {activeChat ? "Add Members" : "Create Group"}
-                            </Button>
+                            </button>
                         </div>
                     </div>
                 </div>
             )}
 
-            <div className="w-80 border-r border-slate-200 bg-slate-50/80">
-                <div className="border-b border-slate-200 bg-[linear-gradient(135deg,#fff7ed_0%,#eff6ff_100%)] p-4">
+            <div className="w-80 border-r border-sky-100 bg-sky-50/50">
+                <div className="border-b border-sky-100 bg-gradient-to-br from-sky-50 via-white to-blue-50 p-4">
                     <div className="mb-4 flex items-center justify-between">
                         <div>
-                            <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">
-                                Group Study
-                            </p>
-                            <h2 className="mt-1 text-2xl font-semibold text-slate-900">
-                                Chats
-                            </h2>
+                            <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">Group Study</p>
+                            <h2 className="mt-1 text-2xl font-semibold text-slate-900">Chats</h2>
                         </div>
-                        <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-white text-amber-500 shadow-sm">
+                        <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-white text-sky-600 shadow-sm">
                             <Sparkles className="h-5 w-5" />
                         </div>
                     </div>
@@ -743,9 +737,7 @@ export function GroupStudyView() {
                         <button
                             className={cn(
                                 "flex-1 rounded-xl px-3 py-2 text-sm font-medium transition",
-                                activeTab === "personal"
-                                    ? "bg-slate-900 text-white shadow-sm"
-                                    : "text-slate-600"
+                                activeTab === "personal" ? "bg-sky-600 text-white shadow-sm" : "text-slate-600"
                             )}
                             onClick={() => setActiveTab("personal")}
                         >
@@ -754,9 +746,7 @@ export function GroupStudyView() {
                         <button
                             className={cn(
                                 "flex-1 rounded-xl px-3 py-2 text-sm font-medium transition",
-                                activeTab === "group"
-                                    ? "bg-slate-900 text-white shadow-sm"
-                                    : "text-slate-600"
+                                activeTab === "group" ? "bg-sky-600 text-white shadow-sm" : "text-slate-600"
                             )}
                             onClick={() => setActiveTab("group")}
                         >
@@ -765,86 +755,77 @@ export function GroupStudyView() {
                     </div>
 
                     {activeTab === "group" && (
-                        <Button
-                            className="mt-4 h-11 w-full rounded-2xl bg-slate-900 text-white hover:bg-slate-800"
+                        <button
+                            className="mt-4 flex h-11 w-full items-center justify-center rounded-2xl bg-sky-600 text-white hover:bg-sky-700"
                             onClick={() => setShowCreateGroup(true)}
                         >
                             <Plus className="mr-2 h-4 w-4" />
                             Create Study Group
-                        </Button>
+                        </button>
                     )}
                 </div>
 
-                <ScrollArea className="h-[calc(100%-220px)]">
-                    <div className="p-3">
-                        {chats.map(chat => {
-                            let chatTitle = chat.name?.trim()
+                <div className="h-[calc(100%-220px)] overflow-y-auto p-3">
+                    {chats.map(chat => {
+                        let chatTitle = chat.name?.trim()
 
-                            if (chat.type === "group") {
-                                chatTitle = chat.name || "Unnamed Group"
-                            } else if (chat.type === "personal" && chat.members) {
-                                const otherUserId = chat.members.find(member => String(member) !== String(currentUserId))
-                                const otherUser = students.find(student => String(student.id) === String(otherUserId))
-                                chatTitle = otherUser?.name || "Unknown User"
-                            }
+                        if (chat.type === "group") {
+                            chatTitle = chat.name || "Unnamed Group"
+                        } else if (chat.type === "personal" && chat.members) {
+                            const otherUserId = chat.members.find(member => String(member) !== String(currentUserId))
+                            const otherUser = students.find(student => String(student.id) === String(otherUserId))
+                            chatTitle = otherUser?.name || "Unknown User"
+                        }
 
-                            const isActive = activeChat === chat.id
+                        const isActive = activeChat === chat.id
 
-                            return (
-                                <button
-                                    key={chat.id}
-                                    onClick={() => {
-                                        setActiveChat(chat.id)
-                                        setActiveChatName(chatTitle)
-                                    }}
-                                    className={cn(
-                                        "mb-2 w-full rounded-2xl border px-3 py-3 text-left transition",
-                                        isActive
-                                            ? "border-slate-900 bg-white shadow-md"
-                                            : "border-transparent bg-white/70 hover:border-slate-200 hover:bg-white"
-                                    )}
-                                >
-                                    <div className="flex items-center justify-between gap-3">
-                                        <div className="flex min-w-0 items-center gap-3">
-                                            <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl text-sm font-semibold text-white ${getAvatarColor(chatTitle)}`}>
-                                                {chat.type === "group"
-                                                    ? <Users className="h-4 w-4" />
-                                                    : (chatTitle || "").charAt(0).toUpperCase()}
-                                            </div>
-
-                                            <div className="min-w-0">
-                                                <p className="truncate text-sm font-semibold text-slate-900">
-                                                    {chatTitle}
-                                                </p>
-                                                <p className="truncate text-xs text-slate-500">
-                                                    {chat.type === "group" ? "Group discussion" : "Direct chat"}
-                                                </p>
-                                            </div>
+                        return (
+                            <button
+                                key={chat.id}
+                                onClick={() => {
+                                    setActiveChat(chat.id)
+                                    setActiveChatName(chatTitle || "Chat")
+                                }}
+                                className={cn(
+                                    "mb-2 w-full rounded-2xl border px-3 py-3 text-left transition",
+                                    isActive
+                                        ? "border-sky-200 bg-white shadow-md"
+                                        : "border-transparent bg-white/70 hover:border-sky-100 hover:bg-white"
+                                )}
+                            >
+                                <div className="flex items-center justify-between gap-3">
+                                    <div className="flex min-w-0 items-center gap-3">
+                                        <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl text-sm font-semibold text-white ${getAvatarColor(chatTitle)}`}>
+                                            {chat.type === "group"
+                                                ? <Users className="h-4 w-4" />
+                                                : (chatTitle || "").charAt(0).toUpperCase()}
                                         </div>
 
-                                        <div className="flex items-center gap-2">
-                                            {chat.isMuted && (
-                                                <span className="text-xs text-slate-400">🔕</span>
-                                            )}
-
-                                            {(chat.unreadCount ?? 0) > 0 && (
-                                                <div className="flex min-w-[24px] items-center justify-center rounded-full bg-emerald-500 px-2 py-1 text-xs font-semibold text-white">
-                                                    {chat.unreadCount}
-                                                </div>
-                                            )}
+                                        <div className="min-w-0">
+                                            <p className="truncate text-sm font-semibold text-slate-900">{chatTitle}</p>
+                                            <p className="truncate text-xs text-slate-500">
+                                                {chat.type === "group" ? "Group discussion" : "Direct chat"}
+                                            </p>
                                         </div>
                                     </div>
-                                </button>
-                            )
-                        })}
-                    </div>
-                </ScrollArea>
+
+                                    <div className="flex items-center gap-2">
+                                        {chat.isMuted && <span className="text-xs text-slate-400">🔕</span>}
+                                        {(chat.unreadCount ?? 0) > 0 && (
+                                            <div className="flex min-w-[24px] items-center justify-center rounded-full bg-sky-600 px-2 py-1 text-xs font-semibold text-white">
+                                                {chat.unreadCount}
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            </button>
+                        )
+                    })}
+                </div>
 
                 {activeTab === "personal" && (
-                    <div className="border-t border-slate-200 bg-white p-3">
-                        <p className="mb-3 text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">
-                            Students
-                        </p>
+                    <div className="border-t border-sky-100 bg-white p-3">
+                        <p className="mb-3 text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Students</p>
 
                         <div className="max-h-56 space-y-2 overflow-y-auto pr-1">
                             {students
@@ -852,15 +833,11 @@ export function GroupStudyView() {
                                 .map(student => (
                                     <div
                                         key={student.id}
-                                        className="flex items-center justify-between rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2"
+                                        className="flex items-center justify-between rounded-2xl border border-sky-100 bg-sky-50/40 px-3 py-2"
                                     >
                                         <div className="min-w-0">
-                                            <p className="truncate text-sm font-medium text-slate-900">
-                                                {student.name}
-                                            </p>
-                                            <p className="truncate text-xs text-slate-500">
-                                                {student.email || "Student"}
-                                            </p>
+                                            <p className="truncate text-sm font-medium text-slate-900">{student.name}</p>
+                                            <p className="truncate text-xs text-slate-500">{student.email || "Student"}</p>
                                         </div>
 
                                         {!sentRequests.includes(student.id) &&
@@ -868,13 +845,12 @@ export function GroupStudyView() {
                                                 chat.members?.includes(student.id) &&
                                                 chat.members?.includes(currentUserId)
                                             ) && (
-                                                <Button
-                                                    size="sm"
-                                                    className="rounded-xl"
+                                                <button
+                                                    className="rounded-xl bg-sky-600 px-3 py-2 text-sm text-white"
                                                     onClick={() => sendRequest(student.id)}
                                                 >
                                                     Request
-                                                </Button>
+                                                </button>
                                             )}
                                     </div>
                                 ))}
@@ -883,8 +859,8 @@ export function GroupStudyView() {
                 )}
             </div>
 
-            <div className="flex flex-1 flex-col bg-[linear-gradient(180deg,#ffffff_0%,#f8fafc_100%)]">
-                <div className="border-b border-slate-200 bg-white/80 p-4 backdrop-blur">
+            <div className="flex flex-1 flex-col bg-gradient-to-b from-white to-sky-50/30">
+                <div className="border-b border-sky-100 bg-white/90 p-4 backdrop-blur">
                     <div className="flex items-center justify-between gap-4">
                         <div className="flex min-w-0 items-center gap-3">
                             {activeChatName ? (
@@ -908,7 +884,7 @@ export function GroupStudyView() {
                                                         Authorization: `Bearer ${localStorage.getItem("token")}`,
                                                     },
                                                 })
-                                                    .then(res => res.json())
+                                                    .then(response => response.json() as Promise<{ blocked: boolean }>)
                                                     .then(data => setIsBlocked(data.blocked))
                                                     .catch(() => setIsBlocked(false))
                                             }
@@ -916,11 +892,9 @@ export function GroupStudyView() {
 
                                         if (activeTab === "group" && activeChat) {
                                             fetch(`${API_BASE}/api/groups/${activeChat}`)
-                                                .then(async res => {
-                                                    const text = await res.text()
-                                                    return text ? JSON.parse(text) : {}
-                                                })
-                                                .then(data => {
+                                                .then(response => response.text())
+                                                .then(text => (text ? JSON.parse(text) : {}))
+                                                .then((data: { members?: Student[]; description?: string; adminId?: string }) => {
                                                     setGroupMembers(data.members || [])
                                                     setGroupDescription(data.description || "")
                                                     setGroupAdminId(data.adminId || "")
@@ -935,20 +909,14 @@ export function GroupStudyView() {
                                         setShowProfile(true)
                                     }}
                                 >
-                                    <div className={`relative flex h-12 w-12 items-center justify-center rounded-2xl text-white shadow-sm ${getAvatarColor(activeChatName)}`}>
+                                    <div className={`flex h-12 w-12 items-center justify-center rounded-2xl text-white shadow-sm ${getAvatarColor(activeChatName)}`}>
                                         {activeTab === "group"
                                             ? <Users className="h-5 w-5" />
                                             : activeChatName.charAt(0).toUpperCase()}
-
-                                        {activeTab === "personal" && (
-                                            <span className="absolute -bottom-0.5 -right-0.5 h-3.5 w-3.5 rounded-full border-2 border-white bg-emerald-500" />
-                                        )}
                                     </div>
 
                                     <div className="min-w-0 text-left">
-                                        <h3 className="truncate text-base font-semibold text-slate-900">
-                                            {activeChatName}
-                                        </h3>
+                                        <h3 className="truncate text-base font-semibold text-slate-900">{activeChatName}</h3>
                                         <p className="truncate text-sm text-slate-500">
                                             {activeTab === "group" ? "Study room details" : "Tap to view profile"}
                                         </p>
@@ -956,276 +924,64 @@ export function GroupStudyView() {
                                 </button>
                             ) : (
                                 <div>
-                                    <h3 className="text-base font-semibold text-slate-900">
-                                        Select a chat
-                                    </h3>
-                                    <p className="text-sm text-slate-500">
-                                        Pick a conversation to start messaging.
-                                    </p>
+                                    <h3 className="text-base font-semibold text-slate-900">Select a chat</h3>
+                                    <p className="text-sm text-slate-500">Pick a conversation to start messaging.</p>
                                 </div>
                             )}
                         </div>
 
-                        <div className="flex items-center gap-2">
-                            <Button
-                                size="icon"
-                                variant="outline"
-                                onClick={startCall}
-                                disabled={!activeChat || activeTab !== "personal"}
-                                className="h-11 w-11 rounded-2xl border-slate-200 bg-white"
+                        <div className="relative">
+                            <button
+                                onClick={() => setShowCallMenu((prev: boolean) => !prev)}
+                                disabled={!activeChat}
+                                className="flex h-11 items-center gap-2 rounded-2xl border border-sky-100 bg-white px-4 text-slate-700 disabled:opacity-50"
                             >
                                 <Phone className="h-4 w-4" />
-                            </Button>
+                                <span className="text-sm font-medium">Call</span>
+                                <ChevronDown className="h-4 w-4" />
+                            </button>
+
+                            {showCallMenu && activeChat && (
+                                <div className="absolute right-0 top-14 z-40 w-72 rounded-[24px] border border-sky-100 bg-white p-4 shadow-2xl">
+                                    <div className="mb-4">
+                                        <p className="text-base font-semibold text-slate-900">{activeChatName}</p>
+                                        <p className="text-sm text-slate-500">
+                                            {activeTab === "group" ? "Start a group call" : "Choose call type"}
+                                        </p>
+                                    </div>
+
+                                    <div className="grid grid-cols-2 gap-3">
+                                        <button
+                                            onClick={() => void startCall("voice")}
+                                            className="flex items-center justify-center gap-2 rounded-2xl bg-sky-600 px-4 py-3 font-medium text-white"
+                                        >
+                                            <Phone className="h-4 w-4" />
+                                            Voice
+                                        </button>
+                                        <button
+                                            onClick={() => void startCall("video")}
+                                            className="flex items-center justify-center gap-2 rounded-2xl bg-blue-600 px-4 py-3 font-medium text-white"
+                                        >
+                                            <Video className="h-4 w-4" />
+                                            Video
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
                         </div>
                     </div>
                 </div>
 
-                {showProfile && (
-                    <div
-                        className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/55 backdrop-blur-sm"
-                        onClick={() => setShowProfile(false)}
-                    >
-                        <div
-                            className="max-h-[90vh] w-[380px] overflow-y-auto rounded-[26px] border border-slate-200 bg-white text-slate-900 shadow-2xl"
-                            onClick={event => event.stopPropagation()}
-                        >
-                            <div className="flex items-center justify-between border-b border-slate-200 p-5">
-                                <div>
-                                    <h2 className="text-lg font-semibold">
-                                        {activeTab === "group" ? "Group Profile" : "Profile"}
-                                    </h2>
-                                    <p className="text-sm text-slate-500">
-                                        {activeTab === "group" ? "Group settings and members" : "Chat actions and details"}
-                                    </p>
-                                </div>
-
-                                <button onClick={() => setShowProfile(false)} className="text-xl text-slate-500">
-                                    ×
-                                </button>
-                            </div>
-
-                            <div className="p-6">
-                                <div className="text-center">
-                                    <div className={`mx-auto flex h-24 w-24 items-center justify-center rounded-[28px] text-3xl font-bold text-white shadow-lg ${getAvatarColor(profileName)}`}>
-                                        {profileName.charAt(0).toUpperCase()}
-                                    </div>
-
-                                    <h2 className="mt-4 text-xl font-semibold">{profileName}</h2>
-
-                                    {activeTab === "group" && (
-                                        <p className="mt-1 text-sm text-slate-500">
-                                            Group • {groupMembers.length} members
-                                        </p>
-                                    )}
-                                </div>
-
-                                {activeTab === "personal" && (
-                                    <div className="mt-6 space-y-4">
-                                        <div className="grid grid-cols-3 gap-2 text-sm">
-                                            <button
-                                                onClick={startCall}
-                                                className="rounded-2xl bg-emerald-50 px-3 py-3 text-emerald-700"
-                                            >
-                                                <Phone className="mx-auto mb-1 h-4 w-4" />
-                                                Voice
-                                            </button>
-
-                                            <button
-                                                className="rounded-2xl bg-violet-50 px-3 py-3 text-violet-700"
-                                                onClick={async () => {
-                                                    if (!activeChat) {
-                                                        return
-                                                    }
-
-                                                    try {
-                                                        const res = await fetch(`${API_BASE}/api/messages/export/${activeChat}`, {
-                                                            headers: {
-                                                                Authorization: `Bearer ${localStorage.getItem("token")}`,
-                                                            },
-                                                        })
-
-                                                        if (!res.ok) {
-                                                            throw new Error()
-                                                        }
-
-                                                        const blob = await res.blob()
-                                                        const url = window.URL.createObjectURL(blob)
-                                                        const anchor = document.createElement("a")
-                                                        anchor.href = url
-                                                        anchor.download = `chat-${activeChat}.txt`
-                                                        anchor.click()
-                                                        window.URL.revokeObjectURL(url)
-                                                    } catch {
-                                                        alert("Export failed")
-                                                    }
-                                                }}
-                                            >
-                                                <Search className="mx-auto mb-1 h-4 w-4" />
-                                                Export
-                                            </button>
-
-                                            <button
-                                                onClick={() => {
-                                                    alert(`User Info\n\nName: ${profileName}\nID: ${profileId}`)
-                                                }}
-                                                className="rounded-2xl bg-slate-100 px-3 py-3 text-slate-700"
-                                            >
-                                                <User className="mx-auto mb-1 h-4 w-4" />
-                                                Info
-                                            </button>
-                                        </div>
-
-                                        <div className="rounded-2xl bg-slate-50 p-4">
-                                            <p className="text-xs uppercase tracking-[0.16em] text-slate-500">
-                                                Student ID
-                                            </p>
-                                            <p className="mt-2 break-all text-sm font-medium text-slate-900">
-                                                {profileId}
-                                            </p>
-                                        </div>
-
-                                        <div className="overflow-hidden rounded-2xl border border-slate-200">
-                                            <button onClick={clearChat} className="w-full border-b border-slate-200 px-4 py-3 text-left text-sm">
-                                                Clear Chat
-                                            </button>
-                                            <button onClick={toggleMuteChat} className="w-full border-b border-slate-200 px-4 py-3 text-left text-sm">
-                                                {isChatMuted ? "Unmute Chat" : "Mute Chat"}
-                                            </button>
-                                            <button
-                                                onClick={toggleBlockUser}
-                                                disabled={blockLoading}
-                                                className={cn(
-                                                    "w-full px-4 py-3 text-left text-sm",
-                                                    isBlocked ? "text-emerald-600" : "text-rose-600"
-                                                )}
-                                            >
-                                                {isBlocked ? "Unblock User" : "Block User"}
-                                            </button>
-                                        </div>
-                                    </div>
-                                )}
-
-                                {activeTab === "group" && (
-                                    <div className="mt-6 space-y-4">
-                                        <div className="grid grid-cols-2 gap-2 text-sm">
-                                            <button
-                                                onClick={() => {
-                                                    setShowProfile(false)
-                                                    setSelectedStudents([])
-                                                    setShowCreateGroup(true)
-                                                }}
-                                                className="rounded-2xl bg-violet-50 px-3 py-3 text-violet-700"
-                                            >
-                                                <Plus className="mx-auto mb-1 h-4 w-4" />
-                                                Add Members
-                                            </button>
-
-                                            <button
-                                                onClick={() => {
-                                                    alert(`Group Info\n\nName: ${profileName}\nMembers: ${groupMembers.length}`)
-                                                }}
-                                                className="rounded-2xl bg-slate-100 px-3 py-3 text-slate-700"
-                                            >
-                                                <User className="mx-auto mb-1 h-4 w-4" />
-                                                Info
-                                            </button>
-                                        </div>
-
-                                        <div className="rounded-2xl bg-slate-50 p-4">
-                                            <p className="text-xs uppercase tracking-[0.16em] text-slate-500">
-                                                Group Description
-                                            </p>
-                                            <p className="mt-2 text-sm text-slate-700">
-                                                {groupDescription || "Add group description"}
-                                            </p>
-                                            <p className="mt-3 text-xs text-slate-500">
-                                                Created by {groupAdminId || "Admin"}
-                                            </p>
-                                        </div>
-
-                                        <div className="rounded-2xl bg-slate-50 p-4">
-                                            <p className="mb-3 text-sm font-semibold text-slate-900">
-                                                Members ({groupMembers.length})
-                                            </p>
-
-                                            <div className="space-y-2">
-                                                {groupMembers.map(member => (
-                                                    <div
-                                                        key={member.id}
-                                                        className="flex items-center justify-between rounded-xl bg-white px-3 py-2"
-                                                    >
-                                                        <span className="text-sm text-slate-700">
-                                                            {member.name}
-                                                        </span>
-                                                        {member.id === groupAdminId && (
-                                                            <span className="rounded-full bg-emerald-500 px-2 py-0.5 text-xs font-medium text-white">
-                                                                Admin
-                                                            </span>
-                                                        )}
-                                                    </div>
-                                                ))}
-                                            </div>
-                                        </div>
-
-                                        <div className="overflow-hidden rounded-2xl border border-slate-200">
-                                            <button onClick={clearChat} className="w-full border-b border-slate-200 px-4 py-3 text-left text-sm">
-                                                Clear Chat
-                                            </button>
-                                            <button onClick={toggleMuteChat} className="w-full border-b border-slate-200 px-4 py-3 text-left text-sm">
-                                                {isChatMuted ? "Unmute Group" : "Mute Group"}
-                                            </button>
-                                            <button
-                                                className="w-full px-4 py-3 text-left text-sm text-rose-600"
-                                                onClick={async () => {
-                                                    if (!activeChat) {
-                                                        return
-                                                    }
-
-                                                    try {
-                                                        await fetch(`${API_BASE}/api/groups/exit/${activeChat}`, {
-                                                            method: "POST",
-                                                            headers: {
-                                                                "Content-Type": "application/json",
-                                                                UserId: currentUserId,
-                                                                Authorization: `Bearer ${localStorage.getItem("token")}`,
-                                                            },
-                                                        })
-
-                                                        alert("Exited group")
-                                                        setActiveChat(null)
-                                                        setMessages([])
-
-                                                        const updatedChats = await safeFetch<Chat[]>(
-                                                            `${API_BASE}/api/chat/group/${currentUserId}`
-                                                        )
-                                                        setChats(updatedChats)
-                                                    } catch {
-                                                        alert("Exit failed")
-                                                    }
-                                                }}
-                                            >
-                                                Exit Group
-                                            </button>
-                                        </div>
-                                    </div>
-                                )}
-                            </div>
-                        </div>
-                    </div>
-                )}
-
-                <ScrollArea className="flex-1 p-4">
+                <div className="flex-1 overflow-y-auto p-4">
                     {!activeChat && (
                         <div className="flex h-full items-center justify-center">
                             <div className="max-w-md text-center">
-                                <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-[24px] bg-slate-900 text-white">
+                                <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-[24px] bg-sky-600 text-white">
                                     <Users className="h-7 w-7" />
                                 </div>
-                                <h3 className="text-xl font-semibold text-slate-900">
-                                    Choose a conversation
-                                </h3>
+                                <h3 className="text-xl font-semibold text-slate-900">Choose a conversation</h3>
                                 <p className="mt-2 text-sm text-slate-500">
-                                    Open a direct chat for messages and voice calls, or jump into a study group.
+                                    Open a direct chat for messages and calls, or jump into a study group.
                                 </p>
                             </div>
                         </div>
@@ -1236,17 +992,15 @@ export function GroupStudyView() {
                             key={msg.id}
                             className={cn(
                                 "mb-3 flex",
-                                String(msg.senderId) === String(currentUserId)
-                                    ? "justify-end"
-                                    : "justify-start"
+                                String(msg.senderId) === String(currentUserId) ? "justify-end" : "justify-start"
                             )}
                         >
                             <div
                                 className={cn(
                                     "max-w-[72%] rounded-[22px] px-4 py-3 shadow-sm",
                                     String(msg.senderId) === String(currentUserId)
-                                        ? "bg-slate-900 text-white"
-                                        : "border border-slate-200 bg-white text-slate-900"
+                                        ? "bg-sky-600 text-white"
+                                        : "border border-sky-100 bg-white text-slate-900"
                                 )}
                             >
                                 {activeTab === "group" &&
@@ -1257,9 +1011,7 @@ export function GroupStudyView() {
                                     )}
 
                                 {msg.isCall ? (
-                                    <p className="text-center text-xs font-medium text-slate-500">
-                                        {msg.message}
-                                    </p>
+                                    <p className="text-center text-xs font-medium text-slate-500">{msg.message}</p>
                                 ) : (
                                     <p className="text-sm leading-6">{msg.message}</p>
                                 )}
@@ -1269,7 +1021,7 @@ export function GroupStudyView() {
                                         <img
                                             src={`${API_BASE}${msg.fileUrl}`}
                                             alt="chat-image"
-                                            className="mt-3 max-h-60 rounded-2xl cursor-pointer"
+                                            className="mt-3 max-h-60 cursor-pointer rounded-2xl"
                                             onClick={() => window.open(`${API_BASE}${msg.fileUrl}`, "_blank")}
                                         />
                                     ) : (
@@ -1299,9 +1051,7 @@ export function GroupStudyView() {
                                         <span>
                                             {msg.status === "sent" && "✓"}
                                             {msg.status === "delivered" && "✓✓"}
-                                            {msg.status === "read" && (
-                                                <span className="text-emerald-400">✓✓</span>
-                                            )}
+                                            {msg.status === "read" && <span className="text-blue-200">✓✓</span>}
                                         </span>
                                     )}
                                 </div>
@@ -1310,17 +1060,17 @@ export function GroupStudyView() {
                     ))}
 
                     <div ref={bottomRef} />
-                </ScrollArea>
+                </div>
 
                 {typingUser && typingUser !== currentUserId && (
-                    <p className="px-4 pb-1 text-xs text-slate-500 animate-pulse">
+                    <p className="animate-pulse px-4 pb-1 text-xs text-slate-500">
                         {activeTab === "group"
                             ? `${students.find(student => student.id === typingUser)?.name || "Student"} typing...`
                             : "typing..."}
                     </p>
                 )}
 
-                <div className="border-t border-slate-200 bg-white p-3">
+                <div className="border-t border-sky-100 bg-white p-3">
                     {showEmoji && (
                         <div className="absolute bottom-20 z-30">
                             <EmojiPicker onEmojiClick={addEmoji} />
@@ -1328,7 +1078,7 @@ export function GroupStudyView() {
                     )}
 
                     {file && (
-                        <div className="mb-3 flex items-center justify-between rounded-2xl bg-slate-100 px-3 py-2 text-xs text-slate-600">
+                        <div className="mb-3 flex items-center justify-between rounded-2xl bg-sky-50 px-3 py-2 text-xs text-slate-600">
                             <span className="truncate">{file.name}</span>
                             <button onClick={() => setFile(null)} className="text-rose-500">
                                 Remove
@@ -1336,15 +1086,13 @@ export function GroupStudyView() {
                         </div>
                     )}
 
-                    <div className="flex items-center gap-2 rounded-[24px] border border-slate-200 bg-slate-50 px-2 py-2 shadow-sm">
-                        <Button
-                            size="icon"
-                            variant="ghost"
-                            onClick={() => setShowEmoji(prev => !prev)}
-                            className="rounded-2xl"
+                    <div className="flex items-center gap-2 rounded-[24px] border border-sky-100 bg-sky-50/40 px-2 py-2 shadow-sm">
+                        <button
+                            onClick={() => setShowEmoji((prev: boolean) => !prev)}
+                            className="flex h-10 w-10 items-center justify-center rounded-2xl text-slate-600"
                         >
                             <Smile className="h-5 w-5" />
-                        </Button>
+                        </button>
 
                         <label className="flex h-10 w-10 cursor-pointer items-center justify-center rounded-2xl text-slate-500 transition hover:bg-white">
                             <input
@@ -1355,22 +1103,20 @@ export function GroupStudyView() {
                             <Paperclip className="h-5 w-5" />
                         </label>
 
-                        <Input
+                        <input
                             value={message}
                             onChange={event => {
                                 setMessage(event.target.value)
 
-                                if (connectionRef.current && activeChat) {
+                                if (activeChat) {
                                     fetch(`${API_BASE}/api/chat/typing`, {
                                         method: "POST",
-                                        headers: {
-                                            "Content-Type": "application/json",
-                                        },
+                                        headers: { "Content-Type": "application/json" },
                                         body: JSON.stringify({
                                             chatId: Number(activeChat),
                                             userId: currentUserId,
                                         }),
-                                    }).catch(err => console.error("Typing error:", err))
+                                    }).catch((error: unknown) => console.error("Typing error:", error))
                                 }
 
                                 setTimeout(() => setTypingUser(null), 2000)
@@ -1378,22 +1124,21 @@ export function GroupStudyView() {
                             onKeyDown={event => {
                                 if (event.key === "Enter") {
                                     event.preventDefault()
-                                    sendMessage()
+                                    void sendMessage()
                                 }
                             }}
                             placeholder={activeChat ? "Type a message..." : "Select a chat first"}
                             disabled={!activeChat}
-                            className="h-11 flex-1 rounded-2xl border-0 bg-transparent shadow-none focus-visible:ring-0"
+                            className="h-11 flex-1 rounded-2xl border-0 bg-transparent px-3 shadow-none outline-none"
                         />
 
-                        <Button
-                            size="icon"
-                            onClick={sendMessage}
+                        <button
+                            onClick={() => void sendMessage()}
                             disabled={!activeChat}
-                            className="h-11 w-11 rounded-2xl"
+                            className="flex h-11 w-11 items-center justify-center rounded-2xl bg-sky-600 text-white disabled:opacity-50"
                         >
                             <Send className="h-4 w-4" />
-                        </Button>
+                        </button>
                     </div>
                 </div>
             </div>

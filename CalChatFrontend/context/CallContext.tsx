@@ -1,76 +1,107 @@
 "use client"
 
-import { createContext, useContext, useMemo, useRef, useState } from "react"
+import {
+    createContext,
+    useContext,
+    useMemo,
+    useState,
+    type Dispatch,
+    type ReactNode,
+    type SetStateAction,
+} from "react"
 import * as signalR from "@microsoft/signalr"
 
-export interface CallData {
-    fromUserId: string
-    fromUserName: string
-    callType: "voice" | "video"
-    chatId?: string
-}
+export type CallType = "voice" | "video"
 
-export interface OutgoingCallData {
-    userId: string
-    userName: string
-    callType: "voice"
+export interface CallInviteData {
     chatId: string
+    chatName: string
+    callerId: string
+    callerName: string
+    participantIds: string[]
+    isGroup: boolean
+    callType: CallType
 }
 
-interface PendingOfferData {
-    offer: string
-    fromUserId: string
-    fromUserName?: string
+export interface ActiveCallData {
+    chatId: string
+    chatName: string
+    initiatorId: string
+    initiatorName: string
+    participantIds: string[]
+    isGroup: boolean
+    callType: CallType
+    state: "calling" | "ringing" | "connected" | "ended"
+}
+
+export interface EndedCallData {
+    chatId: string
+    chatName: string
+    endedBy?: string
+}
+
+interface StartOutgoingCallPayload {
+    chatId: string
+    chatName: string
+    participantIds: string[]
+    isGroup: boolean
+    callType: CallType
 }
 
 interface CallContextType {
-    incomingCall: CallData | null
-    setIncomingCall: (call: CallData | null) => void
-    acceptCall: () => Promise<void>
-    rejectCall: () => Promise<void>
-    endCall: () => void
     connection: signalR.HubConnection | null
     setConnection: (conn: signalR.HubConnection | null) => void
-    pendingOfferData: React.MutableRefObject<PendingOfferData | null>
-    outgoingCall: OutgoingCallData | null
-    startOutgoingCall: (call: OutgoingCallData) => void
-    clearOutgoingCall: () => void
     isCallReady: boolean
-    acceptedIncomingCall: boolean
-    setAcceptedIncomingCall: (value: boolean) => void
+    incomingCall: CallInviteData | null
+    setIncomingCall: Dispatch<SetStateAction<CallInviteData | null>>
+    activeCall: ActiveCallData | null
+    setActiveCall: Dispatch<SetStateAction<ActiveCallData | null>>
+    lastEndedCall: EndedCallData | null
+    setLastEndedCall: Dispatch<SetStateAction<EndedCallData | null>>
+    startOutgoingCall: (data: StartOutgoingCallPayload) => void
+    acceptCall: () => Promise<void>
+    rejectCall: () => Promise<void>
+    clearCallState: () => void
 }
 
 const CallContext = createContext<CallContextType | null>(null)
 
-export const CallProvider = ({ children }: { children: React.ReactNode }) => {
-    const [incomingCall, setIncomingCall] = useState<CallData | null>(null)
-    const [connection, setConnectionState] = useState<signalR.HubConnection | null>(null)
-    const [outgoingCall, setOutgoingCall] = useState<OutgoingCallData | null>(null)
-    const [acceptedIncomingCall, setAcceptedIncomingCall] = useState(false)
+const getCurrentUser = () => ({
+    id: typeof window !== "undefined" ? localStorage.getItem("userId") || "" : "",
+    name: typeof window !== "undefined" ? localStorage.getItem("name") || "You" : "You",
+})
 
-    const pendingOfferData = useRef<PendingOfferData | null>(null)
+export function CallProvider({ children }: { children: ReactNode }) {
+    const [connection, setConnectionState] = useState<signalR.HubConnection | null>(null)
+    const [incomingCall, setIncomingCall] = useState<CallInviteData | null>(null)
+    const [activeCall, setActiveCall] = useState<ActiveCallData | null>(null)
+    const [lastEndedCall, setLastEndedCall] = useState<EndedCallData | null>(null)
 
     const setConnection = (conn: signalR.HubConnection | null) => {
         setConnectionState(conn)
     }
 
-    const startOutgoingCall = (call: OutgoingCallData) => {
-        localStorage.setItem("chatId", call.chatId)
-        setAcceptedIncomingCall(false)
-        setOutgoingCall(call)
+    const clearCallState = () => {
+        setIncomingCall(null)
+        setActiveCall(null)
     }
 
-    const clearOutgoingCall = () => {
-        setOutgoingCall(null)
-    }
+    const startOutgoingCall = (data: StartOutgoingCallPayload) => {
+        const currentUser = getCurrentUser()
 
-    const stopRingtone = () => {
-        const ringtone = (window as any).ringtone
-        if (ringtone?.pause) {
-            ringtone.pause()
-            ringtone.currentTime = 0
-                ; (window as any).ringtone = null
-        }
+        localStorage.setItem("chatId", data.chatId)
+        setLastEndedCall(null)
+        setIncomingCall(null)
+        setActiveCall({
+            chatId: data.chatId,
+            chatName: data.chatName,
+            initiatorId: currentUser.id,
+            initiatorName: currentUser.name,
+            participantIds: data.participantIds,
+            isGroup: data.isGroup,
+            callType: data.callType,
+            state: "calling",
+        })
     }
 
     const acceptCall = async () => {
@@ -78,76 +109,75 @@ export const CallProvider = ({ children }: { children: React.ReactNode }) => {
             return
         }
 
-        stopRingtone()
-
         try {
-            localStorage.setItem("chatId", incomingCall.chatId || "")
-            setAcceptedIncomingCall(true)
-            await connection.invoke("AcceptCall", incomingCall.fromUserId, incomingCall.chatId || "")
+            localStorage.setItem("chatId", incomingCall.chatId)
+            setLastEndedCall(null)
+            setActiveCall({
+                chatId: incomingCall.chatId,
+                chatName: incomingCall.chatName,
+                initiatorId: incomingCall.callerId,
+                initiatorName: incomingCall.callerName,
+                participantIds: incomingCall.participantIds,
+                isGroup: incomingCall.isGroup,
+                callType: incomingCall.callType,
+                state: "ringing",
+            })
+
+            await connection.invoke("AcceptCall", incomingCall.chatId)
             setIncomingCall(null)
-        } catch (err) {
-            console.error("Accept error:", err)
-            setAcceptedIncomingCall(false)
+        } catch (error: unknown) {
+            console.error("AcceptCall failed:", error)
+            setActiveCall(null)
         }
     }
 
     const rejectCall = async () => {
         if (!incomingCall || !connection) {
+            setIncomingCall(null)
             return
         }
 
-        stopRingtone()
-
         try {
-            await connection.invoke("RejectCall", incomingCall.fromUserId, incomingCall.chatId || "")
-        } catch (err) {
-            console.error("Reject error:", err)
+            await connection.invoke("RejectCall", incomingCall.chatId)
+        } catch (error: unknown) {
+            console.error("RejectCall failed:", error)
         }
 
         setIncomingCall(null)
-        setOutgoingCall(null)
-        setAcceptedIncomingCall(false)
-        pendingOfferData.current = null
-    }
-
-    const endCall = () => {
-        setIncomingCall(null)
-        setOutgoingCall(null)
-        setAcceptedIncomingCall(false)
-        pendingOfferData.current = null
     }
 
     const isCallReady =
         !!connection &&
         connection.state === signalR.HubConnectionState.Connected
 
-    const value = useMemo(
+    const value = useMemo<CallContextType>(
         () => ({
-            incomingCall,
-            setIncomingCall,
-            acceptCall,
-            rejectCall,
-            endCall,
             connection,
             setConnection,
-            pendingOfferData,
-            outgoingCall,
-            startOutgoingCall,
-            clearOutgoingCall,
             isCallReady,
-            acceptedIncomingCall,
-            setAcceptedIncomingCall,
+            incomingCall,
+            setIncomingCall,
+            activeCall,
+            setActiveCall,
+            lastEndedCall,
+            setLastEndedCall,
+            startOutgoingCall,
+            acceptCall,
+            rejectCall,
+            clearCallState,
         }),
-        [incomingCall, connection, outgoingCall, isCallReady, acceptedIncomingCall]
+        [connection, isCallReady, incomingCall, activeCall, lastEndedCall]
     )
 
     return <CallContext.Provider value={value}>{children}</CallContext.Provider>
 }
 
-export const useCall = () => {
+export function useCall() {
     const context = useContext(CallContext)
+
     if (!context) {
         throw new Error("useCall must be used inside CallProvider")
     }
+
     return context
 }
