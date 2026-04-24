@@ -128,9 +128,7 @@ export default function GlobalCallUI() {
     useEffect(() => {
         outgoingCallRef.current = outgoingCall
 
-        if (!outgoingCall) {
-            return
-        }
+        if (!outgoingCall) return
 
         callUserIdRef.current = outgoingCall.userId
         setCallUserName(outgoingCall.userName)
@@ -140,14 +138,10 @@ export default function GlobalCallUI() {
     }, [outgoingCall])
 
     useEffect(() => {
-        if (!connection) {
-            return
-        }
+        if (!connection) return
 
         connection.on("CallAccepted", async data => {
-            if (!outgoingCallRef.current) {
-                return
-            }
+            if (!outgoingCallRef.current) return
 
             stopMedia()
 
@@ -162,9 +156,7 @@ export default function GlobalCallUI() {
             createPeer()
 
             const stream = await getMicStream()
-            if (!stream) {
-                return
-            }
+            if (!stream) return
 
             stream.getTracks().forEach(track => {
                 peerRef.current?.addTrack(track, stream)
@@ -173,7 +165,6 @@ export default function GlobalCallUI() {
             try {
                 const offer = await peerRef.current!.createOffer()
                 await peerRef.current!.setLocalDescription(offer)
-
                 await connection.invoke("SendOffer", JSON.stringify(offer), targetId)
             } catch (err) {
                 console.error("Offer creation failed:", err)
@@ -181,9 +172,7 @@ export default function GlobalCallUI() {
         })
 
         connection.on("ReceiveAnswer", async data => {
-            if (!peerRef.current) {
-                return
-            }
+            if (!peerRef.current) return
 
             try {
                 await peerRef.current.setRemoteDescription(
@@ -222,9 +211,7 @@ export default function GlobalCallUI() {
     useEffect(() => {
         const handler = async () => {
             const data = pendingOfferData.current
-            if (!data || !connection) {
-                return
-            }
+            if (!data || !connection) return
 
             stopMedia()
 
@@ -238,9 +225,7 @@ export default function GlobalCallUI() {
             createPeer()
 
             const stream = await getMicStream()
-            if (!stream) {
-                return
-            }
+            if (!stream) return
 
             stream.getTracks().forEach(track => {
                 peerRef.current?.addTrack(track, stream)
@@ -267,14 +252,10 @@ export default function GlobalCallUI() {
     }, [connection, pendingOfferData])
 
     const toggleMute = async () => {
-        if (!peerRef.current) {
-            return
-        }
+        if (!peerRef.current) return
 
         const sender = peerRef.current.getSenders().find(item => item.track?.kind === "audio")
-        if (!sender) {
-            return
-        }
+        if (!sender) return
 
         const newMuted = !isMuted
 
@@ -295,7 +276,6 @@ export default function GlobalCallUI() {
     const handleEndCall = async () => {
         if (connection && callUserIdRef.current) {
             const chatId = localStorage.getItem("chatId")
-
             try {
                 await connection.invoke("EndCall", callUserIdRef.current, chatId)
             } catch (err) {
@@ -306,12 +286,10 @@ export default function GlobalCallUI() {
         cleanupCall()
     }
 
-    if (!callType) {
-        return null
-    }
+    if (!callType) return null
 
     return (
-        <div className="fixed inset-0 z-[99999] flex items-center justify-center bg-slate-950/60 backdrop-blur-md">
+        <div className="fixed inset-0 z-[99999] flex items-center justify-center bg-slate-950/65 backdrop-blur-md">
             <div className="relative w-[390px] overflow-hidden rounded-[32px] border border-white/15 bg-[radial-gradient(circle_at_top,#1e293b_0%,#0f172a_45%,#020617_100%)] p-6 shadow-[0_30px_80px_-28px_rgba(2,6,23,0.85)]">
                 <div className="absolute inset-x-0 top-0 h-32 bg-[radial-gradient(circle_at_top,rgba(56,189,248,0.22),transparent_65%)]" />
 
@@ -322,7 +300,7 @@ export default function GlobalCallUI() {
                                 Voice Call
                             </p>
                             <p className="mt-2 text-sm text-slate-300">
-                                {callStatus === "calling" ? "Connecting study partner" : "Live conversation"}
+                                {callStatus === "calling" ? "Connecting..." : "Connected"}
                             </p>
                         </div>
 
@@ -343,7 +321,7 @@ export default function GlobalCallUI() {
                             {callUserName}
                         </h2>
                         <p className="mt-2 text-sm text-slate-300">
-                            {callStatus === "calling" ? "Ringing..." : "Connected"}
+                            {callStatus === "calling" ? "Ringing..." : "Voice call active"}
                         </p>
                     </div>
 
@@ -357,7 +335,6 @@ export default function GlobalCallUI() {
                         <button
                             onClick={toggleMute}
                             className={`flex h-14 w-14 items-center justify-center rounded-2xl transition ${isMuted ? "bg-rose-500 text-white" : "bg-white/10 text-white hover:bg-white/15"}`}
-                            title={isMuted ? "Unmute" : "Mute"}
                         >
                             {isMuted ? <MicOff className="h-5 w-5" /> : <Mic className="h-5 w-5" />}
                         </button>

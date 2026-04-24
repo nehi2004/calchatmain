@@ -1,7 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;
 using System.Security.Claims;
-
 using CalChatAPI.Data;
 using CalChatAPI.Models;
 
@@ -38,30 +37,16 @@ namespace CalChatAPI.Hubs
 
         public async Task JoinChat(string chatId)
         {
-            if (string.IsNullOrEmpty(chatId))
-            {
-                return;
-            }
-
+            if (string.IsNullOrEmpty(chatId)) return;
             await Groups.AddToGroupAsync(Context.ConnectionId, chatId);
         }
 
         public async Task SendMessage(object message)
         {
-            if (message == null)
-            {
-                return;
-            }
+            if (message == null) return;
 
-            var chatId = message.GetType()
-                .GetProperty("ChatId")?
-                .GetValue(message)?
-                .ToString();
-
-            if (string.IsNullOrEmpty(chatId))
-            {
-                return;
-            }
+            var chatId = message.GetType().GetProperty("ChatId")?.GetValue(message)?.ToString();
+            if (string.IsNullOrEmpty(chatId)) return;
 
             var text =
                 message.GetType().GetProperty("Text")?.GetValue(message) ??

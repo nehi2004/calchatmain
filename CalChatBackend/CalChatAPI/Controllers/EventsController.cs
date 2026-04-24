@@ -66,8 +66,6 @@
 //        }
 //    }
 //}
-
-
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using CalChatAPI.Data;
@@ -115,9 +113,54 @@ namespace CalChatAPI.Controllers
             public string? Status { get; set; }
         }
 
-        // GET: api/Events
+        public class EventResponseDto
+        {
+            public Guid Id { get; set; }
+            public string Title { get; set; } = string.Empty;
+            public DateTime? Date { get; set; }
+            public string Time { get; set; } = string.Empty;
+            public string Location { get; set; } = string.Empty;
+            public int Attendees { get; set; }
+            public string Type { get; set; } = "General";
+            public string Status { get; set; } = "Upcoming";
+        }
+
+        private static string ResolveStatus(DateTime? date, string? existingStatus)
+        {
+            if (!string.IsNullOrWhiteSpace(existingStatus) &&
+                existingStatus.Trim().Equals("Cancelled", StringComparison.OrdinalIgnoreCase))
+            {
+                return "Cancelled";
+            }
+
+            if (!date.HasValue)
+                return "Upcoming";
+
+            var today = DateTime.Today;
+            var eventDate = date.Value.Date;
+
+            if (eventDate < today) return "Past";
+            if (eventDate == today) return "Today";
+            return "Upcoming";
+        }
+
+        private static EventResponseDto MapToDto(EventItem eventItem)
+        {
+            return new EventResponseDto
+            {
+                Id = eventItem.Id,
+                Title = eventItem.Title ?? string.Empty,
+                Date = eventItem.Date,
+                Time = eventItem.Time ?? string.Empty,
+                Location = eventItem.Location ?? string.Empty,
+                Attendees = eventItem.Attendees,
+                Type = string.IsNullOrWhiteSpace(eventItem.Type) ? "General" : eventItem.Type,
+                Status = ResolveStatus(eventItem.Date, eventItem.Status)
+            };
+        }
+
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<EventItem>>> GetEvents()
+        public async Task<ActionResult<IEnumerable<EventResponseDto>>> GetEvents()
         {
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 
@@ -126,12 +169,11 @@ namespace CalChatAPI.Controllers
                 .OrderBy(e => e.Date)
                 .ToListAsync();
 
-            return Ok(events);
+            return Ok(events.Select(MapToDto));
         }
 
-        // GET: api/Events/{id}
         [HttpGet("{id:guid}")]
-        public async Task<ActionResult<EventItem>> GetEvent(Guid id)
+        public async Task<ActionResult<EventResponseDto>> GetEvent(Guid id)
         {
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 
@@ -141,12 +183,11 @@ namespace CalChatAPI.Controllers
             if (eventItem == null)
                 return NotFound();
 
-            return Ok(eventItem);
+            return Ok(MapToDto(eventItem));
         }
 
-        // POST: api/Events
         [HttpPost]
-        public async Task<ActionResult<EventItem>> CreateEvent([FromBody] EventCreateUpdateDto dto)
+        public async Task<ActionResult<EventResponseDto>> CreateEvent([FromBody] EventCreateUpdateDto dto)
         {
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 
@@ -163,16 +204,17 @@ namespace CalChatAPI.Controllers
                 Location = dto.Location?.Trim() ?? string.Empty,
                 Attendees = dto.Attendees,
                 Type = string.IsNullOrWhiteSpace(dto.Type) ? "General" : dto.Type.Trim(),
-                Status = string.IsNullOrWhiteSpace(dto.Status) ? "Upcoming" : dto.Status.Trim()
+                Status = string.IsNullOrWhiteSpace(dto.Status)
+                    ? ResolveStatus(dto.Date, null)
+                    : dto.Status.Trim()
             };
 
             _context.Events.Add(eventItem);
             await _context.SaveChangesAsync();
 
-            return CreatedAtAction(nameof(GetEvent), new { id = eventItem.Id }, eventItem);
+            return CreatedAtAction(nameof(GetEvent), new { id = eventItem.Id }, MapToDto(eventItem));
         }
 
-        // PUT: api/Events/{id}
         [HttpPut("{id:guid}")]
         public async Task<IActionResult> UpdateEvent(Guid id, [FromBody] EventCreateUpdateDto dto)
         {
@@ -193,13 +235,14 @@ namespace CalChatAPI.Controllers
             eventItem.Location = dto.Location?.Trim() ?? string.Empty;
             eventItem.Attendees = dto.Attendees;
             eventItem.Type = string.IsNullOrWhiteSpace(dto.Type) ? "General" : dto.Type.Trim();
-            eventItem.Status = string.IsNullOrWhiteSpace(dto.Status) ? "Upcoming" : dto.Status.Trim();
+            eventItem.Status = string.IsNullOrWhiteSpace(dto.Status)
+                ? ResolveStatus(dto.Date, null)
+                : dto.Status.Trim();
 
             await _context.SaveChangesAsync();
             return NoContent();
         }
 
-        // DELETE: api/Events/{id}
         [HttpDelete("{id:guid}")]
         public async Task<IActionResult> DeleteEvent(Guid id)
         {

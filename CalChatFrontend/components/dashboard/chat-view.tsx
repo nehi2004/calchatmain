@@ -2191,7 +2191,7 @@ export function ChatView() {
             updateMessageActionState(messageId, "confirmed")
             toast.success("Event added to calendar")
 
-            const confirmMessage = `Event successfully added to your calendar.
+            const confirmMessage = `Event successfully added to your calendar🎉🎉.
 
 ${data?.title ? `Title: ${data.title}` : ""}
 ${data?.date ? `Date: ${formatEventDate(data.date)}` : ""}

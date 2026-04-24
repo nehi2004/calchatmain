@@ -954,6 +954,363 @@
 
 
 
+//"use client"
+
+//import { useState, useEffect, useMemo } from "react"
+//import {
+//    LayoutDashboard,
+//    Calendar,
+//    MessageSquare,
+//    CheckCircle2,
+//    Focus,
+//    CalendarDays,
+//    Users,
+//    BarChart3,
+//    Clock,
+//    FileText
+//} from "lucide-react"
+
+//import { DashboardShell } from "@/components/dashboard/dashboard-shell"
+//import { StatCard } from "@/components/dashboard/stat-card"
+//import { Progress } from "@/components/ui/progress"
+//import { Badge } from "@/components/ui/badge"
+
+//import {
+//    BarChart,
+//    Bar,
+//    XAxis,
+//    YAxis,
+//    Tooltip,
+//    CartesianGrid,
+//    ResponsiveContainer
+//} from "recharts"
+
+///* ================= TYPES ================= */
+
+//type Task = {
+//    id: string
+//    title: string
+//    status: string
+//    priority: string
+//    deadline?: string
+//}
+
+//type EventType = {
+//    id: string
+//    title: string
+//    date: string
+//    time: string
+//    priority: string
+//}
+
+///* ================= NAV ================= */
+
+//const navItems = [
+//    { label: "Dashboard", href: "/dashboard/student", icon: LayoutDashboard },
+//    { label: "Calendar", href: "/dashboard/student/calendar", icon: Calendar },
+//    { label: "AI Chat", href: "/dashboard/student/chat", icon: MessageSquare },
+//    { label: "Tasks", href: "/dashboard/student/tasks", icon: CheckCircle2 },
+//    { label: "Focus Mode", href: "/dashboard/student/focus", icon: Focus },
+//    { label: "Events", href: "/dashboard/student/events", icon: CalendarDays },
+//    { label: "Group Study", href: "/dashboard/student/group", icon: Users },
+//    { label: "Analytics", href: "/dashboard/student/analytics", icon: BarChart3 },
+//]
+
+//const TASK_API = "https://steadfast-warmth-production-64c8.up.railway.app/api/Tasks"
+//const EVENT_API = "https://steadfast-warmth-production-64c8.up.railway.app/api/CalendarEvents"
+//const CUSTOM_EVENT_API = "https://steadfast-warmth-production-64c8.up.railway.app/api/Events"
+
+///* ================= UTIL ================= */
+
+//function formatDate(date: Date) {
+//    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(
+//        date.getDate()
+//    ).padStart(2, "0")}`
+//}
+
+//export default function StudentDashboard() {
+
+//    const [tasks, setTasks] = useState<Task[]>([])
+//    const [events, setEvents] = useState<EventType[]>([])
+//    const [customEvents, setCustomEvents] = useState<any[]>([])
+
+//    const today = formatDate(new Date())
+
+//    useEffect(() => {
+//        fetchTasks()
+//        fetchEvents()
+//        fetchCustomEvents()
+//    }, [])
+
+
+//    useEffect(() => {
+
+//        const handleEventUpdate = () => {
+//            fetchCustomEvents()
+//        }
+
+//        window.addEventListener("event-added", handleEventUpdate)
+
+//        return () => {
+//            window.removeEventListener("event-added", handleEventUpdate)
+//        }
+
+//    }, [])
+
+//    async function fetchTasks() {
+//        const token = localStorage.getItem("token")
+
+//        const res = await fetch(TASK_API, {
+//            headers: { Authorization: `Bearer ${token}` }
+//        })
+
+//        const data = await res.json()
+
+//        setTasks(data.map((t: any) => ({
+//            ...t,
+//            deadline: t.deadline?.split("T")[0]
+//        })))
+//    }
+
+//    async function fetchEvents() {
+//        const token = localStorage.getItem("token")
+
+//        const res = await fetch(EVENT_API, {
+//            headers: { Authorization: `Bearer ${token}` }
+//        })
+
+//        const data = await res.json()
+
+//        setEvents(data.map((e: any) => ({
+//            ...e,
+//            date: e.date.split("T")[0]
+//        })))
+//    }
+
+//    async function fetchCustomEvents() {
+//        const token = localStorage.getItem("token")
+
+//        const res = await fetch(CUSTOM_EVENT_API, {
+//            headers: { Authorization: `Bearer ${token}` }
+//        })
+
+//        const data = await res.json()
+//        setCustomEvents(
+//            data.map((e: any) => {
+
+//                // 🔥 SMART PRIORITY L
+
+//                //if (e.status === "Upcoming") priority = "High"
+//                //else if (e.type?.toLowerCase().includes("exam")) priority = "High"
+//                //else if (e.type?.toLowerCase().includes("meeting")) priority = "Medium"
+//                //else if (e.type?.toLowerCase().includes("study")) priority = "Low"
+
+//                return {
+//                    id: e.id,
+//                    title: e.title,
+//                    date: e.date?.split("T")[0],
+//                    time: e.time || "",
+//                    type: e.type || "General",        // ✅ ADD THIS
+//                    location: e.location || "",       // ✅ ADD THIS (optional)
+//                }
+//            })
+//        )
+//    }
+//    const allEvents = useMemo(() => {
+//        return [...events, ...customEvents]
+//    }, [events, customEvents])
+//    /* ================= STATS ================= */
+
+//    const completed = tasks.filter(t => t.status === "Completed").length
+//    const todo = tasks.filter(t => t.status === "Todo").length
+//    const progress = tasks.filter(t => t.status === "In Progress").length
+
+//    const progressPercent =
+//        tasks.length > 0 ? Math.round((completed / tasks.length) * 100) : 0
+
+//    /* ================= FILTERS ================= */
+
+//    const todayEvents = useMemo(() =>
+//        allEvents.filter(e => e.date === today)
+//        , [allEvents, today])
+
+//    const todayTasks = useMemo(() =>
+//        tasks.filter(t => t.deadline === today)
+//        , [tasks, today])
+
+//    const upcomingEvents = useMemo(() =>
+//        allEvents
+//            .filter(e => e.date > today)
+//            .sort((a, b) => a.date.localeCompare(b.date))
+//            .slice(0, 5)
+//        , [allEvents, today])
+
+//    /* ================= ANALYTICS ================= */
+
+//    const weeklyData = useMemo(() => {
+
+//        const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]
+//        const result: any = {}
+
+//        days.forEach(d => result[d] = { day: d, count: 0 })
+
+//            ;[...tasks, ...events].forEach((item: any) => {
+//                const date = item.deadline || item.date
+//                if (!date) return
+//                const day = days[new Date(date).getDay()]
+//                result[day].count++
+//            })
+
+//        return Object.values(result)
+
+//    }, [tasks, events])
+
+//    return (
+
+//        <DashboardShell navItems={navItems} role="Student" title="Dashboard">
+
+//            {/* STATS */}
+//            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+//                <StatCard icon={Calendar} title="Today's Tasks" value={String(todayEvents.length)} />
+//                <StatCard icon={CheckCircle2} title="Completed Tasks" value={String(completed)} />
+//                <StatCard icon={Clock} title="In Progress" value={String(progress)} />
+//                <StatCard icon={FileText} title="Pending Tasks" value={String(todo)} />
+//            </div>
+
+//            {/* MAIN */}
+//            <div className="mt-6 grid gap-6 lg:grid-cols-2">
+
+//                {/* TODAY EVENTS */}
+//                <Card title="Today's Schedule" items={todayEvents} type="event" />
+
+//                {/* TODAY TASKS */}
+//                <div className="rounded-xl border bg-card p-6">
+//                    <h3 className="font-semibold text-lg">Today's Tasks</h3>
+
+//                    <div className="mt-4">
+//                        <Progress value={progressPercent} />
+//                    </div>
+
+//                    <CardList items={todayTasks} type="task" />
+//                </div>
+
+//                {/* ANALYTICS */}
+//                <div className="rounded-xl border bg-card p-6">
+//                    <h3 className="font-semibold text-lg">Weekly Activity</h3>
+
+//                    <div className="h-64 mt-4">
+//                        <ResponsiveContainer>
+//                            <BarChart data={weeklyData}>
+//                                <CartesianGrid strokeDasharray="3 3" />
+//                                <XAxis dataKey="day" />
+//                                <YAxis />
+//                                <Tooltip />
+//                                <Bar dataKey="count" fill="hsl(var(--primary))" />
+//                            </BarChart>
+//                        </ResponsiveContainer>
+//                    </div>
+//                </div>
+
+//                {/* UPCOMING EVENTS */}
+//                <Card
+//                    title="Upcoming Events"
+//                    items={upcomingEvents}
+//                    type="event"
+//                    hidePriority={true}   // ✅ ADD THIS
+//                />
+
+//            </div>
+//        </DashboardShell>
+//    )
+//}
+
+///* ================= REUSABLE UI ================= */
+
+//function Card({ title, items, type, hidePriority }: any) {
+//    return (
+//        <div className="rounded-xl border bg-card p-6">
+//            <h3 className="font-semibold text-lg">{title}</h3>
+//            <CardList items={items} type={type} hidePriority={hidePriority} />
+//        </div>
+//    )
+//}
+
+//function CardList({ items, type, hidePriority }: any) {
+
+//    return (
+//        <div className={`mt-4 flex flex-col gap-3 pr-2 ${items.length > 3 ? "max-h-60 overflow-y-auto scrollbar-thin" : ""}`}>
+
+//            {items.length === 0 && (
+//                <p className="text-sm text-muted-foreground text-center py-6">
+//                    No data available
+//                </p>
+//            )}
+
+//            {items.map((item: any) => (
+//                <div
+//                    key={item.id}
+//                    className="flex items-center gap-3 rounded-lg bg-muted/50 p-3 hover:bg-muted transition-all duration-200 hover:scale-[1.01]"
+//                >
+
+//                    {/* LEFT */}
+//                    {type === "event" ? (
+//                        <span className="w-14 text-sm font-semibold text-primary">
+//                            {item.time}
+//                        </span>
+//                    ) : (
+//                        <div className={`h-2 w-2 rounded-full ${item.status === "Completed"
+//                                ? "bg-green-500"
+//                                : item.status === "In Progress"
+//                                    ? "bg-blue-500"
+//                                    : "bg-gray-400"
+//                            }`} />
+//                    )}
+
+//                    {/* CENTER */}
+//                    <div className="flex-1">
+//                        <p className="text-sm font-medium">
+//                            {item.title}
+//                        </p>
+//                        {type === "event" && (
+//                            <>
+//                                <p className="text-xs text-muted-foreground">
+//                                    {item.date}
+//                                </p>
+//                                <p className="text-xs text-purple-500">
+//                                    {item.type || "General"}
+//                                </p>
+//                            </>
+//                        )}
+//                    </div>
+
+//                    {/* RIGHT */}
+//                    {/* RIGHT */}
+//                    {!hidePriority ? (
+//                        <Badge
+//                            variant="outline"
+//                            className={
+//                                item.priority === "High"
+//                                    ? "text-red-600 border-red-300"
+//                                    : item.priority === "Medium"
+//                                        ? "text-yellow-600 border-yellow-300"
+//                                        : "text-green-600 border-green-300"
+//                            }
+//                        >
+//                            {item.priority}
+//                        </Badge>
+//                    ) : (
+//                        <span className="text-xs text-blue-500 font-medium">
+//                            {item.location || item.type}
+//                        </span>
+//                    )}
+
+//                </div>
+//            ))}
+
+//        </div>
+//    )
+//}
+
 "use client"
 
 import { useState, useEffect, useMemo } from "react"
@@ -967,13 +1324,18 @@ import {
     Users,
     BarChart3,
     Clock,
-    FileText
+    FileText,
+    RefreshCw,
+    AlertTriangle,
+    Inbox,
+    Sparkles,
 } from "lucide-react"
 
 import { DashboardShell } from "@/components/dashboard/dashboard-shell"
 import { StatCard } from "@/components/dashboard/stat-card"
 import { Progress } from "@/components/ui/progress"
 import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
 
 import {
     BarChart,
@@ -982,17 +1344,16 @@ import {
     YAxis,
     Tooltip,
     CartesianGrid,
-    ResponsiveContainer
+    ResponsiveContainer,
 } from "recharts"
-
-/* ================= TYPES ================= */
 
 type Task = {
     id: string
     title: string
-    status: string
-    priority: string
+    status: "Todo" | "In Progress" | "Completed"
+    priority: "Low" | "Medium" | "High"
     deadline?: string
+    description?: string
 }
 
 type EventType = {
@@ -1000,10 +1361,11 @@ type EventType = {
     title: string
     date: string
     time: string
-    priority: string
+    priority?: "Low" | "Medium" | "High"
+    type?: string
+    location?: string
+    source?: "calendar" | "custom"
 }
-
-/* ================= NAV ================= */
 
 const navItems = [
     { label: "Dashboard", href: "/dashboard/student", icon: LayoutDashboard },
@@ -1019,8 +1381,7 @@ const navItems = [
 const TASK_API = "https://steadfast-warmth-production-64c8.up.railway.app/api/Tasks"
 const EVENT_API = "https://steadfast-warmth-production-64c8.up.railway.app/api/CalendarEvents"
 const CUSTOM_EVENT_API = "https://steadfast-warmth-production-64c8.up.railway.app/api/Events"
-
-/* ================= UTIL ================= */
+const PANEL_HEIGHT = "h-[360px]"
 
 function formatDate(date: Date) {
     return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(
@@ -1028,285 +1389,423 @@ function formatDate(date: Date) {
     ).padStart(2, "0")}`
 }
 
-export default function StudentDashboard() {
+function formatPrettyDate(value?: string) {
+    if (!value) return "No date"
+    return new Date(value).toLocaleDateString(undefined, {
+        month: "short",
+        day: "numeric",
+        year: "numeric",
+    })
+}
 
+function isOverdue(deadline?: string, status?: string) {
+    if (!deadline || status === "Completed") return false
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
+    const due = new Date(deadline)
+    due.setHours(0, 0, 0, 0)
+    return due.getTime() < today.getTime()
+}
+
+function getTaskPriorityClasses(priority?: string) {
+    switch (priority) {
+        case "High":
+            return "border-red-300 bg-red-50 text-red-600"
+        case "Medium":
+            return "border-yellow-300 bg-yellow-50 text-yellow-700"
+        default:
+            return "border-green-300 bg-green-50 text-green-700"
+    }
+}
+
+function getEventAccent(event: EventType) {
+    if (event.location) return event.location
+    if (event.type) return event.type
+    return event.source === "custom" ? "Custom" : "Calendar"
+}
+
+function StudentDashboardPanel({
+    title,
+    subtitle,
+    children,
+    className = "",
+}: {
+    title: string
+    subtitle?: string
+    children: React.ReactNode
+    className?: string
+}) {
+    return (
+        <div
+            className={`flex ${PANEL_HEIGHT} min-h-0 flex-col rounded-3xl border border-border/60 bg-card/95 p-6 shadow-sm transition hover:shadow-md ${className}`}
+        >
+            <div className="mb-4">
+                <h3 className="text-lg font-semibold tracking-tight">{title}</h3>
+                {subtitle && <p className="mt-1 text-xs text-muted-foreground">{subtitle}</p>}
+            </div>
+            <div className="min-h-0 flex-1">{children}</div>
+        </div>
+    )
+}
+
+function StudentCardList({
+    items,
+    type,
+    hidePriority,
+}: {
+    items: any[]
+    type: "event" | "task"
+    hidePriority?: boolean
+}) {
+    return (
+        <div className="flex h-full flex-col gap-3 overflow-y-auto pr-1">
+            {items.length === 0 && (
+                <div className="flex h-full flex-col items-center justify-center gap-3 rounded-2xl border border-dashed text-center">
+                    <Inbox className="h-8 w-8 text-muted-foreground" />
+                    <p className="text-sm text-muted-foreground">No data available</p>
+                </div>
+            )}
+
+            {items.map((item) => (
+                <div
+                    key={item.id}
+                    className="flex items-center gap-3 rounded-2xl border border-transparent bg-muted/40 p-4 transition-all duration-200 hover:border-border hover:bg-muted/60"
+                >
+                    {type === "event" ? (
+                        <div className="w-16 shrink-0 rounded-xl bg-primary/10 px-2 py-2 text-center text-sm font-semibold text-primary">
+                            {item.time || "--:--"}
+                        </div>
+                    ) : (
+                        <div
+                            className={`h-2.5 w-2.5 shrink-0 rounded-full ${item.status === "Completed"
+                                    ? "bg-green-500"
+                                    : item.status === "In Progress"
+                                        ? "bg-blue-500"
+                                        : "bg-gray-400"
+                                }`}
+                        />
+                    )}
+
+                    <div className="min-w-0 flex-1">
+                        <p className="truncate text-sm font-medium">{item.title}</p>
+
+                        {type === "event" ? (
+                            <>
+                                <p className="text-xs text-muted-foreground">{formatPrettyDate(item.date)}</p>
+                                <p className="text-xs text-violet-600">{item.type || "General"}</p>
+                            </>
+                        ) : (
+                            <p className="text-xs text-muted-foreground">
+                                {item.deadline ? formatPrettyDate(item.deadline) : "No deadline"}
+                            </p>
+                        )}
+                    </div>
+
+                    {!hidePriority && type === "task" ? (
+                        <Badge variant="outline" className={getTaskPriorityClasses(item.priority)}>
+                            {item.priority}
+                        </Badge>
+                    ) : (
+                        <span className="max-w-[110px] truncate text-xs font-medium text-blue-600">
+                            {getEventAccent(item)}
+                        </span>
+                    )}
+                </div>
+            ))}
+        </div>
+    )
+}
+
+export default function StudentDashboard() {
     const [tasks, setTasks] = useState<Task[]>([])
     const [events, setEvents] = useState<EventType[]>([])
-    const [customEvents, setCustomEvents] = useState<any[]>([])
+    const [customEvents, setCustomEvents] = useState<EventType[]>([])
+    const [loading, setLoading] = useState(true)
+    const [refreshing, setRefreshing] = useState(false)
+    const [error, setError] = useState("")
 
     const today = formatDate(new Date())
 
     useEffect(() => {
-        fetchTasks()
-        fetchEvents()
-        fetchCustomEvents()
+        fetchAll()
     }, [])
 
-
     useEffect(() => {
-
         const handleEventUpdate = () => {
-            fetchCustomEvents()
+            fetchCustomEvents(true)
         }
 
         window.addEventListener("event-added", handleEventUpdate)
-
-        return () => {
-            window.removeEventListener("event-added", handleEventUpdate)
-        }
-
+        return () => window.removeEventListener("event-added", handleEventUpdate)
     }, [])
 
-    async function fetchTasks() {
+    function getHeaders() {
         const token = localStorage.getItem("token")
-
-        const res = await fetch(TASK_API, {
-            headers: { Authorization: `Bearer ${token}` }
-        })
-
-        const data = await res.json()
-
-        setTasks(data.map((t: any) => ({
-            ...t,
-            deadline: t.deadline?.split("T")[0]
-        })))
+        return {
+            Authorization: `Bearer ${token}`,
+        }
     }
 
-    async function fetchEvents() {
-        const token = localStorage.getItem("token")
-
-        const res = await fetch(EVENT_API, {
-            headers: { Authorization: `Bearer ${token}` }
-        })
-
-        const data = await res.json()
-
-        setEvents(data.map((e: any) => ({
-            ...e,
-            date: e.date.split("T")[0]
-        })))
+    async function fetchJson(url: string) {
+        const res = await fetch(url, { headers: getHeaders() })
+        if (!res.ok) throw new Error(`Failed to fetch ${url}`)
+        return res.json()
     }
 
-    async function fetchCustomEvents() {
-        const token = localStorage.getItem("token")
+    async function fetchAll(isRefresh = false) {
+        try {
+            if (isRefresh) {
+                setRefreshing(true)
+            } else {
+                setLoading(true)
+            }
 
-        const res = await fetch(CUSTOM_EVENT_API, {
-            headers: { Authorization: `Bearer ${token}` }
-        })
+            setError("")
 
-        const data = await res.json()
-        setCustomEvents(
-            data.map((e: any) => {
+            const [taskData, eventData, customEventData] = await Promise.all([
+                fetchJson(TASK_API),
+                fetchJson(EVENT_API),
+                fetchJson(CUSTOM_EVENT_API),
+            ])
 
-                // 🔥 SMART PRIORITY L
+            const normalizedTasks: Task[] = (Array.isArray(taskData) ? taskData : []).map((t: any) => ({
+                id: t.id,
+                title: t.title,
+                status: t.status,
+                priority: t.priority || "Low",
+                deadline: t.deadline?.split("T")[0],
+                description: t.description || "",
+            }))
 
-                //if (e.status === "Upcoming") priority = "High"
-                //else if (e.type?.toLowerCase().includes("exam")) priority = "High"
-                //else if (e.type?.toLowerCase().includes("meeting")) priority = "Medium"
-                //else if (e.type?.toLowerCase().includes("study")) priority = "Low"
+            const normalizedEvents: EventType[] = (Array.isArray(eventData) ? eventData : []).map((e: any) => ({
+                id: e.id,
+                title: e.title,
+                date: e.date?.split("T")[0],
+                time: e.time || "",
+                priority: e.priority || "Medium",
+                type: e.type || "Calendar",
+                location: e.location || "",
+                source: "calendar",
+            }))
 
-                return {
-                    id: e.id,
-                    title: e.title,
-                    date: e.date?.split("T")[0],
-                    time: e.time || "",
-                    type: e.type || "General",        // ✅ ADD THIS
-                    location: e.location || "",       // ✅ ADD THIS (optional)
-                }
+            const normalizedCustomEvents: EventType[] = (Array.isArray(customEventData) ? customEventData : []).map((e: any) => ({
+                id: e.id,
+                title: e.title,
+                date: e.date?.split("T")[0],
+                time: e.time || "",
+                priority: e.priority || "Medium",
+                type: e.type || "General",
+                location: e.location || "",
+                source: "custom",
+            }))
+
+            setTasks(normalizedTasks)
+            setEvents(normalizedEvents)
+            setCustomEvents(normalizedCustomEvents)
+        } catch (err) {
+            console.error("Student dashboard error:", err)
+            setError("Unable to load dashboard data right now.")
+            setTasks([])
+            setEvents([])
+            setCustomEvents([])
+        } finally {
+            setLoading(false)
+            setRefreshing(false)
+        }
+    }
+
+    async function fetchCustomEvents(isRefresh = false) {
+        try {
+            if (isRefresh) setRefreshing(true)
+
+            const data = await fetchJson(CUSTOM_EVENT_API)
+
+            const normalizedCustomEvents: EventType[] = (Array.isArray(data) ? data : []).map((e: any) => ({
+                id: e.id,
+                title: e.title,
+                date: e.date?.split("T")[0],
+                time: e.time || "",
+                priority: e.priority || "Medium",
+                type: e.type || "General",
+                location: e.location || "",
+                source: "custom",
+            }))
+
+            setCustomEvents(normalizedCustomEvents)
+        } catch (err) {
+            console.error("fetchCustomEvents error:", err)
+        } finally {
+            setRefreshing(false)
+        }
+    }
+
+    const allEvents = useMemo(() => [...events, ...customEvents], [events, customEvents])
+
+    const completed = tasks.filter((t) => t.status === "Completed").length
+    const todo = tasks.filter((t) => t.status === "Todo").length
+    const progress = tasks.filter((t) => t.status === "In Progress").length
+    const overdueTasks = tasks.filter((t) => isOverdue(t.deadline, t.status)).length
+
+    const progressPercent = tasks.length > 0 ? Math.round((completed / tasks.length) * 100) : 0
+
+    const todayEvents = useMemo(() => allEvents.filter((e) => e.date === today), [allEvents, today])
+    const todayTasks = useMemo(() => tasks.filter((t) => t.deadline === today), [tasks, today])
+
+    const upcomingEvents = useMemo(() => {
+        return allEvents
+            .filter((e) => e.date > today)
+            .sort((a, b) => {
+                const dateDiff = a.date.localeCompare(b.date)
+                if (dateDiff !== 0) return dateDiff
+                return (a.time || "").localeCompare(b.time || "")
             })
-        )
-    }
-    const allEvents = useMemo(() => {
-        return [...events, ...customEvents]
-    }, [events, customEvents])
-    /* ================= STATS ================= */
-
-    const completed = tasks.filter(t => t.status === "Completed").length
-    const todo = tasks.filter(t => t.status === "Todo").length
-    const progress = tasks.filter(t => t.status === "In Progress").length
-
-    const progressPercent =
-        tasks.length > 0 ? Math.round((completed / tasks.length) * 100) : 0
-
-    /* ================= FILTERS ================= */
-
-    const todayEvents = useMemo(() =>
-        allEvents.filter(e => e.date === today)
-        , [allEvents, today])
-
-    const todayTasks = useMemo(() =>
-        tasks.filter(t => t.deadline === today)
-        , [tasks, today])
-
-    const upcomingEvents = useMemo(() =>
-        allEvents
-            .filter(e => e.date > today)
-            .sort((a, b) => a.date.localeCompare(b.date))
-            .slice(0, 5)
-        , [allEvents, today])
-
-    /* ================= ANALYTICS ================= */
+            .slice(0, 6)
+    }, [allEvents, today])
 
     const weeklyData = useMemo(() => {
-
         const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]
-        const result: any = {}
+        const result: Record<string, { day: string; count: number }> = {}
 
-        days.forEach(d => result[d] = { day: d, count: 0 })
+        days.forEach((d) => {
+            result[d] = { day: d, count: 0 }
+        })
 
-            ;[...tasks, ...events].forEach((item: any) => {
-                const date = item.deadline || item.date
-                if (!date) return
-                const day = days[new Date(date).getDay()]
+            ;[...tasks, ...allEvents].forEach((item: any) => {
+                const rawDate = item.deadline || item.date
+                if (!rawDate) return
+                const day = days[new Date(rawDate).getDay()]
                 result[day].count++
             })
 
         return Object.values(result)
+    }, [tasks, allEvents])
 
-    }, [tasks, events])
+    if (loading) {
+        return (
+            <DashboardShell navItems={navItems} role="Student" title="Dashboard">
+                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+                    {Array.from({ length: 4 }).map((_, index) => (
+                        <div key={index} className="rounded-3xl border bg-card p-6">
+                            <div className="animate-pulse space-y-3">
+                                <div className="h-4 w-28 rounded bg-muted" />
+                                <div className="h-8 w-20 rounded bg-muted" />
+                            </div>
+                        </div>
+                    ))}
+                </div>
+
+                <div className="mt-6 grid gap-6 lg:grid-cols-2">
+                    {Array.from({ length: 4 }).map((_, index) => (
+                        <div key={index} className="h-[360px] rounded-3xl border bg-card p-6">
+                            <div className="animate-pulse space-y-4">
+                                <div className="h-5 w-40 rounded bg-muted" />
+                                <div className="h-64 rounded bg-muted" />
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            </DashboardShell>
+        )
+    }
 
     return (
-
         <DashboardShell navItems={navItems} role="Student" title="Dashboard">
-
-            {/* STATS */}
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-                <StatCard icon={Calendar} title="Today's Tasks" value={String(todayEvents.length)} />
-                <StatCard icon={CheckCircle2} title="Completed Tasks" value={String(completed)} />
-                <StatCard icon={Clock} title="In Progress" value={String(progress)} />
-                <StatCard icon={FileText} title="Pending Tasks" value={String(todo)} />
-            </div>
-
-            {/* MAIN */}
-            <div className="mt-6 grid gap-6 lg:grid-cols-2">
-
-                {/* TODAY EVENTS */}
-                <Card title="Today's Schedule" items={todayEvents} type="event" />
-
-                {/* TODAY TASKS */}
-                <div className="rounded-xl border bg-card p-6">
-                    <h3 className="font-semibold text-lg">Today's Tasks</h3>
-
-                    <div className="mt-4">
-                        <Progress value={progressPercent} />
+            <div className="flex flex-col gap-6">
+                <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                    <div>
+                        <div className="mb-2 inline-flex items-center gap-2 rounded-full border bg-muted/50 px-3 py-1 text-xs text-muted-foreground">
+                            <Sparkles className="h-3.5 w-3.5" />
+                            Student Overview
+                        </div>
+                        <h2 className="text-3xl font-semibold tracking-tight">Student Dashboard</h2>
+                        <p className="mt-1 text-sm text-muted-foreground">
+                            Track tasks, events, and weekly academic activity in one place.
+                        </p>
                     </div>
 
-                    <CardList items={todayTasks} type="task" />
+                    <Button variant="outline" onClick={() => fetchAll(true)} disabled={refreshing}>
+                        <RefreshCw className={`mr-2 h-4 w-4 ${refreshing ? "animate-spin" : ""}`} />
+                        Refresh
+                    </Button>
                 </div>
 
-                {/* ANALYTICS */}
-                <div className="rounded-xl border bg-card p-6">
-                    <h3 className="font-semibold text-lg">Weekly Activity</h3>
+                {error && (
+                    <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                        {error}
+                    </div>
+                )}
 
-                    <div className="h-64 mt-4">
-                        <ResponsiveContainer>
-                            <BarChart data={weeklyData}>
-                                <CartesianGrid strokeDasharray="3 3" />
-                                <XAxis dataKey="day" />
-                                <YAxis />
-                                <Tooltip />
-                                <Bar dataKey="count" fill="hsl(var(--primary))" />
-                            </BarChart>
-                        </ResponsiveContainer>
+                <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+                    <StatCard icon={Calendar} title="Today's Events" value={String(todayEvents.length)} />
+                    <StatCard icon={CheckCircle2} title="Completed Tasks" value={String(completed)} />
+                    <StatCard icon={Clock} title="In Progress" value={String(progress)} />
+                    <StatCard icon={AlertTriangle} title="Overdue Tasks" value={String(overdueTasks)} />
+                </div>
+
+                <div className="grid gap-4 lg:grid-cols-3">
+                    <div className="rounded-3xl border bg-card p-5 shadow-sm">
+                        <p className="text-sm text-muted-foreground">Today’s Focus</p>
+                        <h3 className="mt-1 text-lg font-semibold">{todayTasks.length} tasks due today</h3>
+                    </div>
+
+                    <div className="rounded-3xl border bg-card p-5 shadow-sm">
+                        <p className="text-sm text-muted-foreground">Upcoming Plan</p>
+                        <h3 className="mt-1 text-lg font-semibold">{upcomingEvents.length} upcoming events</h3>
+                    </div>
+
+                    <div className="rounded-3xl border bg-card p-5 shadow-sm">
+                        <p className="text-sm text-muted-foreground">Completion Rate</p>
+                        <h3 className="mt-1 text-lg font-semibold">{progressPercent}% completed</h3>
                     </div>
                 </div>
 
-                {/* UPCOMING EVENTS */}
-                <Card
-                    title="Upcoming Events"
-                    items={upcomingEvents}
-                    type="event"
-                    hidePriority={true}   // ✅ ADD THIS
-                />
+                <div className="mt-2 grid gap-6 lg:grid-cols-2">
+                    <StudentDashboardPanel
+                        title="Today's Schedule"
+                        subtitle="Events and planned items scheduled for today"
+                    >
+                        <StudentCardList items={todayEvents} type="event" />
+                    </StudentDashboardPanel>
 
+                    <StudentDashboardPanel
+                        title="Today's Tasks"
+                        subtitle="Tasks with deadlines due today"
+                    >
+                        <div className="mb-4 rounded-2xl bg-muted/30 p-4">
+                            <div className="mb-2 flex items-center justify-between text-xs text-muted-foreground">
+                                <span>Overall completion</span>
+                                <span>{progressPercent}%</span>
+                            </div>
+                            <Progress value={progressPercent} />
+                        </div>
+                        <StudentCardList items={todayTasks} type="task" />
+                    </StudentDashboardPanel>
+
+                    <StudentDashboardPanel
+                        title="Weekly Activity"
+                        subtitle="Combined task and event activity across the week"
+                    >
+                        <div className="h-full rounded-2xl bg-muted/20 p-3">
+                            <ResponsiveContainer width="100%" height="100%">
+                                <BarChart data={weeklyData}>
+                                    <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                                    <XAxis dataKey="day" />
+                                    <YAxis allowDecimals={false} />
+                                    <Tooltip />
+                                    <Bar dataKey="count" fill="hsl(var(--primary))" radius={[8, 8, 0, 0]} />
+                                </BarChart>
+                            </ResponsiveContainer>
+                        </div>
+                    </StudentDashboardPanel>
+
+                    <StudentDashboardPanel
+                        title="Upcoming Events"
+                        subtitle="Your next scheduled calendar and personal events"
+                    >
+                        <StudentCardList items={upcomingEvents} type="event" hidePriority />
+                    </StudentDashboardPanel>
+                </div>
             </div>
         </DashboardShell>
-    )
-}
-
-/* ================= REUSABLE UI ================= */
-
-function Card({ title, items, type, hidePriority }: any) {
-    return (
-        <div className="rounded-xl border bg-card p-6">
-            <h3 className="font-semibold text-lg">{title}</h3>
-            <CardList items={items} type={type} hidePriority={hidePriority} />
-        </div>
-    )
-}
-
-function CardList({ items, type, hidePriority }: any) {
-
-    return (
-        <div className={`mt-4 flex flex-col gap-3 pr-2 ${items.length > 3 ? "max-h-60 overflow-y-auto scrollbar-thin" : ""}`}>
-
-            {items.length === 0 && (
-                <p className="text-sm text-muted-foreground text-center py-6">
-                    No data available
-                </p>
-            )}
-
-            {items.map((item: any) => (
-                <div
-                    key={item.id}
-                    className="flex items-center gap-3 rounded-lg bg-muted/50 p-3 hover:bg-muted transition-all duration-200 hover:scale-[1.01]"
-                >
-
-                    {/* LEFT */}
-                    {type === "event" ? (
-                        <span className="w-14 text-sm font-semibold text-primary">
-                            {item.time}
-                        </span>
-                    ) : (
-                        <div className={`h-2 w-2 rounded-full ${item.status === "Completed"
-                                ? "bg-green-500"
-                                : item.status === "In Progress"
-                                    ? "bg-blue-500"
-                                    : "bg-gray-400"
-                            }`} />
-                    )}
-
-                    {/* CENTER */}
-                    <div className="flex-1">
-                        <p className="text-sm font-medium">
-                            {item.title}
-                        </p>
-                        {type === "event" && (
-                            <>
-                                <p className="text-xs text-muted-foreground">
-                                    {item.date}
-                                </p>
-                                <p className="text-xs text-purple-500">
-                                    {item.type || "General"}
-                                </p>
-                            </>
-                        )}
-                    </div>
-
-                    {/* RIGHT */}
-                    {/* RIGHT */}
-                    {!hidePriority ? (
-                        <Badge
-                            variant="outline"
-                            className={
-                                item.priority === "High"
-                                    ? "text-red-600 border-red-300"
-                                    : item.priority === "Medium"
-                                        ? "text-yellow-600 border-yellow-300"
-                                        : "text-green-600 border-green-300"
-                            }
-                        >
-                            {item.priority}
-                        </Badge>
-                    ) : (
-                        <span className="text-xs text-blue-500 font-medium">
-                            {item.location || item.type}
-                        </span>
-                    )}
-
-                </div>
-            ))}
-
-        </div>
     )
 }

@@ -1271,7 +1271,6 @@
 //        </div>
 //    )
 //}
-
 "use client"
 
 import { useEffect, useMemo, useState } from "react"
@@ -1286,6 +1285,7 @@ import {
     Search,
     RefreshCw,
     Inbox,
+    Pencil,
 } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
@@ -1308,31 +1308,34 @@ interface EventItem {
     location: string
     attendees: number
     type: string
-    status: string
+    status: "Upcoming" | "Today" | "Past" | "Cancelled"
 }
 
 const API_URL = "https://steadfast-warmth-production-64c8.up.railway.app/api/Events"
 
 const initialEventState = {
+    id: "",
     title: "",
     date: "",
     time: "",
     location: "",
     attendees: 0,
     type: "",
-    status: "Upcoming",
+    status: "Upcoming" as "Upcoming" | "Today" | "Past" | "Cancelled",
 }
 
 function getStatusBadgeClasses(status: string) {
     switch ((status || "").toLowerCase()) {
-        case "completed":
-            return "bg-emerald-100 text-emerald-700 border-emerald-200"
+        case "today":
+            return "border-orange-200 bg-orange-100 text-orange-700"
         case "upcoming":
-            return "bg-blue-100 text-blue-700 border-blue-200"
+            return "border-blue-200 bg-blue-100 text-blue-700"
+        case "past":
+            return "border-slate-200 bg-slate-100 text-slate-700"
         case "cancelled":
-            return "bg-red-100 text-red-700 border-red-200"
+            return "border-red-200 bg-red-100 text-red-700"
         default:
-            return "bg-slate-100 text-slate-700 border-slate-200"
+            return "border-slate-200 bg-slate-100 text-slate-700"
     }
 }
 
@@ -1349,15 +1352,27 @@ function getTypeBadgeClasses(type: string) {
     }
 }
 
-function getDerivedStatus(date?: string) {
+function deriveStatus(date?: string, existingStatus?: string) {
+    if ((existingStatus || "").toLowerCase() === "cancelled") return "Cancelled"
     if (!date) return "Upcoming"
+
     const today = new Date()
     today.setHours(0, 0, 0, 0)
+
     const eventDate = new Date(date)
     eventDate.setHours(0, 0, 0, 0)
 
-    if (eventDate.getTime() < today.getTime()) return "Completed"
+    if (eventDate.getTime() < today.getTime()) return "Past"
+    if (eventDate.getTime() === today.getTime()) return "Today"
     return "Upcoming"
+}
+
+function getDateKey(date: string | Date) {
+    const value = new Date(date)
+    const year = value.getFullYear()
+    const month = String(value.getMonth() + 1).padStart(2, "0")
+    const day = String(value.getDate()).padStart(2, "0")
+    return `${year}-${month}-${day}`
 }
 
 export function EventsView() {
@@ -1369,9 +1384,11 @@ export function EventsView() {
     const [refreshing, setRefreshing] = useState(false)
     const [submitting, setSubmitting] = useState(false)
     const [search, setSearch] = useState("")
+    const [statusFilter, setStatusFilter] = useState("all")
     const [error, setError] = useState("")
+    const [editingId, setEditingId] = useState<string | null>(null)
 
-    const [newEvent, setNewEvent] = useState(initialEventState)
+    const [formData, setFormData] = useState(initialEventState)
 
     useEffect(() => {
         const token = localStorage.getItem("token")
@@ -1383,21 +1400,29 @@ export function EventsView() {
     }, [router])
 
     function resetForm() {
-        setNewEvent(initialEventState)
+        setFormData(initialEventState)
+        setEditingId(null)
     }
 
-    function saveEventReminder(event: typeof initialEventState) {
+    function saveEventReminder(event: EventItem | typeof initialEventState) {
         if (!event.date) return
 
-        const existing = JSON.parse(localStorage.getItem("globalNotifications") || "[]")
+        const eventStatus = deriveStatus(event.date, event.status)
+        if (eventStatus === "Past" || eventStatus === "Cancelled") return
 
-        const eventDate = new Date(event.date)
-        const reminderDate = new Date(eventDate)
+        const existing = JSON.parse(localStorage.getItem("globalNotifications") || "[]")
+        const reminderDate = new Date(event.date)
         reminderDate.setDate(reminderDate.getDate() - 1)
         reminderDate.setHours(19, 0, 0, 0)
 
+        const dedupeKey = `event-reminder-${event.title}-${event.date}`
+
+        const alreadyExists = existing.some((item: any) => item.dedupeKey === dedupeKey)
+        if (alreadyExists) return
+
         const newNotif = {
             id: Date.now(),
+            dedupeKey,
             text: `Tomorrow: ${event.title}`,
             isRead: false,
             triggerTime: reminderDate.getTime(),
@@ -1437,16 +1462,29 @@ export function EventsView() {
             const data = await res.json()
 
             const formatted = data
-                .map((e: any) => ({
-                    ...e,
-                    date: e.date?.split("T")[0],
-                    status: e.status || getDerivedStatus(e.date),
-                    type: e.type || "General",
-                }))
-                .sort(
-                    (a: EventItem, b: EventItem) =>
-                        new Date(a.date).getTime() - new Date(b.date).getTime()
-                )
+                .map((e: any) => {
+                    const normalizedDate = e.date?.split("T")[0] || ""
+                    return {
+                        ...e,
+                        date: normalizedDate,
+                        status: deriveStatus(normalizedDate, e.status),
+                        type: e.type || "General",
+                        time: e.time || "",
+                        location: e.location || "",
+                        attendees: e.attendees || 0,
+                    }
+                })
+                .sort((a: EventItem, b: EventItem) => {
+                    const order = { Today: 0, Upcoming: 1, Past: 2, Cancelled: 3 }
+                    const statusDiff = order[a.status] - order[b.status]
+                    if (statusDiff !== 0) return statusDiff
+
+                    if (a.status === "Past") {
+                        return new Date(b.date).getTime() - new Date(a.date).getTime()
+                    }
+
+                    return new Date(a.date).getTime() - new Date(b.date).getTime()
+                })
 
             setEvents(formatted)
         } catch (err) {
@@ -1459,12 +1497,12 @@ export function EventsView() {
         }
     }
 
-    async function handleAddEvent() {
-        const title = newEvent.title.trim()
-        const location = newEvent.location.trim()
-        const type = newEvent.type.trim()
+    async function handleSaveEvent() {
+        const title = formData.title.trim()
+        const location = formData.location.trim()
+        const type = formData.type.trim()
 
-        if (!title || !newEvent.date) {
+        if (!title || !formData.date) {
             setError("Title and date are required.")
             return
         }
@@ -1476,16 +1514,21 @@ export function EventsView() {
             const token = localStorage.getItem("token")
 
             const payload = {
-                ...newEvent,
                 title,
+                date: new Date(formData.date).toISOString(),
+                time: formData.time.trim(),
                 location,
+                attendees: Number(formData.attendees) || 0,
                 type: type || "General",
-                status: getDerivedStatus(newEvent.date),
-                date: newEvent.date ? new Date(newEvent.date).toISOString() : null,
+                status: deriveStatus(formData.date, formData.status),
             }
 
-            const res = await fetch(API_URL, {
-                method: "POST",
+            const isEdit = Boolean(editingId)
+            const url = isEdit ? `${API_URL}/${editingId}` : API_URL
+            const method = isEdit ? "PUT" : "POST"
+
+            const res = await fetch(url, {
+                method,
                 headers: {
                     "Content-Type": "application/json",
                     Authorization: `Bearer ${token}`,
@@ -1494,19 +1537,43 @@ export function EventsView() {
             })
 
             if (!res.ok) {
-                throw new Error("Failed to create event")
+                throw new Error(isEdit ? "Failed to update event" : "Failed to create event")
             }
 
-            saveEventReminder(newEvent)
+            if (!isEdit) {
+                saveEventReminder({
+                    ...formData,
+                    title,
+                    location,
+                    type: type || "General",
+                })
+            }
+
             await fetchEvents(true)
             setDialogOpen(false)
             resetForm()
         } catch (err) {
-            console.error("handleAddEvent error:", err)
-            setError("Unable to create event right now.")
+            console.error("handleSaveEvent error:", err)
+            setError("Unable to save event right now.")
         } finally {
             setSubmitting(false)
         }
+    }
+
+    function handleEdit(event: EventItem) {
+        setEditingId(event.id)
+        setFormData({
+            id: event.id,
+            title: event.title,
+            date: event.date,
+            time: event.time || "",
+            location: event.location || "",
+            attendees: event.attendees || 0,
+            type: event.type || "",
+            status: event.status,
+        })
+        setError("")
+        setDialogOpen(true)
     }
 
     async function handleDelete(id: string) {
@@ -1536,15 +1603,24 @@ export function EventsView() {
         const q = search.toLowerCase().trim()
 
         return events.filter((event) => {
-            if (!q) return true
-            return (
+            const matchesSearch =
+                !q ||
                 event.title?.toLowerCase().includes(q) ||
                 event.location?.toLowerCase().includes(q) ||
                 event.type?.toLowerCase().includes(q) ||
                 event.status?.toLowerCase().includes(q)
-            )
+
+            const matchesStatus =
+                statusFilter === "all" ||
+                event.status.toLowerCase() === statusFilter.toLowerCase()
+
+            return matchesSearch && matchesStatus
         })
-    }, [events, search])
+    }, [events, search, statusFilter])
+
+    const upcomingCount = events.filter((e) => e.status === "Upcoming").length
+    const todayCount = events.filter((e) => e.status === "Today").length
+    const pastCount = events.filter((e) => e.status === "Past").length
 
     return (
         <div className="flex flex-col gap-6">
@@ -1552,7 +1628,7 @@ export function EventsView() {
                 <div>
                     <h2 className="text-2xl font-semibold">Events</h2>
                     <p className="text-sm text-muted-foreground">
-                        Manage and track your events
+                        Manage, search, and track your events professionally
                     </p>
                 </div>
 
@@ -1579,50 +1655,52 @@ export function EventsView() {
                         <DialogTrigger asChild>
                             <Button className="gap-2 shadow-lg">
                                 <Plus className="h-4 w-4" />
-                                Create Event
+                                {editingId ? "Edit Event" : "Create Event"}
                             </Button>
                         </DialogTrigger>
 
                         <DialogContent className="rounded-2xl">
                             <DialogHeader>
-                                <DialogTitle>Create Event</DialogTitle>
+                                <DialogTitle>
+                                    {editingId ? "Update Event" : "Create Event"}
+                                </DialogTitle>
                                 <DialogDescription>
-                                    Fill in the details to create a new event.
+                                    Add complete event details below.
                                 </DialogDescription>
                             </DialogHeader>
 
                             <div className="mt-4 space-y-4">
                                 <Input
                                     placeholder="Event Title"
-                                    value={newEvent.title}
+                                    value={formData.title}
                                     onChange={(e) =>
-                                        setNewEvent({ ...newEvent, title: e.target.value })
+                                        setFormData({ ...formData, title: e.target.value })
                                     }
                                 />
 
                                 <div className="grid grid-cols-2 gap-4">
                                     <Input
                                         type="date"
-                                        value={newEvent.date}
+                                        value={formData.date}
                                         onChange={(e) =>
-                                            setNewEvent({ ...newEvent, date: e.target.value })
+                                            setFormData({ ...formData, date: e.target.value })
                                         }
                                     />
 
                                     <Input
                                         placeholder="Time (e.g. 10:00 AM)"
-                                        value={newEvent.time}
+                                        value={formData.time}
                                         onChange={(e) =>
-                                            setNewEvent({ ...newEvent, time: e.target.value })
+                                            setFormData({ ...formData, time: e.target.value })
                                         }
                                     />
                                 </div>
 
                                 <Input
                                     placeholder="Location"
-                                    value={newEvent.location}
+                                    value={formData.location}
                                     onChange={(e) =>
-                                        setNewEvent({ ...newEvent, location: e.target.value })
+                                        setFormData({ ...formData, location: e.target.value })
                                     }
                                 />
 
@@ -1631,10 +1709,10 @@ export function EventsView() {
                                         type="number"
                                         min={0}
                                         placeholder="Attendees"
-                                        value={newEvent.attendees}
+                                        value={formData.attendees}
                                         onChange={(e) =>
-                                            setNewEvent({
-                                                ...newEvent,
+                                            setFormData({
+                                                ...formData,
                                                 attendees: Number(e.target.value) || 0,
                                             })
                                         }
@@ -1642,9 +1720,9 @@ export function EventsView() {
 
                                     <Input
                                         placeholder="Type (Meeting, Workshop...)"
-                                        value={newEvent.type}
+                                        value={formData.type}
                                         onChange={(e) =>
-                                            setNewEvent({ ...newEvent, type: e.target.value })
+                                            setFormData({ ...formData, type: e.target.value })
                                         }
                                     />
                                 </div>
@@ -1656,11 +1734,17 @@ export function EventsView() {
                                 )}
 
                                 <Button
-                                    onClick={handleAddEvent}
+                                    onClick={handleSaveEvent}
                                     disabled={submitting}
                                     className="w-full shadow-md"
                                 >
-                                    {submitting ? "Saving..." : "Save Event"}
+                                    {submitting
+                                        ? editingId
+                                            ? "Updating..."
+                                            : "Saving..."
+                                        : editingId
+                                            ? "Update Event"
+                                            : "Save Event"}
                                 </Button>
                             </div>
                         </DialogContent>
@@ -1668,14 +1752,45 @@ export function EventsView() {
                 </div>
             </div>
 
-            <div className="relative max-w-md">
-                <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                <Input
-                    placeholder="Search events..."
-                    value={search}
-                    onChange={(e) => setSearch(e.target.value)}
-                    className="pl-10"
-                />
+            <div className="grid gap-4 md:grid-cols-3">
+                <div className="rounded-2xl border bg-card p-5">
+                    <p className="text-sm text-muted-foreground">Upcoming</p>
+                    <h3 className="mt-1 text-2xl font-semibold">{upcomingCount}</h3>
+                </div>
+
+                <div className="rounded-2xl border bg-card p-5">
+                    <p className="text-sm text-muted-foreground">Today</p>
+                    <h3 className="mt-1 text-2xl font-semibold">{todayCount}</h3>
+                </div>
+
+                <div className="rounded-2xl border bg-card p-5">
+                    <p className="text-sm text-muted-foreground">Past</p>
+                    <h3 className="mt-1 text-2xl font-semibold">{pastCount}</h3>
+                </div>
+            </div>
+
+            <div className="grid gap-3 lg:grid-cols-[1fr_180px]">
+                <div className="relative">
+                    <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                    <Input
+                        placeholder="Search events..."
+                        value={search}
+                        onChange={(e) => setSearch(e.target.value)}
+                        className="pl-10"
+                    />
+                </div>
+
+                <select
+                    value={statusFilter}
+                    onChange={(e) => setStatusFilter(e.target.value)}
+                    className="h-10 rounded-md border bg-background px-3 text-sm"
+                >
+                    <option value="all">All Status</option>
+                    <option value="Upcoming">Upcoming</option>
+                    <option value="Today">Today</option>
+                    <option value="Past">Past</option>
+                    <option value="Cancelled">Cancelled</option>
+                </select>
             </div>
 
             {loading ? (
@@ -1701,7 +1816,7 @@ export function EventsView() {
                         <p className="text-sm text-muted-foreground">
                             {events.length === 0
                                 ? "Create your first event to get started."
-                                : "Try a different search term."}
+                                : "Try a different search term or filter."}
                         </p>
                     </div>
                 </div>
@@ -1751,13 +1866,23 @@ export function EventsView() {
                                         {event.type || "General"}
                                     </Badge>
 
-                                    <Button
-                                        variant="ghost"
-                                        size="icon"
-                                        onClick={() => handleDelete(event.id)}
-                                    >
-                                        <Trash2 className="h-4 w-4" />
-                                    </Button>
+                                    <div className="flex items-center gap-1">
+                                        <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            onClick={() => handleEdit(event)}
+                                        >
+                                            <Pencil className="h-4 w-4" />
+                                        </Button>
+
+                                        <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            onClick={() => handleDelete(event.id)}
+                                        >
+                                            <Trash2 className="h-4 w-4" />
+                                        </Button>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -1767,3 +1892,4 @@ export function EventsView() {
         </div>
     )
 }
+

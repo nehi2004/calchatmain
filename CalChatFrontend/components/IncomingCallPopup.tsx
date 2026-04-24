@@ -6,9 +6,7 @@ import { useCall } from "@/context/CallContext"
 export default function IncomingCallPopup() {
     const { incomingCall, acceptCall, rejectCall } = useCall()
 
-    if (!incomingCall) {
-        return null
-    }
+    if (!incomingCall) return null
 
     return (
         <div className="fixed bottom-5 right-5 z-[9999] w-[340px] overflow-hidden rounded-[26px] border border-slate-200 bg-white shadow-[0_25px_70px_-35px_rgba(15,23,42,0.55)]">

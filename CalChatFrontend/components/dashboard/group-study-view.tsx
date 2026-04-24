@@ -77,7 +77,7 @@ const safeFetch = async <T,>(url: string): Promise<T> => {
 }
 
 export function GroupStudyView() {
-    const { connection: callConnection, startOutgoingCall, clearOutgoingCall } = useCall()
+    const { connection: callConnection, startOutgoingCall, clearOutgoingCall, isCallReady } = useCall()
 
     const [students, setStudents] = useState<Student[]>([])
     const [chats, setChats] = useState<Chat[]>([])
@@ -234,13 +234,8 @@ export function GroupStudyView() {
             return
         }
 
-        if (!callConnection) {
-            alert("Call service is not ready yet.")
-            return
-        }
-
-        if (callConnection.state !== signalR.HubConnectionState.Connected) {
-            alert("Call service is connecting. Please try again.")
+        if (!callConnection || !isCallReady) {
+            alert("Call service is connecting. Please wait a moment.")
             return
         }
 
@@ -249,7 +244,10 @@ export function GroupStudyView() {
             return
         }
 
-        const otherUserId = chat.members?.find(member => String(member) !== String(currentUserId))
+        const otherUserId = chat.members?.find(
+            member => String(member) !== String(currentUserId)
+        )
+
         if (!otherUserId) {
             return
         }
@@ -277,6 +275,8 @@ export function GroupStudyView() {
             alert("Unable to start call right now.")
         }
     }
+
+
 
     const createGroup = async () => {
         const res = await fetch(`${API_BASE}/api/groups`, {
