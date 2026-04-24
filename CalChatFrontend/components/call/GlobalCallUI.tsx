@@ -49,13 +49,6 @@ export default function GlobalCallUI() {
     }
 
     const createPeer = () => {
-        if (peerRef.current) {
-            peerRef.current.ontrack = null
-            peerRef.current.onicecandidate = null
-            peerRef.current.close()
-            peerRef.current = null
-        }
-
         const pc = new RTCPeerConnection({
             iceServers: [
                 { urls: "stun:stun.l.google.com:19302" },
@@ -99,24 +92,10 @@ export default function GlobalCallUI() {
     }
 
     const getMicStream = async (): Promise<MediaStream | null> => {
-        if (localStream.current) {
-            localStream.current.getTracks().forEach(track => track.stop())
-            localStream.current = null
-        }
-
         try {
             const stream = await navigator.mediaDevices.getUserMedia({
-                audio: {
-                    echoCancellation: true,
-                    noiseSuppression: true,
-                    sampleRate: 44100,
-                },
+                audio: true,
             })
-
-            stream.getAudioTracks().forEach(track => {
-                track.enabled = true
-            })
-
             localStream.current = stream
             return stream
         } catch (err) {
@@ -145,13 +124,10 @@ export default function GlobalCallUI() {
 
             stopMedia()
 
-            const targetId = data.fromUserId
-            callUserIdRef.current = targetId
-            localStorage.setItem("chatId", data.chatId || localStorage.getItem("chatId") || "")
+            callUserIdRef.current = data.fromUserId
             setCallUserName(outgoingCallRef.current.userName || data.fromUserName || "User")
             setCallType("voice")
             setCallStatus("calling")
-            setIsMuted(false)
 
             createPeer()
 
@@ -162,37 +138,25 @@ export default function GlobalCallUI() {
                 peerRef.current?.addTrack(track, stream)
             })
 
-            try {
-                const offer = await peerRef.current!.createOffer()
-                await peerRef.current!.setLocalDescription(offer)
-                await connection.invoke("SendOffer", JSON.stringify(offer), targetId)
-            } catch (err) {
-                console.error("Offer creation failed:", err)
-            }
+            const offer = await peerRef.current!.createOffer()
+            await peerRef.current!.setLocalDescription(offer)
+
+            await connection.invoke("SendOffer", JSON.stringify(offer), data.fromUserId)
         })
 
         connection.on("ReceiveAnswer", async data => {
             if (!peerRef.current) return
-
-            try {
-                await peerRef.current.setRemoteDescription(
-                    new RTCSessionDescription(JSON.parse(data.answer))
-                )
-                setCallStatus("connected")
-            } catch (err) {
-                console.error("setRemoteDescription failed:", err)
-            }
+            await peerRef.current.setRemoteDescription(
+                new RTCSessionDescription(JSON.parse(data.answer))
+            )
+            setCallStatus("connected")
         })
 
         connection.on("ReceiveIceCandidate", async data => {
             if (data.candidate && peerRef.current) {
-                try {
-                    await peerRef.current.addIceCandidate(
-                        new RTCIceCandidate(JSON.parse(data.candidate))
-                    )
-                } catch (err) {
-                    console.warn("ICE candidate error:", err)
-                }
+                await peerRef.current.addIceCandidate(
+                    new RTCIceCandidate(JSON.parse(data.candidate))
+                )
             }
         })
 
@@ -215,12 +179,10 @@ export default function GlobalCallUI() {
 
             stopMedia()
 
-            const targetId = data.fromUserId
-            callUserIdRef.current = targetId
+            callUserIdRef.current = data.fromUserId
             setCallUserName(data.fromUserName || "User")
             setCallType("voice")
             setCallStatus("connected")
-            setIsMuted(false)
 
             createPeer()
 
@@ -231,18 +193,14 @@ export default function GlobalCallUI() {
                 peerRef.current?.addTrack(track, stream)
             })
 
-            try {
-                await peerRef.current!.setRemoteDescription(
-                    new RTCSessionDescription(JSON.parse(data.offer))
-                )
+            await peerRef.current!.setRemoteDescription(
+                new RTCSessionDescription(JSON.parse(data.offer))
+            )
 
-                const answer = await peerRef.current!.createAnswer()
-                await peerRef.current!.setLocalDescription(answer)
+            const answer = await peerRef.current!.createAnswer()
+            await peerRef.current!.setLocalDescription(answer)
 
-                await connection.invoke("SendAnswer", JSON.stringify(answer), targetId)
-            } catch (err) {
-                console.error("Answer creation failed:", err)
-            }
+            await connection.invoke("SendAnswer", JSON.stringify(answer), data.fromUserId)
 
             pendingOfferData.current = null
         }
@@ -251,38 +209,20 @@ export default function GlobalCallUI() {
         return () => window.removeEventListener("start-call", handler)
     }, [connection, pendingOfferData])
 
-    const toggleMute = async () => {
-        if (!peerRef.current) return
+    const toggleMute = () => {
+        if (!localStream.current) return
+        const audioTrack = localStream.current.getAudioTracks()[0]
+        if (!audioTrack) return
 
-        const sender = peerRef.current.getSenders().find(item => item.track?.kind === "audio")
-        if (!sender) return
-
-        const newMuted = !isMuted
-
-        if (newMuted) {
-            localStream.current?.getTracks().forEach(track => track.stop())
-            localStream.current = null
-            await sender.replaceTrack(null)
-        } else {
-            const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
-            const newTrack = stream.getAudioTracks()[0]
-            await sender.replaceTrack(newTrack)
-            localStream.current = stream
-        }
-
-        setIsMuted(newMuted)
+        audioTrack.enabled = !audioTrack.enabled
+        setIsMuted(!audioTrack.enabled)
     }
 
     const handleEndCall = async () => {
         if (connection && callUserIdRef.current) {
             const chatId = localStorage.getItem("chatId")
-            try {
-                await connection.invoke("EndCall", callUserIdRef.current, chatId)
-            } catch (err) {
-                console.error("EndCall invoke error:", err)
-            }
+            await connection.invoke("EndCall", callUserIdRef.current, chatId)
         }
-
         cleanupCall()
     }
 
@@ -291,39 +231,18 @@ export default function GlobalCallUI() {
     return (
         <div className="fixed inset-0 z-[99999] flex items-center justify-center bg-slate-950/65 backdrop-blur-md">
             <div className="relative w-[390px] overflow-hidden rounded-[32px] border border-white/15 bg-[radial-gradient(circle_at_top,#1e293b_0%,#0f172a_45%,#020617_100%)] p-6 shadow-[0_30px_80px_-28px_rgba(2,6,23,0.85)]">
-                <div className="absolute inset-x-0 top-0 h-32 bg-[radial-gradient(circle_at_top,rgba(56,189,248,0.22),transparent_65%)]" />
-
-                <div className="relative">
-                    <div className="mb-10 flex items-center justify-between text-slate-300">
-                        <div>
-                            <p className="text-xs uppercase tracking-[0.26em] text-slate-400">
-                                Voice Call
-                            </p>
-                            <p className="mt-2 text-sm text-slate-300">
-                                {callStatus === "calling" ? "Connecting..." : "Connected"}
-                            </p>
-                        </div>
-
-                        <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white/10">
-                            <PhoneOutgoing className="h-5 w-5" />
-                        </div>
-                    </div>
-
-                    <div className="relative mx-auto mb-10 flex h-36 w-36 items-center justify-center rounded-full bg-white/10 ring-8 ring-white/5">
-                        <div className="absolute inset-0 animate-pulse rounded-full bg-cyan-400/10" />
+                <div className="relative text-center">
+                    <p className="text-xs uppercase tracking-[0.26em] text-slate-400">Voice Call</p>
+                    <div className="relative mx-auto mt-8 mb-8 flex h-36 w-36 items-center justify-center rounded-full bg-white/10 ring-8 ring-white/5">
                         <span className="relative text-5xl font-semibold text-white">
                             {callUserName?.charAt(0)?.toUpperCase() || "U"}
                         </span>
                     </div>
 
-                    <div className="text-center">
-                        <h2 className="text-3xl font-semibold tracking-tight text-white">
-                            {callUserName}
-                        </h2>
-                        <p className="mt-2 text-sm text-slate-300">
-                            {callStatus === "calling" ? "Ringing..." : "Voice call active"}
-                        </p>
-                    </div>
+                    <h2 className="text-3xl font-semibold tracking-tight text-white">{callUserName}</h2>
+                    <p className="mt-2 text-sm text-slate-300">
+                        {callStatus === "calling" ? "Calling..." : "Connected"}
+                    </p>
 
                     {isMuted && (
                         <div className="mt-6 rounded-2xl border border-rose-400/30 bg-rose-400/10 px-4 py-3 text-center text-xs font-medium text-rose-200">

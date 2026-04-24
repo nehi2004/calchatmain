@@ -65,6 +65,7 @@ export const CallProvider = ({ children }: { children: React.ReactNode }) => {
         if (ringtone?.pause) {
             ringtone.pause()
             ringtone.currentTime = 0
+                ; (window as any).ringtone = null
         }
 
         if (!incomingCall || !connection) return
@@ -84,6 +85,7 @@ export const CallProvider = ({ children }: { children: React.ReactNode }) => {
         if (ringtone?.pause) {
             ringtone.pause()
             ringtone.currentTime = 0
+                ; (window as any).ringtone = null
         }
 
         if (!incomingCall || !connection) return
@@ -96,7 +98,6 @@ export const CallProvider = ({ children }: { children: React.ReactNode }) => {
 
         setIncomingCall(null)
         setOutgoingCall(null)
-        window.dispatchEvent(new Event("call-ended"))
     }
 
     const endCall = () => {

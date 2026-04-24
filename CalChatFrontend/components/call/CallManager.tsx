@@ -34,7 +34,6 @@ export default function CallManager() {
 
         const scheduleRetry = () => {
             clearRetry()
-
             retryRef.current = setTimeout(() => {
                 void ensureConnected()
             }, 1500)
@@ -75,18 +74,15 @@ export default function CallManager() {
                 stopRingtone()
             })
 
-            connection.onreconnecting(error => {
-                console.warn("Call hub reconnecting:", error)
+            connection.onreconnecting(() => {
                 setConnection(null)
             })
 
             connection.onreconnected(() => {
-                console.log("Call hub reconnected")
                 setConnection(connection)
             })
 
-            connection.onclose(error => {
-                console.warn("Call hub closed:", error)
+            connection.onclose(() => {
                 setConnection(null)
                 connectionRef.current = null
                 isConnectingRef.current = false
@@ -98,9 +94,7 @@ export default function CallManager() {
         }
 
         const ensureConnected = async () => {
-            if (disposed || isConnectingRef.current) {
-                return
-            }
+            if (disposed || isConnectingRef.current) return
 
             const existing = connectionRef.current
             if (existing) {
@@ -109,8 +103,10 @@ export default function CallManager() {
                     return
                 }
 
-                if (existing.state === signalR.HubConnectionState.Connecting ||
-                    existing.state === signalR.HubConnectionState.Reconnecting) {
+                if (
+                    existing.state === signalR.HubConnectionState.Connecting ||
+                    existing.state === signalR.HubConnectionState.Reconnecting
+                ) {
                     return
                 }
             }
