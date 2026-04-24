@@ -36,6 +36,8 @@ interface CallContextType {
     startOutgoingCall: (call: OutgoingCallData) => void
     clearOutgoingCall: () => void
     isCallReady: boolean
+    acceptedIncomingCall: boolean
+    setAcceptedIncomingCall: (value: boolean) => void
 }
 
 const CallContext = createContext<CallContextType | null>(null)
@@ -44,6 +46,7 @@ export const CallProvider = ({ children }: { children: React.ReactNode }) => {
     const [incomingCall, setIncomingCall] = useState<CallData | null>(null)
     const [connection, setConnectionState] = useState<signalR.HubConnection | null>(null)
     const [outgoingCall, setOutgoingCall] = useState<OutgoingCallData | null>(null)
+    const [acceptedIncomingCall, setAcceptedIncomingCall] = useState(false)
 
     const pendingOfferData = useRef<PendingOfferData | null>(null)
 
@@ -53,6 +56,7 @@ export const CallProvider = ({ children }: { children: React.ReactNode }) => {
 
     const startOutgoingCall = (call: OutgoingCallData) => {
         localStorage.setItem("chatId", call.chatId)
+        setAcceptedIncomingCall(false)
         setOutgoingCall(call)
     }
 
@@ -60,35 +64,39 @@ export const CallProvider = ({ children }: { children: React.ReactNode }) => {
         setOutgoingCall(null)
     }
 
-    const acceptCall = async () => {
+    const stopRingtone = () => {
         const ringtone = (window as any).ringtone
         if (ringtone?.pause) {
             ringtone.pause()
             ringtone.currentTime = 0
                 ; (window as any).ringtone = null
         }
+    }
 
-        if (!incomingCall || !connection) return
+    const acceptCall = async () => {
+        if (!incomingCall || !connection) {
+            return
+        }
+
+        stopRingtone()
 
         try {
             localStorage.setItem("chatId", incomingCall.chatId || "")
+            setAcceptedIncomingCall(true)
             await connection.invoke("AcceptCall", incomingCall.fromUserId, incomingCall.chatId || "")
-            window.dispatchEvent(new Event("start-call"))
             setIncomingCall(null)
         } catch (err) {
             console.error("Accept error:", err)
+            setAcceptedIncomingCall(false)
         }
     }
 
     const rejectCall = async () => {
-        const ringtone = (window as any).ringtone
-        if (ringtone?.pause) {
-            ringtone.pause()
-            ringtone.currentTime = 0
-                ; (window as any).ringtone = null
+        if (!incomingCall || !connection) {
+            return
         }
 
-        if (!incomingCall || !connection) return
+        stopRingtone()
 
         try {
             await connection.invoke("RejectCall", incomingCall.fromUserId, incomingCall.chatId || "")
@@ -98,10 +106,15 @@ export const CallProvider = ({ children }: { children: React.ReactNode }) => {
 
         setIncomingCall(null)
         setOutgoingCall(null)
+        setAcceptedIncomingCall(false)
+        pendingOfferData.current = null
     }
 
     const endCall = () => {
+        setIncomingCall(null)
         setOutgoingCall(null)
+        setAcceptedIncomingCall(false)
+        pendingOfferData.current = null
     }
 
     const isCallReady =
@@ -122,8 +135,10 @@ export const CallProvider = ({ children }: { children: React.ReactNode }) => {
             startOutgoingCall,
             clearOutgoingCall,
             isCallReady,
+            acceptedIncomingCall,
+            setAcceptedIncomingCall,
         }),
-        [incomingCall, connection, outgoingCall, isCallReady]
+        [incomingCall, connection, outgoingCall, isCallReady, acceptedIncomingCall]
     )
 
     return <CallContext.Provider value={value}>{children}</CallContext.Provider>
@@ -131,6 +146,8 @@ export const CallProvider = ({ children }: { children: React.ReactNode }) => {
 
 export const useCall = () => {
     const context = useContext(CallContext)
-    if (!context) throw new Error("useCall must be used inside CallProvider")
+    if (!context) {
+        throw new Error("useCall must be used inside CallProvider")
+    }
     return context
 }

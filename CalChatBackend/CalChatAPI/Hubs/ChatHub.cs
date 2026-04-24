@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;
+using System.Collections.Concurrent;
 using System.Security.Claims;
 using CalChatAPI.Data;
 using CalChatAPI.Models;
@@ -10,7 +11,7 @@ namespace CalChatAPI.Hubs
     public class ChatHub : Hub
     {
         private readonly ApplicationDbContext _context;
-        private static readonly Dictionary<string, DateTime> activeCalls = new();
+        private static readonly ConcurrentDictionary<string, DateTime> ActiveCalls = new();
 
         public ChatHub(ApplicationDbContext context)
         {
@@ -22,7 +23,7 @@ namespace CalChatAPI.Hubs
             var fromUserId = Context.UserIdentifier;
             var fromUserName = Context.User?.Identity?.Name;
 
-            if (string.IsNullOrEmpty(fromUserName) && !string.IsNullOrEmpty(fromUserId))
+            if (string.IsNullOrWhiteSpace(fromUserName) && !string.IsNullOrWhiteSpace(fromUserId))
             {
                 var user = await _context.Users.FindAsync(fromUserId);
                 fromUserName = user?.Name ?? fromUserId;
@@ -41,7 +42,7 @@ namespace CalChatAPI.Hubs
             var userId = Context.UserIdentifier;
             var role = Context.User?.FindFirst(ClaimTypes.Role)?.Value;
 
-            if (!string.IsNullOrEmpty(userId))
+            if (!string.IsNullOrWhiteSpace(userId))
             {
                 await Groups.AddToGroupAsync(Context.ConnectionId, userId);
 
@@ -59,7 +60,8 @@ namespace CalChatAPI.Hubs
         public override async Task OnDisconnectedAsync(Exception? exception)
         {
             var userId = Context.UserIdentifier;
-            if (!string.IsNullOrEmpty(userId))
+
+            if (!string.IsNullOrWhiteSpace(userId))
             {
                 await Groups.RemoveFromGroupAsync(Context.ConnectionId, userId);
                 Console.WriteLine($"Disconnected: {userId}");
@@ -70,16 +72,26 @@ namespace CalChatAPI.Hubs
 
         public async Task JoinChat(string chatId)
         {
-            if (string.IsNullOrEmpty(chatId)) return;
+            if (string.IsNullOrWhiteSpace(chatId))
+            {
+                return;
+            }
+
             await Groups.AddToGroupAsync(Context.ConnectionId, chatId);
         }
 
         public async Task SendMessage(object message)
         {
-            if (message == null) return;
+            if (message == null)
+            {
+                return;
+            }
 
             var chatId = message.GetType().GetProperty("ChatId")?.GetValue(message)?.ToString();
-            if (string.IsNullOrEmpty(chatId)) return;
+            if (string.IsNullOrWhiteSpace(chatId))
+            {
+                return;
+            }
 
             var text =
                 message.GetType().GetProperty("Text")?.GetValue(message) ??
@@ -108,16 +120,24 @@ namespace CalChatAPI.Hubs
             var fromUserId = Context.UserIdentifier;
             var fromUserName = await GetCurrentUserName();
 
-            if (string.IsNullOrEmpty(fromUserId) || string.IsNullOrEmpty(toUserId) || string.IsNullOrEmpty(chatId))
+            if (string.IsNullOrWhiteSpace(fromUserId) ||
+                string.IsNullOrWhiteSpace(toUserId) ||
+                string.IsNullOrWhiteSpace(chatId))
+            {
                 return;
+            }
 
-            await SendToUserChannel(toUserId, "IncomingCall", new
+            var payload = new
             {
                 fromUserId,
                 fromUserName,
+                toUserId,
                 callType = "voice",
                 chatId
-            });
+            };
+
+            await SendToUserChannel(toUserId, "IncomingCall", payload);
+            await SendToUserChannel(fromUserId, "OutgoingCall", payload);
         }
 
         public async Task AcceptCall(string toUserId, string chatId)
@@ -125,10 +145,14 @@ namespace CalChatAPI.Hubs
             var fromUserId = Context.UserIdentifier;
             var fromUserName = await GetCurrentUserName();
 
-            if (string.IsNullOrEmpty(fromUserId) || string.IsNullOrEmpty(toUserId) || string.IsNullOrEmpty(chatId))
+            if (string.IsNullOrWhiteSpace(fromUserId) ||
+                string.IsNullOrWhiteSpace(toUserId) ||
+                string.IsNullOrWhiteSpace(chatId))
+            {
                 return;
+            }
 
-            activeCalls[chatId] = DateTime.UtcNow;
+            ActiveCalls[chatId] = DateTime.UtcNow;
 
             var message = new Message
             {
@@ -171,12 +195,14 @@ namespace CalChatAPI.Hubs
         {
             var fromUserId = Context.UserIdentifier;
 
-            if (string.IsNullOrEmpty(fromUserId) || string.IsNullOrEmpty(toUserId))
-                return;
-
-            if (!string.IsNullOrEmpty(chatId) && activeCalls.ContainsKey(chatId))
+            if (string.IsNullOrWhiteSpace(fromUserId) || string.IsNullOrWhiteSpace(toUserId))
             {
-                activeCalls.Remove(chatId);
+                return;
+            }
+
+            if (!string.IsNullOrWhiteSpace(chatId))
+            {
+                ActiveCalls.TryRemove(chatId, out _);
             }
 
             await SendToUserChannel(toUserId, "CallRejected", new { fromUserId, chatId });
@@ -188,7 +214,10 @@ namespace CalChatAPI.Hubs
             var fromUserId = Context.UserIdentifier;
             var fromUserName = await GetCurrentUserName();
 
-            if (string.IsNullOrEmpty(fromUserId) || string.IsNullOrEmpty(toUserId)) return;
+            if (string.IsNullOrWhiteSpace(fromUserId) || string.IsNullOrWhiteSpace(toUserId))
+            {
+                return;
+            }
 
             await SendToUserChannel(toUserId, "ReceiveOffer", new
             {
@@ -201,7 +230,10 @@ namespace CalChatAPI.Hubs
         public async Task SendAnswer(string answer, string toUserId)
         {
             var fromUserId = Context.UserIdentifier;
-            if (string.IsNullOrEmpty(fromUserId) || string.IsNullOrEmpty(toUserId)) return;
+            if (string.IsNullOrWhiteSpace(fromUserId) || string.IsNullOrWhiteSpace(toUserId))
+            {
+                return;
+            }
 
             await SendToUserChannel(toUserId, "ReceiveAnswer", new
             {
@@ -213,7 +245,10 @@ namespace CalChatAPI.Hubs
         public async Task SendIceCandidate(string candidate, string toUserId)
         {
             var fromUserId = Context.UserIdentifier;
-            if (string.IsNullOrEmpty(fromUserId) || string.IsNullOrEmpty(toUserId)) return;
+            if (string.IsNullOrWhiteSpace(fromUserId) || string.IsNullOrWhiteSpace(toUserId))
+            {
+                return;
+            }
 
             await SendToUserChannel(toUserId, "ReceiveIceCandidate", new
             {
@@ -227,20 +262,19 @@ namespace CalChatAPI.Hubs
             var callerId = Context.UserIdentifier;
             var callerName = await GetCurrentUserName();
 
-            if (string.IsNullOrEmpty(callerId))
+            if (string.IsNullOrWhiteSpace(callerId))
+            {
                 return;
+            }
 
-            if (string.IsNullOrEmpty(chatId) || !activeCalls.ContainsKey(chatId))
+            if (string.IsNullOrWhiteSpace(chatId) || !ActiveCalls.TryRemove(chatId, out var startTime))
             {
                 await SendToUserChannel(targetUserId, "CallEnded", new { chatId });
                 await SendToUserChannel(callerId, "CallEnded", new { chatId });
                 return;
             }
 
-            var startTime = activeCalls[chatId];
             var duration = DateTime.UtcNow - startTime;
-            activeCalls.Remove(chatId);
-
             var durationText =
                 duration.TotalMinutes >= 1
                     ? $"{(int)duration.TotalMinutes} min {duration.Seconds} sec"

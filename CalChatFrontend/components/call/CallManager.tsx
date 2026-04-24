@@ -7,7 +7,15 @@ import { useCall } from "@/context/CallContext"
 const API_BASE = "https://steadfast-warmth-production-64c8.up.railway.app"
 
 export default function CallManager() {
-    const { setIncomingCall, setConnection, pendingOfferData } = useCall()
+    const {
+        setIncomingCall,
+        setConnection,
+        pendingOfferData,
+        startOutgoingCall,
+        clearOutgoingCall,
+        setAcceptedIncomingCall,
+        endCall,
+    } = useCall()
 
     const connectionRef = useRef<signalR.HubConnection | null>(null)
     const isConnectingRef = useRef(false)
@@ -40,9 +48,19 @@ export default function CallManager() {
         }
 
         const attachEvents = (connection: signalR.HubConnection) => {
+            connection.on("OutgoingCall", data => {
+                startOutgoingCall({
+                    userId: data.toUserId,
+                    userName: data.fromUserId === data.toUserId ? "User" : data.toUserName || "User",
+                    chatId: data.chatId,
+                    callType: "voice",
+                })
+            })
+
             connection.on("IncomingCall", data => {
                 localStorage.setItem("chatId", data.chatId)
 
+                setAcceptedIncomingCall(false)
                 setIncomingCall({
                     fromUserId: data.fromUserId,
                     fromUserName: data.fromUserName || "User",
@@ -65,13 +83,14 @@ export default function CallManager() {
             })
 
             connection.on("CallEnded", () => {
-                setIncomingCall(null)
                 stopRingtone()
+                endCall()
             })
 
             connection.on("CallRejected", () => {
-                setIncomingCall(null)
                 stopRingtone()
+                endCall()
+                clearOutgoingCall()
             })
 
             connection.onreconnecting(() => {
@@ -94,7 +113,9 @@ export default function CallManager() {
         }
 
         const ensureConnected = async () => {
-            if (disposed || isConnectingRef.current) return
+            if (disposed || isConnectingRef.current) {
+                return
+            }
 
             const existing = connectionRef.current
             if (existing) {
@@ -142,12 +163,6 @@ export default function CallManager() {
                 setConnection(connection)
             } catch (err) {
                 console.error("Global SignalR connection failed:", err)
-
-                connection.off("IncomingCall")
-                connection.off("ReceiveOffer")
-                connection.off("CallEnded")
-                connection.off("CallRejected")
-
                 connectionRef.current = null
 
                 if (!disposed) {
@@ -164,7 +179,15 @@ export default function CallManager() {
             disposed = true
             clearRetry()
         }
-    }, [pendingOfferData, setConnection, setIncomingCall])
+    }, [
+        clearOutgoingCall,
+        endCall,
+        pendingOfferData,
+        setAcceptedIncomingCall,
+        setConnection,
+        setIncomingCall,
+        startOutgoingCall,
+    ])
 
     return null
 }

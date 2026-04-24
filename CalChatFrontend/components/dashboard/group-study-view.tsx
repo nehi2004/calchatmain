@@ -228,9 +228,16 @@ export function GroupStudyView() {
 
         setBlockLoading(false)
     }
-
     const startCall = async () => {
+        console.log("VOICE BUTTON CLICKED", {
+            activeChat,
+            activeTab,
+            isCallReady,
+            callConnectionState: callConnection?.state,
+        })
+
         if (!activeChat || activeTab !== "personal") {
+            alert("Please select a personal chat first.")
             return
         }
 
@@ -241,6 +248,7 @@ export function GroupStudyView() {
 
         const chat = chats.find(item => item.id === activeChat)
         if (!chat || chat.type !== "personal") {
+            alert("Calls are available only in personal chats.")
             return
         }
 
@@ -249,6 +257,7 @@ export function GroupStudyView() {
         )
 
         if (!otherUserId) {
+            alert("Unable to find the other user for this call.")
             return
         }
 
@@ -269,13 +278,13 @@ export function GroupStudyView() {
 
         try {
             await callConnection.invoke("CallUser", otherUserId, String(activeChat))
+            console.log("CallUser invoke success")
         } catch (err) {
             console.error("CallUser invoke failed:", err)
             clearOutgoingCall()
             alert("Unable to start call right now.")
         }
     }
-
 
 
     const createGroup = async () => {

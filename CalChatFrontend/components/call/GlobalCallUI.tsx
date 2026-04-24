@@ -1,30 +1,44 @@
 "use client"
 
 import { useEffect, useRef, useState } from "react"
-import { Mic, MicOff, PhoneOff, PhoneOutgoing } from "lucide-react"
+import { Mic, MicOff, PhoneOff } from "lucide-react"
 import { useCall } from "@/context/CallContext"
 
-export default function GlobalCallUI() {
-    const { connection, pendingOfferData, outgoingCall, clearOutgoingCall } = useCall()
+type ActivePeer = {
+    userId: string
+    userName: string
+    status: "calling" | "connected"
+} | null
 
-    const [callType, setCallType] = useState<"voice" | null>(null)
-    const [callUserName, setCallUserName] = useState("User")
-    const [callStatus, setCallStatus] = useState<"calling" | "connected">("calling")
+export default function GlobalCallUI() {
+    const {
+        connection,
+        pendingOfferData,
+        outgoingCall,
+        clearOutgoingCall,
+        acceptedIncomingCall,
+        setAcceptedIncomingCall,
+        endCall,
+    } = useCall()
+
+    const [activePeer, setActivePeer] = useState<ActivePeer>(null)
     const [isMuted, setIsMuted] = useState(false)
 
-    const callUserIdRef = useRef<string | null>(null)
     const outgoingCallRef = useRef(outgoingCall)
+    const activePeerRef = useRef<ActivePeer>(null)
     const peerRef = useRef<RTCPeerConnection | null>(null)
-    const localStream = useRef<MediaStream | null>(null)
+    const localStreamRef = useRef<MediaStream | null>(null)
     const remoteAudioRef = useRef<HTMLAudioElement>(null)
 
+    const syncActivePeer = (peer: ActivePeer) => {
+        activePeerRef.current = peer
+        setActivePeer(peer)
+    }
+
     const stopMedia = () => {
-        if (localStream.current) {
-            localStream.current.getTracks().forEach(track => {
-                track.enabled = true
-                track.stop()
-            })
-            localStream.current = null
+        if (localStreamRef.current) {
+            localStreamRef.current.getTracks().forEach(track => track.stop())
+            localStreamRef.current = null
         }
 
         if (peerRef.current) {
@@ -41,14 +55,20 @@ export default function GlobalCallUI() {
 
     const cleanupCall = () => {
         stopMedia()
-        callUserIdRef.current = null
+        syncActivePeer(null)
         setIsMuted(false)
-        setCallType(null)
-        setCallStatus("calling")
         clearOutgoingCall()
+        setAcceptedIncomingCall(false)
+        pendingOfferData.current = null
+        endCall()
     }
 
     const createPeer = () => {
+        if (peerRef.current) {
+            peerRef.current.close()
+            peerRef.current = null
+        }
+
         const pc = new RTCPeerConnection({
             iceServers: [
                 { urls: "stun:stun.l.google.com:19302" },
@@ -73,17 +93,14 @@ export default function GlobalCallUI() {
         }
 
         pc.onicecandidate = event => {
-            if (event.candidate && callUserIdRef.current) {
-                connection?.invoke(
-                    "SendIceCandidate",
-                    JSON.stringify(event.candidate),
-                    callUserIdRef.current
-                )
+            const targetUserId = activePeerRef.current?.userId
+            if (event.candidate && targetUserId) {
+                connection?.invoke("SendIceCandidate", JSON.stringify(event.candidate), targetUserId)
             }
         }
 
         pc.onconnectionstatechange = () => {
-            if (pc.connectionState === "disconnected" || pc.connectionState === "failed") {
+            if (pc.connectionState === "disconnected" || pc.connectionState === "failed" || pc.connectionState === "closed") {
                 cleanupCall()
             }
         }
@@ -91,12 +108,10 @@ export default function GlobalCallUI() {
         peerRef.current = pc
     }
 
-    const getMicStream = async (): Promise<MediaStream | null> => {
+    const getMicStream = async () => {
         try {
-            const stream = await navigator.mediaDevices.getUserMedia({
-                audio: true,
-            })
-            localStream.current = stream
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+            localStreamRef.current = stream
             return stream
         } catch (err) {
             console.error("Mic access failed:", err)
@@ -107,140 +122,177 @@ export default function GlobalCallUI() {
     useEffect(() => {
         outgoingCallRef.current = outgoingCall
 
-        if (!outgoingCall) return
+        if (!outgoingCall) {
+            return
+        }
 
-        callUserIdRef.current = outgoingCall.userId
-        setCallUserName(outgoingCall.userName)
-        setCallType("voice")
-        setCallStatus("calling")
+        syncActivePeer({
+            userId: outgoingCall.userId,
+            userName: outgoingCall.userName,
+            status: "calling",
+        })
         setIsMuted(false)
     }, [outgoingCall])
 
     useEffect(() => {
-        if (!connection) return
+        if (!connection) {
+            return
+        }
 
-        connection.on("CallAccepted", async data => {
-            if (!outgoingCallRef.current) return
+        const onAccepted = async (data: { fromUserId: string; fromUserName?: string }) => {
+            if (!outgoingCallRef.current) {
+                return
+            }
 
             stopMedia()
 
-            callUserIdRef.current = data.fromUserId
-            setCallUserName(outgoingCallRef.current.userName || data.fromUserName || "User")
-            setCallType("voice")
-            setCallStatus("calling")
+            syncActivePeer({
+                userId: data.fromUserId,
+                userName: outgoingCallRef.current.userName || data.fromUserName || "User",
+                status: "calling",
+            })
+            setIsMuted(false)
 
             createPeer()
 
             const stream = await getMicStream()
-            if (!stream) return
+            if (!stream || !peerRef.current) {
+                return
+            }
 
             stream.getTracks().forEach(track => {
                 peerRef.current?.addTrack(track, stream)
             })
 
-            const offer = await peerRef.current!.createOffer()
-            await peerRef.current!.setLocalDescription(offer)
-
+            const offer = await peerRef.current.createOffer()
+            await peerRef.current.setLocalDescription(offer)
             await connection.invoke("SendOffer", JSON.stringify(offer), data.fromUserId)
-        })
+        }
 
-        connection.on("ReceiveAnswer", async data => {
-            if (!peerRef.current) return
+        const onAnswer = async (data: { answer: string }) => {
+            if (!peerRef.current) {
+                return
+            }
+
             await peerRef.current.setRemoteDescription(
                 new RTCSessionDescription(JSON.parse(data.answer))
             )
-            setCallStatus("connected")
-        })
 
-        connection.on("ReceiveIceCandidate", async data => {
+            syncActivePeer(
+                activePeerRef.current
+                    ? { ...activePeerRef.current, status: "connected" }
+                    : activePeerRef.current
+            )
+        }
+
+        const onIce = async (data: { candidate?: string }) => {
             if (data.candidate && peerRef.current) {
                 await peerRef.current.addIceCandidate(
                     new RTCIceCandidate(JSON.parse(data.candidate))
                 )
             }
-        })
+        }
 
+        connection.on("CallAccepted", onAccepted)
+        connection.on("ReceiveAnswer", onAnswer)
+        connection.on("ReceiveIceCandidate", onIce)
         connection.on("CallEnded", cleanupCall)
         connection.on("CallRejected", cleanupCall)
 
         return () => {
-            connection.off("CallAccepted")
-            connection.off("ReceiveAnswer")
-            connection.off("ReceiveIceCandidate")
-            connection.off("CallEnded")
-            connection.off("CallRejected")
+            connection.off("CallAccepted", onAccepted)
+            connection.off("ReceiveAnswer", onAnswer)
+            connection.off("ReceiveIceCandidate", onIce)
+            connection.off("CallEnded", cleanupCall)
+            connection.off("CallRejected", cleanupCall)
         }
-    }, [connection, clearOutgoingCall])
+    }, [connection, clearOutgoingCall, endCall, pendingOfferData, setAcceptedIncomingCall])
 
     useEffect(() => {
-        const handler = async () => {
+        const processIncomingOffer = async () => {
             const data = pendingOfferData.current
-            if (!data || !connection) return
+            if (!data || !connection || !acceptedIncomingCall) {
+                return
+            }
 
             stopMedia()
 
-            callUserIdRef.current = data.fromUserId
-            setCallUserName(data.fromUserName || "User")
-            setCallType("voice")
-            setCallStatus("connected")
+            syncActivePeer({
+                userId: data.fromUserId,
+                userName: data.fromUserName || "User",
+                status: "connected",
+            })
+            setIsMuted(false)
 
             createPeer()
 
             const stream = await getMicStream()
-            if (!stream) return
+            if (!stream || !peerRef.current) {
+                return
+            }
 
             stream.getTracks().forEach(track => {
                 peerRef.current?.addTrack(track, stream)
             })
 
-            await peerRef.current!.setRemoteDescription(
+            await peerRef.current.setRemoteDescription(
                 new RTCSessionDescription(JSON.parse(data.offer))
             )
 
-            const answer = await peerRef.current!.createAnswer()
-            await peerRef.current!.setLocalDescription(answer)
-
+            const answer = await peerRef.current.createAnswer()
+            await peerRef.current.setLocalDescription(answer)
             await connection.invoke("SendAnswer", JSON.stringify(answer), data.fromUserId)
 
             pendingOfferData.current = null
         }
 
-        window.addEventListener("start-call", handler)
-        return () => window.removeEventListener("start-call", handler)
-    }, [connection, pendingOfferData])
+        void processIncomingOffer()
+    }, [acceptedIncomingCall, connection, pendingOfferData])
 
     const toggleMute = () => {
-        if (!localStream.current) return
-        const audioTrack = localStream.current.getAudioTracks()[0]
-        if (!audioTrack) return
+        const track = localStreamRef.current?.getAudioTracks()[0]
+        if (!track) {
+            return
+        }
 
-        audioTrack.enabled = !audioTrack.enabled
-        setIsMuted(!audioTrack.enabled)
+        track.enabled = !track.enabled
+        setIsMuted(!track.enabled)
     }
 
     const handleEndCall = async () => {
-        if (connection && callUserIdRef.current) {
+        if (connection && activePeerRef.current?.userId) {
             const chatId = localStorage.getItem("chatId")
-            await connection.invoke("EndCall", callUserIdRef.current, chatId)
+            try {
+                await connection.invoke("EndCall", activePeerRef.current.userId, chatId)
+            } catch (err) {
+                console.error("EndCall error:", err)
+            }
         }
+
         cleanupCall()
     }
 
-    if (!callType) return null
+    if (!activePeer) {
+        return null
+    }
+
     return (
         <div className="fixed inset-0 z-[99999] flex items-center justify-center bg-slate-950/65 backdrop-blur-md">
             <div className="relative w-[390px] overflow-hidden rounded-[32px] border border-white/15 bg-[radial-gradient(circle_at_top,#1e293b_0%,#0f172a_45%,#020617_100%)] p-6 shadow-[0_30px_80px_-28px_rgba(2,6,23,0.85)]">
                 <div className="relative text-center">
                     <p className="text-xs uppercase tracking-[0.26em] text-slate-400">Voice Call</p>
-                    <div className="relative mx-auto mt-8 mb-8 flex h-36 w-36 items-center justify-center rounded-full bg-white/10 ring-8 ring-white/5">
+
+                    <div className="relative mb-8 mt-8 flex h-36 w-36 items-center justify-center rounded-full bg-white/10 ring-8 ring-white/5 mx-auto">
                         <span className="relative text-5xl font-semibold text-white">
-                            {callUserName?.charAt(0)?.toUpperCase() || "U"}
+                            {activePeer.userName?.charAt(0)?.toUpperCase() || "U"}
                         </span>
                     </div>
 
-                    <h2 className="text-3xl font-semibold tracking-tight text-white">{callUserName}</h2>
+                    <h2 className="text-3xl font-semibold tracking-tight text-white">
+                        {activePeer.userName}
+                    </h2>
                     <p className="mt-2 text-sm text-slate-300">
-                        {callStatus === "calling" ? "Calling..." : "Connected"}
+                        {activePeer.status === "calling" ? "Calling..." : "Connected"}
                     </p>
 
                     {isMuted && (
@@ -252,7 +304,8 @@ export default function GlobalCallUI() {
                     <div className="mt-10 flex items-center justify-center gap-4">
                         <button
                             onClick={toggleMute}
-                            className={`flex h-14 w-14 items-center justify-center rounded-2xl transition ${isMuted ? "bg-rose-500 text-white" : "bg-white/10 text-white hover:bg-white/15"}`}
+                            className={`flex h-14 w-14 items-center justify-center rounded-2xl transition ${isMuted ? "bg-rose-500 text-white" : "bg-white/10 text-white hover:bg-white/15"
+                                }`}
                         >
                             {isMuted ? <MicOff className="h-5 w-5" /> : <Mic className="h-5 w-5" />}
                         </button>
