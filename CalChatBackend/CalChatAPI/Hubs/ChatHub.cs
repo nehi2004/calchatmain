@@ -11,7 +11,6 @@ namespace CalChatAPI.Hubs
     public class ChatHub : Hub
     {
         private readonly ApplicationDbContext _context;
-
         private static Dictionary<string, DateTime> activeCalls = new();
 
         public ChatHub(ApplicationDbContext context)
@@ -32,43 +31,37 @@ namespace CalChatAPI.Hubs
                 {
                     await Groups.AddToGroupAsync(Context.ConnectionId, "Employees");
                 }
-
-                Console.WriteLine($"✅ User CONNECTED: {userId} | Role: {role}");
             }
 
             await base.OnConnectedAsync();
         }
 
-        public override async Task OnDisconnectedAsync(Exception? exception)
-        {
-            var userId = Context.UserIdentifier;
-
-            if (!string.IsNullOrEmpty(userId))
-            {
-                Console.WriteLine($"❌ User DISCONNECTED: {userId}");
-            }
-
-            await base.OnDisconnectedAsync(exception);
-        }
-
         public async Task JoinChat(string chatId)
         {
             if (string.IsNullOrEmpty(chatId))
+            {
                 return;
+            }
 
             await Groups.AddToGroupAsync(Context.ConnectionId, chatId);
         }
 
         public async Task SendMessage(object message)
         {
-            if (message == null) return;
+            if (message == null)
+            {
+                return;
+            }
 
             var chatId = message.GetType()
                 .GetProperty("ChatId")?
                 .GetValue(message)?
                 .ToString();
 
-            if (string.IsNullOrEmpty(chatId)) return;
+            if (string.IsNullOrEmpty(chatId))
+            {
+                return;
+            }
 
             var text =
                 message.GetType().GetProperty("Text")?.GetValue(message) ??
@@ -79,11 +72,11 @@ namespace CalChatAPI.Hubs
                 id = message.GetType().GetProperty("Id")?.GetValue(message),
                 senderId = message.GetType().GetProperty("SenderId")?.GetValue(message),
                 senderName = message.GetType().GetProperty("SenderName")?.GetValue(message),
-                message = text, // ✅ FIXED
+                message = text,
                 fileUrl = message.GetType().GetProperty("FileUrl")?.GetValue(message),
                 time = message.GetType().GetProperty("Time")?.GetValue(message),
                 isCall = message.GetType().GetProperty("IsCall")?.GetValue(message) ?? false,
-                chatId = chatId
+                chatId
             });
         }
 
@@ -95,63 +88,38 @@ namespace CalChatAPI.Hubs
         public async Task CallUser(string toUserId, string chatId)
         {
             var fromUserId = Context.UserIdentifier;
-
             var fromUserName = Context.User?.Identity?.Name;
 
             if (string.IsNullOrEmpty(fromUserName))
             {
                 var user = await _context.Users.FindAsync(fromUserId);
-                fromUserName = user?.Name ?? fromUserId; // fallback to ID
+                fromUserName = user?.Name ?? fromUserId;
             }
 
             if (string.IsNullOrEmpty(fromUserId) || string.IsNullOrEmpty(toUserId))
+            {
                 return;
-
-            // ✅ STORE CALL START TIME
-            activeCalls[chatId] = DateTime.UtcNow;
-
-            var message = new Message
-            {
-                ChatId = int.Parse(chatId),
-                SenderId = fromUserId,
-                SenderName = fromUserName,
-                Text = "📞 Call Started",
-                Time = DateTime.UtcNow,
-                IsCall = true,
-                Status = "sent"
-            };
-
-            _context.Messages.Add(message);
-            await _context.SaveChangesAsync();
-
-            await Clients.Group(chatId).SendAsync("ReceiveMessage", new
-            {
-                id = message.Id,
-                senderId = message.SenderId,
-                senderName = message.SenderName,
-                message = message.Text,
-                time = message.Time,
-                isCall = true,
-                chatId = chatId
-            });
+            }
 
             await Clients.User(toUserId).SendAsync("IncomingCall", new
             {
                 fromUserId,
                 fromUserName,
                 callType = "voice",
-                chatId = chatId // 🔥 ADD THIS
+                chatId
             });
         }
+
         public async Task EndCall(string targetUserId, string chatId)
         {
             var callerId = Context.UserIdentifier;
             var callerName = Context.User?.Identity?.Name ?? "User";
 
             if (string.IsNullOrEmpty(callerId))
+            {
                 return;
+            }
 
-            // 🔥 FIX: prevent crash
             if (string.IsNullOrEmpty(chatId) || !activeCalls.ContainsKey(chatId))
             {
                 await Clients.User(targetUserId).SendAsync("CallEnded");
@@ -161,7 +129,6 @@ namespace CalChatAPI.Hubs
 
             var startTime = activeCalls[chatId];
             var duration = DateTime.UtcNow - startTime;
-
             activeCalls.Remove(chatId);
 
             string durationText =
@@ -174,7 +141,7 @@ namespace CalChatAPI.Hubs
                 ChatId = int.Parse(chatId),
                 SenderId = callerId,
                 SenderName = callerName,
-                Text = $"📞 Voice call • {durationText}",
+                Text = $"Voice call - {durationText}",
                 Time = DateTime.UtcNow,
                 IsCall = true,
                 Status = "read"
@@ -191,10 +158,9 @@ namespace CalChatAPI.Hubs
                 message = message.Text,
                 time = message.Time,
                 isCall = true,
-                chatId = chatId
+                chatId
             });
 
-            // 🔥 BOTH SIDE END
             await Clients.User(targetUserId).SendAsync("CallEnded");
             await Clients.User(callerId).SendAsync("CallEnded");
         }
@@ -202,11 +168,19 @@ namespace CalChatAPI.Hubs
         public async Task SendOffer(string offer, string toUserId)
         {
             var fromUserId = Context.UserIdentifier;
+            var fromUserName = Context.User?.Identity?.Name;
+
+            if (string.IsNullOrEmpty(fromUserName))
+            {
+                var user = await _context.Users.FindAsync(fromUserId);
+                fromUserName = user?.Name ?? fromUserId;
+            }
 
             await Clients.User(toUserId).SendAsync("ReceiveOffer", new
             {
                 offer,
-                fromUserId
+                fromUserId,
+                fromUserName
             });
         }
 
@@ -232,54 +206,82 @@ namespace CalChatAPI.Hubs
             });
         }
 
-        public async Task AcceptCall(string toUserId)
+        public async Task AcceptCall(string toUserId, string chatId)
         {
             var fromUserId = Context.UserIdentifier;
+            var fromUserName = Context.User?.Identity?.Name;
 
-            if (string.IsNullOrEmpty(fromUserId) || string.IsNullOrEmpty(toUserId))
+            if (string.IsNullOrEmpty(fromUserName))
+            {
+                var user = await _context.Users.FindAsync(fromUserId);
+                fromUserName = user?.Name ?? fromUserId;
+            }
+
+            if (string.IsNullOrEmpty(fromUserId) || string.IsNullOrEmpty(toUserId) || string.IsNullOrEmpty(chatId))
+            {
                 return;
+            }
 
-            // ✅ Notify CALLER (User1)
+            activeCalls[chatId] = DateTime.UtcNow;
+
+            var message = new Message
+            {
+                ChatId = int.Parse(chatId),
+                SenderId = fromUserId,
+                SenderName = fromUserName,
+                Text = "Voice call started",
+                Time = DateTime.UtcNow,
+                IsCall = true,
+                Status = "sent"
+            };
+
+            _context.Messages.Add(message);
+            await _context.SaveChangesAsync();
+
+            await Clients.Group(chatId).SendAsync("ReceiveMessage", new
+            {
+                id = message.Id,
+                senderId = message.SenderId,
+                senderName = message.SenderName,
+                message = message.Text,
+                time = message.Time,
+                isCall = true,
+                chatId
+            });
+
             await Clients.User(toUserId).SendAsync("CallAccepted", new
             {
-                fromUserId = fromUserId,   // receiver
-                toUserId = toUserId        // caller
+                fromUserId,
+                fromUserName,
+                toUserId,
+                chatId
             });
 
-            // ✅ Notify RECEIVER (User2) ALSO (VERY IMPORTANT)
             await Clients.User(fromUserId).SendAsync("CallAccepted", new
             {
-                fromUserId = fromUserId,
-                toUserId = toUserId
-            });
-        }
-
-        public async Task RejectCall(string toUserId)
-        {
-            var fromUserId = Context.UserIdentifier;
-
-            if (string.IsNullOrEmpty(fromUserId) || string.IsNullOrEmpty(toUserId))
-                return;
-
-            // ✅ Notify caller
-            await Clients.User(toUserId).SendAsync("CallRejected", fromUserId);
-
-            // ✅ (OPTIONAL BUT BEST) notify receiver also
-            await Clients.User(fromUserId).SendAsync("CallRejected");
-        }
-
-        public async Task ToggleMute(string toUserId, bool isMuted)
-        {
-            var fromUserId = Context.UserIdentifier;
-
-            if (string.IsNullOrEmpty(fromUserId) || string.IsNullOrEmpty(toUserId))
-                return;
-
-            await Clients.User(toUserId).SendAsync("UserMuted", new
-            {
                 fromUserId,
-                isMuted
+                fromUserName,
+                toUserId,
+                chatId
             });
+        }
+
+        public async Task RejectCall(string toUserId, string chatId)
+        {
+            var fromUserId = Context.UserIdentifier;
+
+            if (string.IsNullOrEmpty(fromUserId) || string.IsNullOrEmpty(toUserId))
+            {
+                return;
+            }
+
+            if (!string.IsNullOrEmpty(chatId) && activeCalls.ContainsKey(chatId))
+            {
+                activeCalls.Remove(chatId);
+            }
+
+            await Clients.User(toUserId).SendAsync("CallRejected", fromUserId);
+            await Clients.User(fromUserId).SendAsync("CallRejected");
         }
     }
 }

@@ -7,6 +7,20 @@ export interface CallData {
     fromUserId: string
     fromUserName: string
     callType: "voice" | "video"
+    chatId?: string
+}
+
+export interface OutgoingCallData {
+    userId: string
+    userName: string
+    callType: "voice"
+    chatId: string
+}
+
+interface PendingOfferData {
+    offer: string
+    fromUserId: string
+    fromUserName?: string
 }
 
 interface CallContextType {
@@ -16,36 +30,55 @@ interface CallContextType {
     rejectCall: () => Promise<void>
     endCall: () => void
     connection: signalR.HubConnection | null
-    setConnection: (conn: signalR.HubConnection) => void
+    setConnection: (conn: signalR.HubConnection | null) => void
     callType: "voice" | null
     remoteAudioRef: React.RefObject<HTMLAudioElement | null>
-    pendingOfferData: React.MutableRefObject<any>   // ← NEW
+    pendingOfferData: React.MutableRefObject<PendingOfferData | null>
+    outgoingCall: OutgoingCallData | null
+    startOutgoingCall: (call: OutgoingCallData) => void
+    clearOutgoingCall: () => void
 }
 
 const CallContext = createContext<CallContextType | null>(null)
 
 export const CallProvider = ({ children }: { children: React.ReactNode }) => {
-
     const [incomingCall, setIncomingCall] = useState<CallData | null>(null)
     const [callType, setCallType] = useState<"voice" | null>(null)
+    const [connection, setConnectionState] = useState<signalR.HubConnection | null>(null)
+    const [outgoingCall, setOutgoingCall] = useState<OutgoingCallData | null>(null)
 
-    const connectionRef = useRef<signalR.HubConnection | null>(null)
     const remoteAudioRef = useRef<HTMLAudioElement | null>(null)
-    const pendingOfferData = useRef<any>(null)   // ← NEW
+    const pendingOfferData = useRef<PendingOfferData | null>(null)
 
-    const setConnection = (conn: signalR.HubConnection) => {
-        connectionRef.current = conn
+    const setConnection = (conn: signalR.HubConnection | null) => {
+        setConnectionState(conn)
+    }
+
+    const startOutgoingCall = (call: OutgoingCallData) => {
+        localStorage.setItem("chatId", call.chatId)
+        setCallType("voice")
+        setOutgoingCall(call)
+    }
+
+    const clearOutgoingCall = () => {
+        setOutgoingCall(null)
+        setCallType(null)
     }
 
     const acceptCall = async () => {
         const ringtone = (window as any).ringtone
-        if (ringtone?.pause) { ringtone.pause(); ringtone.currentTime = 0 }
+        if (ringtone?.pause) {
+            ringtone.pause()
+            ringtone.currentTime = 0
+        }
 
-        if (!incomingCall || !connectionRef.current) return
+        if (!incomingCall || !connection) {
+            return
+        }
 
         try {
-            localStorage.setItem("chatId", (incomingCall as any).chatId || "")
-            await connectionRef.current.invoke("AcceptCall", incomingCall.fromUserId)
+            localStorage.setItem("chatId", incomingCall.chatId || "")
+            await connection.invoke("AcceptCall", incomingCall.fromUserId, incomingCall.chatId || "")
             window.dispatchEvent(new Event("start-call"))
             setCallType("voice")
             setIncomingCall(null)
@@ -56,29 +89,45 @@ export const CallProvider = ({ children }: { children: React.ReactNode }) => {
 
     const rejectCall = async () => {
         const ringtone = (window as any).ringtone
-        if (ringtone?.pause) { ringtone.pause(); ringtone.currentTime = 0 }
+        if (ringtone?.pause) {
+            ringtone.pause()
+            ringtone.currentTime = 0
+        }
 
-        if (!incomingCall || !connectionRef.current) return
+        if (!incomingCall || !connection) {
+            return
+        }
 
-        await connectionRef.current.invoke("RejectCall", incomingCall.fromUserId)
+        await connection.invoke("RejectCall", incomingCall.fromUserId, incomingCall.chatId || "")
         setIncomingCall(null)
+        setCallType(null)
+        setOutgoingCall(null)
         window.dispatchEvent(new Event("call-ended"))
     }
 
     const endCall = () => {
         setCallType(null)
+        setOutgoingCall(null)
     }
 
     return (
-        <CallContext.Provider value={{
-            incomingCall, setIncomingCall,
-            acceptCall, rejectCall, endCall,
-            connection: connectionRef.current,
-            setConnection,
-            callType,
-            remoteAudioRef,
-            pendingOfferData   // ← NEW
-        }}>
+        <CallContext.Provider
+            value={{
+                incomingCall,
+                setIncomingCall,
+                acceptCall,
+                rejectCall,
+                endCall,
+                connection,
+                setConnection,
+                callType,
+                remoteAudioRef,
+                pendingOfferData,
+                outgoingCall,
+                startOutgoingCall,
+                clearOutgoingCall,
+            }}
+        >
             {children}
         </CallContext.Provider>
     )
@@ -86,6 +135,10 @@ export const CallProvider = ({ children }: { children: React.ReactNode }) => {
 
 export const useCall = () => {
     const context = useContext(CallContext)
-    if (!context) throw new Error("useCall must be used inside CallProvider")
+
+    if (!context) {
+        throw new Error("useCall must be used inside CallProvider")
+    }
+
     return context
 }

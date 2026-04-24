@@ -1,12 +1,11 @@
 "use client"
 
 import { useEffect, useRef, useState } from "react"
-import { PhoneOff, Mic, MicOff } from "lucide-react"
+import { Mic, MicOff, PhoneOff, PhoneOutgoing } from "lucide-react"
 import { useCall } from "@/context/CallContext"
 
 export default function GlobalCallUI() {
-
-    const { connection, pendingOfferData } = useCall()
+    const { connection, pendingOfferData, outgoingCall, clearOutgoingCall } = useCall()
 
     const [callType, setCallType] = useState<"voice" | null>(null)
     const [callUserName, setCallUserName] = useState("User")
@@ -14,25 +13,20 @@ export default function GlobalCallUI() {
     const [isMuted, setIsMuted] = useState(false)
 
     const callUserIdRef = useRef<string | null>(null)
+    const outgoingCallRef = useRef(outgoingCall)
     const peerRef = useRef<RTCPeerConnection | null>(null)
     const localStream = useRef<MediaStream | null>(null)
     const remoteAudioRef = useRef<HTMLAudioElement>(null)
 
-    // ✅ KEY FIX: isMuted ref mirrors state — so closures always read latest value
-    const isMutedRef = useRef(false)
-
-    /* ================= CLEANUP (called before every new call too) ================= */
-    const cleanupCall = () => {
-        // Stop ALL local tracks — this is what actually silences mic
+    const stopMedia = () => {
         if (localStream.current) {
-            localStream.current.getTracks().forEach(t => {
-                t.enabled = true   // re-enable before stop so browser releases mic
-                t.stop()
+            localStream.current.getTracks().forEach(track => {
+                track.enabled = true
+                track.stop()
             })
             localStream.current = null
         }
 
-        // Close peer connection fully
         if (peerRef.current) {
             peerRef.current.ontrack = null
             peerRef.current.onicecandidate = null
@@ -40,22 +34,21 @@ export default function GlobalCallUI() {
             peerRef.current = null
         }
 
-        // Clear remote audio
         if (remoteAudioRef.current) {
             remoteAudioRef.current.srcObject = null
         }
+    }
 
+    const cleanupCall = () => {
+        stopMedia()
         callUserIdRef.current = null
-        isMutedRef.current = false
         setIsMuted(false)
         setCallType(null)
         setCallStatus("calling")
+        clearOutgoingCall()
     }
 
-    /* ================= CREATE PEER ================= */
     const createPeer = () => {
-
-        // ✅ Always cleanup old peer first before creating new one
         if (peerRef.current) {
             peerRef.current.ontrack = null
             peerRef.current.onicecandidate = null
@@ -66,30 +59,27 @@ export default function GlobalCallUI() {
         const pc = new RTCPeerConnection({
             iceServers: [
                 { urls: "stun:stun.l.google.com:19302" },
-
-                // 🔥 TURN SERVER (REQUIRED FOR PRODUCTION)
                 {
                     urls: "turn:openrelay.metered.ca:80",
                     username: "openrelayproject",
-                    credential: "openrelayproject"
+                    credential: "openrelayproject",
                 },
                 {
                     urls: "turn:openrelay.metered.ca:443",
                     username: "openrelayproject",
-                    credential: "openrelayproject"
-                }
-            ]
+                    credential: "openrelayproject",
+                },
+            ],
         })
 
-        pc.ontrack = (event) => {
-            console.log("🔊 Remote stream received")
+        pc.ontrack = event => {
             if (remoteAudioRef.current) {
                 remoteAudioRef.current.srcObject = event.streams[0]
-                remoteAudioRef.current.play().catch(() => { })
+                remoteAudioRef.current.play().catch(() => undefined)
             }
         }
 
-        pc.onicecandidate = (event) => {
+        pc.onicecandidate = event => {
             if (event.candidate && callUserIdRef.current) {
                 connection?.invoke(
                     "SendIceCandidate",
@@ -100,7 +90,6 @@ export default function GlobalCallUI() {
         }
 
         pc.onconnectionstatechange = () => {
-            console.log("🔗 Peer connection state:", pc.connectionState)
             if (pc.connectionState === "disconnected" || pc.connectionState === "failed") {
                 cleanupCall()
             }
@@ -109,12 +98,9 @@ export default function GlobalCallUI() {
         peerRef.current = pc
     }
 
-    /* ================= GET MIC STREAM ================= */
     const getMicStream = async (): Promise<MediaStream | null> => {
-
-        // ✅ Stop old stream first if any
         if (localStream.current) {
-            localStream.current.getTracks().forEach(t => t.stop())
+            localStream.current.getTracks().forEach(track => track.stop())
             localStream.current = null
         }
 
@@ -123,49 +109,62 @@ export default function GlobalCallUI() {
                 audio: {
                     echoCancellation: true,
                     noiseSuppression: true,
-                    sampleRate: 44100
-                }
+                    sampleRate: 44100,
+                },
             })
 
-            // ✅ Always start with mic ENABLED
             stream.getAudioTracks().forEach(track => {
                 track.enabled = true
-                console.log("🎤 Track created, enabled:", track.enabled, "| label:", track.label)
             })
 
             localStream.current = stream
             return stream
-
         } catch (err) {
-            console.error("❌ Mic access failed:", err)
+            console.error("Mic access failed:", err)
             return null
         }
     }
 
-    /* ================= SIGNALR ================= */
     useEffect(() => {
+        outgoingCallRef.current = outgoingCall
 
-        if (!connection) return
+        if (!outgoingCall) {
+            return
+        }
 
-        // ✅ CALLER FLOW: CallAccepted → get mic → create offer
-        connection.on("CallAccepted", async (data) => {
+        callUserIdRef.current = outgoingCall.userId
+        setCallUserName(outgoingCall.userName)
+        setCallType("voice")
+        setCallStatus("calling")
+        setIsMuted(false)
+    }, [outgoingCall])
 
-            console.log("📞 Call accepted by receiver — caller starts WebRTC")
+    useEffect(() => {
+        if (!connection) {
+            return
+        }
 
-            cleanupCall()   // ✅ clean any leftover state from previous call
+        connection.on("CallAccepted", async data => {
+            if (!outgoingCallRef.current) {
+                return
+            }
+
+            stopMedia()
 
             const targetId = data.fromUserId
             callUserIdRef.current = targetId
-            setCallUserName(data.fromUserName || "User")
+            localStorage.setItem("chatId", data.chatId || localStorage.getItem("chatId") || "")
+            setCallUserName(outgoingCallRef.current.userName || data.fromUserName || "User")
             setCallType("voice")
             setCallStatus("calling")
-            isMutedRef.current = false
             setIsMuted(false)
 
             createPeer()
 
             const stream = await getMicStream()
-            if (!stream) return
+            if (!stream) {
+                return
+            }
 
             stream.getTracks().forEach(track => {
                 peerRef.current?.addTrack(track, stream)
@@ -175,23 +174,16 @@ export default function GlobalCallUI() {
                 const offer = await peerRef.current!.createOffer()
                 await peerRef.current!.setLocalDescription(offer)
 
-                await connection.invoke(
-                    "SendOffer",
-                    JSON.stringify(offer),
-                    targetId
-                )
-                console.log("📤 Offer sent to", targetId)
-
+                await connection.invoke("SendOffer", JSON.stringify(offer), targetId)
             } catch (err) {
-                console.error("❌ Offer creation failed:", err)
+                console.error("Offer creation failed:", err)
             }
         })
 
-        // ✅ CALLER: answer received → fully connected
-        connection.on("ReceiveAnswer", async (data) => {
-
-            console.log("✅ Answer received — caller connected")
-            if (!peerRef.current) return
+        connection.on("ReceiveAnswer", async data => {
+            if (!peerRef.current) {
+                return
+            }
 
             try {
                 await peerRef.current.setRemoteDescription(
@@ -199,11 +191,11 @@ export default function GlobalCallUI() {
                 )
                 setCallStatus("connected")
             } catch (err) {
-                console.error("❌ setRemoteDescription failed:", err)
+                console.error("setRemoteDescription failed:", err)
             }
         })
 
-        connection.on("ReceiveIceCandidate", async (data) => {
+        connection.on("ReceiveIceCandidate", async data => {
             if (data.candidate && peerRef.current) {
                 try {
                     await peerRef.current.addIceCandidate(
@@ -215,16 +207,8 @@ export default function GlobalCallUI() {
             }
         })
 
-        // ✅ Use ref-based endCall so it always has latest refs
-        connection.on("CallEnded", () => {
-            console.log("📴 CallEnded received")
-            cleanupCall()
-        })
-
-        connection.on("CallRejected", () => {
-            console.log("❌ CallRejected received")
-            cleanupCall()
-        })
+        connection.on("CallEnded", cleanupCall)
+        connection.on("CallRejected", cleanupCall)
 
         return () => {
             connection.off("CallAccepted")
@@ -233,33 +217,30 @@ export default function GlobalCallUI() {
             connection.off("CallEnded")
             connection.off("CallRejected")
         }
+    }, [connection, clearOutgoingCall])
 
-    }, [connection])
-
-    /* ================= RECEIVER FLOW ================= */
     useEffect(() => {
-
         const handler = async () => {
-
             const data = pendingOfferData.current
-            if (!data || !connection) return
+            if (!data || !connection) {
+                return
+            }
 
-            console.log("📞 Receiver: processing accepted call")
-
-            cleanupCall()   // ✅ clean any leftover state
+            stopMedia()
 
             const targetId = data.fromUserId
             callUserIdRef.current = targetId
             setCallUserName(data.fromUserName || "User")
             setCallType("voice")
-            setCallStatus("connected")   // receiver is connected immediately
-            isMutedRef.current = false
+            setCallStatus("connected")
             setIsMuted(false)
 
             createPeer()
 
             const stream = await getMicStream()
-            if (!stream) return
+            if (!stream) {
+                return
+            }
 
             stream.getTracks().forEach(track => {
                 peerRef.current?.addTrack(track, stream)
@@ -273,137 +254,121 @@ export default function GlobalCallUI() {
                 const answer = await peerRef.current!.createAnswer()
                 await peerRef.current!.setLocalDescription(answer)
 
-                await connection.invoke(
-                    "SendAnswer",
-                    JSON.stringify(answer),
-                    targetId
-                )
-                console.log("📤 Answer sent to", targetId)
-
+                await connection.invoke("SendAnswer", JSON.stringify(answer), targetId)
             } catch (err) {
-                console.error("❌ Answer creation failed:", err)
+                console.error("Answer creation failed:", err)
             }
 
-            // ✅ Clear offer so it can't be reused accidentally
             pendingOfferData.current = null
         }
 
         window.addEventListener("start-call", handler)
         return () => window.removeEventListener("start-call", handler)
+    }, [connection, pendingOfferData])
 
-    }, [connection])
-
-    /* ================= MUTE ================= */
     const toggleMute = async () => {
+        if (!peerRef.current) {
+            return
+        }
 
-        if (!peerRef.current) return
-
-        const sender = peerRef.current
-            .getSenders()
-            .find(s => s.track?.kind === "audio")
-
+        const sender = peerRef.current.getSenders().find(item => item.track?.kind === "audio")
         if (!sender) {
-            console.warn("⚠️ No audio sender found")
             return
         }
 
         const newMuted = !isMuted
 
         if (newMuted) {
-            // 🔴 MUTE → remove track completely
+            localStream.current?.getTracks().forEach(track => track.stop())
+            localStream.current = null
             await sender.replaceTrack(null)
-            console.log("🔇 Audio track removed")
         } else {
-            // 🟢 UNMUTE → add fresh mic track
             const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
             const newTrack = stream.getAudioTracks()[0]
-
             await sender.replaceTrack(newTrack)
-
             localStream.current = stream
-
-            console.log("🎤 Audio track restored")
         }
 
         setIsMuted(newMuted)
     }
 
-    /* ================= END CALL (button) ================= */
     const handleEndCall = async () => {
         if (connection && callUserIdRef.current) {
             const chatId = localStorage.getItem("chatId")
+
             try {
                 await connection.invoke("EndCall", callUserIdRef.current, chatId)
             } catch (err) {
                 console.error("EndCall invoke error:", err)
             }
         }
+
         cleanupCall()
     }
 
-    /* ================= UI ================= */
-    if (!callType) return null
+    if (!callType) {
+        return null
+    }
 
     return (
-        <div className="fixed inset-0 z-[99999] flex items-center justify-center bg-black/60">
+        <div className="fixed inset-0 z-[99999] flex items-center justify-center bg-slate-950/60 backdrop-blur-md">
+            <div className="relative w-[390px] overflow-hidden rounded-[32px] border border-white/15 bg-[radial-gradient(circle_at_top,#1e293b_0%,#0f172a_45%,#020617_100%)] p-6 shadow-[0_30px_80px_-28px_rgba(2,6,23,0.85)]">
+                <div className="absolute inset-x-0 top-0 h-32 bg-[radial-gradient(circle_at_top,rgba(56,189,248,0.22),transparent_65%)]" />
 
-            <div className="w-[380px] h-[520px] bg-[#0b141a] rounded-2xl flex flex-col">
+                <div className="relative">
+                    <div className="mb-10 flex items-center justify-between text-slate-300">
+                        <div>
+                            <p className="text-xs uppercase tracking-[0.26em] text-slate-400">
+                                Voice Call
+                            </p>
+                            <p className="mt-2 text-sm text-slate-300">
+                                {callStatus === "calling" ? "Connecting study partner" : "Live conversation"}
+                            </p>
+                        </div>
 
-                <div className="p-4 text-gray-300 border-b border-gray-700">
-                    Voice Call
-                </div>
-
-                <div className="flex-1 relative flex items-center justify-center">
-
-                    {/* Avatar */}
-                    <div className="w-32 h-32 rounded-full bg-gray-500 flex items-center justify-center text-4xl text-white">
-                        {callUserName?.charAt(0)?.toUpperCase() || "U"}
+                        <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white/10">
+                            <PhoneOutgoing className="h-5 w-5" />
+                        </div>
                     </div>
 
-                    {/* Name + Status */}
-                    <div className="absolute bottom-6 text-center w-full">
-                        <h2 className="text-white text-lg font-semibold">
+                    <div className="relative mx-auto mb-10 flex h-36 w-36 items-center justify-center rounded-full bg-white/10 ring-8 ring-white/5">
+                        <div className="absolute inset-0 animate-pulse rounded-full bg-cyan-400/10" />
+                        <span className="relative text-5xl font-semibold text-white">
+                            {callUserName?.charAt(0)?.toUpperCase() || "U"}
+                        </span>
+                    </div>
+
+                    <div className="text-center">
+                        <h2 className="text-3xl font-semibold tracking-tight text-white">
                             {callUserName}
                         </h2>
-                        <p className="text-gray-300 text-sm">
-                            {callStatus === "calling" ? "Calling..." : "Connected"}
+                        <p className="mt-2 text-sm text-slate-300">
+                            {callStatus === "calling" ? "Ringing..." : "Connected"}
                         </p>
                     </div>
 
-                </div>
+                    {isMuted && (
+                        <div className="mt-6 rounded-2xl border border-rose-400/30 bg-rose-400/10 px-4 py-3 text-center text-xs font-medium text-rose-200">
+                            Your microphone is muted
+                        </div>
+                    )}
 
-                {/* Mute indicator */}
-                {isMuted && (
-                    <div className="text-center text-red-400 text-xs pb-1">
-                        Your microphone is off
+                    <div className="mt-10 flex items-center justify-center gap-4">
+                        <button
+                            onClick={toggleMute}
+                            className={`flex h-14 w-14 items-center justify-center rounded-2xl transition ${isMuted ? "bg-rose-500 text-white" : "bg-white/10 text-white hover:bg-white/15"}`}
+                            title={isMuted ? "Unmute" : "Mute"}
+                        >
+                            {isMuted ? <MicOff className="h-5 w-5" /> : <Mic className="h-5 w-5" />}
+                        </button>
+
+                        <button
+                            onClick={handleEndCall}
+                            className="flex h-16 w-16 items-center justify-center rounded-full bg-rose-500 text-white shadow-lg shadow-rose-500/30 transition hover:bg-rose-600"
+                        >
+                            <PhoneOff className="h-6 w-6" />
+                        </button>
                     </div>
-                )}
-
-                <div className="flex justify-between items-center p-6">
-
-                    {/* Mute button */}
-                    <button
-                        onClick={toggleMute}
-                        className={`p-3 rounded-full transition-colors ${isMuted
-                            ? "bg-red-500 ring-2 ring-red-300"   // muted = red
-                            : "bg-gray-700"                       // active = gray
-                            }`}
-                        title={isMuted ? "Tap to unmute" : "Tap to mute"}
-                    >
-                        {isMuted
-                            ? <MicOff className="h-5 w-5 text-white" />
-                            : <Mic className="h-5 w-5 text-white" />
-                        }
-                    </button>
-
-                    {/* End call */}
-                    <button
-                        onClick={handleEndCall}
-                        className="bg-red-500 p-4 rounded-full hover:bg-red-600 transition-colors"
-                    >
-                        <PhoneOff className="h-5 w-5 text-white" />
-                    </button>
-
                 </div>
             </div>
 
