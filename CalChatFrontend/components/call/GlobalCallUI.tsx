@@ -227,7 +227,6 @@ export default function GlobalCallUI() {
     }
 
     if (!callType) return null
-
     return (
         <div className="fixed inset-0 z-[99999] flex items-center justify-center bg-slate-950/65 backdrop-blur-md">
             <div className="relative w-[390px] overflow-hidden rounded-[32px] border border-white/15 bg-[radial-gradient(circle_at_top,#1e293b_0%,#0f172a_45%,#020617_100%)] p-6 shadow-[0_30px_80px_-28px_rgba(2,6,23,0.85)]">
