@@ -1739,6 +1739,8 @@
 //    )
 
 //}
+
+
 "use client"
 
 import React, { useEffect, useMemo, useRef, useState } from "react"
@@ -1930,8 +1932,13 @@ export function ChatView() {
 
             const connection = new signalR.HubConnectionBuilder()
                 .withUrl(`${API_BASE}/chatHub`, {
-                    accessTokenFactory: () => token,
-                    transport: signalR.HttpTransportType.WebSockets,
+                    accessTokenFactory: () => {
+                        return localStorage.getItem("token") || ""
+                    },
+                    withCredentials: true,
+                    skipNegotiation: false,
+                    transport: signalR.HttpTransportType.WebSockets |
+                        signalR.HttpTransportType.LongPolling
                 })
                 .withAutomaticReconnect()
                 .build()
